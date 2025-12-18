@@ -1,0 +1,12 @@
+emulator -avd pixel_light \
+  -gpu swiftshader_indirect \
+  -memory 1024 \
+  -cores 1 \
+  -no-snapshot \
+  -no-boot-anim \
+  -no-audio \
+  -netdelay none \
+  -netspeed full \
+  -no-metrics
+
+flutter run -d emulator-5554 --profile
