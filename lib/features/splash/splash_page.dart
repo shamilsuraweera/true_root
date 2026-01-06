@@ -17,10 +17,9 @@ class _SplashPageState extends ConsumerState<SplashPage> {
 
     Future.delayed(const Duration(seconds: 1), () {
       final isLoggedIn = ref.read(authProvider).isLoggedIn;
-
       Navigator.pushReplacementNamed(
         context,
-        isLoggedIn ? AppRoutes.home : AppRoutes.login,
+        isLoggedIn ? AppRoutes.dashboard : AppRoutes.login,
       );
     });
   }
