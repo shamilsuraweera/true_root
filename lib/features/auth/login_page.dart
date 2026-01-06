@@ -14,7 +14,7 @@ class LoginPage extends ConsumerWidget {
         child: ElevatedButton(
           onPressed: () {
             ref.read(authProvider.notifier).login();
-            Navigator.pushReplacementNamed(context, AppRoutes.home);
+            Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
           },
           child: const Text('Login (Mock)'),
         ),
