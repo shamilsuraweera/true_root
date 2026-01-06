@@ -1,0 +1,136 @@
+PROJECT: Batch Tracking MVP
+LAST UPDATED: 2026-01-07
+OWNER: Shamil
+
+LEGEND:
+[ ] TODO
+[~] IN PROGRESS
+[x] DONE
+[!] BLOCKED
+
+==================================================
+PHASE 1 — FOUNDATION
+==================================================
+
+1. Development Environment
+[x] Flutter setup
+[x] Android emulator / device
+[x] VS Code workflow
+[x] Git repo initialized
+
+2. Flutter App Foundation
+[x] Clean template
+[x] Folder structure
+[x] Rename app & package ID
+[x] App icon & name
+[x] Basic theme/colors
+
+==================================================
+PHASE 2 — APP STRUCTURE
+==================================================
+
+3. Routing / Navigation
+[ ] App router (routes.dart)
+[ ] Route names
+[ ] Initial route (Splash)
+[ ] Auth vs App flow separation
+
+4. Global App State
+[ ] State management chosen (Riverpod)
+[ ] App-level providers
+[ ] Auth state placeholder
+
+==================================================
+PHASE 3 — AUTHENTICATION
+==================================================
+
+5. Auth UI (Flutter)
+[ ] Login screen
+[ ] Form validation
+[ ] Role-based redirect
+
+6. Backend Auth (NestJS)
+[ ] NestJS project init
+[ ] Auth module
+[ ] User entity
+[ ] JWT login
+[ ] Role guard
+
+==================================================
+PHASE 4 — DATABASE & BACKEND
+==================================================
+
+7. Database Setup
+[x] PostgreSQL local instance
+[x] Tables created
+[ ] Seed users
+[ ] Seed products
+
+8. Backend Core Modules
+[ ] Products module
+[ ] Batches module
+[ ] BatchEvents module
+
+9. API Endpoints
+[ ] Create batch
+[ ] Get batch by ID
+[ ] Change quantity
+[ ] Change status
+[ ] Change grade
+[ ] Disqualify batch
+[ ] Get batch history
+
+==================================================
+PHASE 5 — CORE MVP FEATURES
+==================================================
+
+10. Batch Management (Flutter)
+[ ] Batch list screen
+[ ] Batch detail screen
+[ ] Current state view
+[ ] History timeline view
+
+11. QR Code
+[ ] Generate QR
+[ ] Scan QR
+[ ] Fetch batch from backend
+
+12. Advanced Batch Operations
+[ ] Split batch
+[ ] Merge batches
+[ ] Transform batch
+
+==================================================
+PHASE 6 — ADMIN PANEL
+==================================================
+
+13. Admin UI (Flutter Web)
+[ ] Admin dashboard
+[ ] User management
+[ ] Product management
+[ ] Batch audit view
+
+==================================================
+PHASE 7 — FINAL MVP POLISH
+==================================================
+
+14. Security & Rules
+[ ] Role permissions
+[ ] Input validation
+[ ] Illegal operation prevention
+
+15. UX & Stability
+[ ] Loading states
+[ ] Error handling
+[ ] Offline-safe reads
+
+16. Documentation
+[ ] README
+[ ] Architecture diagram
+[ ] Demo flow explanation
+
+==================================================
+NOTES / BLOCKERS
+==================================================
+
+-
