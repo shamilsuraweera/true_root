@@ -1,26 +1,22 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
 
 class AppTheme {
+  static const Color primary = Color(0xFF007E6E);
+  static const Color secondary = Color(0xFF73AF6F);
+  static const Color background = Color(0xFFE7DEAF);
+  static const Color textDark = Color(0xFF1E1E1E);
+
   static ThemeData light() {
     return ThemeData(
       useMaterial3: true,
-      scaffoldBackgroundColor: AppColors.background,
+      scaffoldBackgroundColor: background,
       colorScheme: ColorScheme.light(
-        primary: AppColors.primary,
-        secondary: AppColors.secondary,
-        surface: AppColors.background,
+        primary: primary,
+        secondary: secondary,
+        surface: background,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
-        onSurface: AppColors.textDark,
-      ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: AppColors.textDark),
-        bodyMedium: TextStyle(color: AppColors.textDark),
-        titleLarge: TextStyle(
-          color: AppColors.textDark,
-          fontWeight: FontWeight.w600,
-        ),
+        onSurface: textDark,
       ),
     );
   }
