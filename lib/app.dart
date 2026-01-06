@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
-
-import 'core/theme/app_theme.dart';
 import 'app_routes.dart';
-
-import 'features/splash/splash_page.dart';
-import 'features/auth/login_page.dart';
-import 'features/home/home_page.dart';
+import 'core/theme/app_theme.dart';
 
 class TrueRootApp extends StatelessWidget {
   const TrueRootApp({super.key});
@@ -17,11 +12,7 @@ class TrueRootApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       initialRoute: AppRoutes.splash,
-      routes: {
-        AppRoutes.splash: (_) => const SplashPage(),
-        AppRoutes.login: (_) => const LoginPage(),
-        AppRoutes.home: (_) => const HomePage(),
-      },
+      routes: AppRoutes.routes,
     );
   }
 }
