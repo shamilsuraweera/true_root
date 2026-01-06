@@ -5,8 +5,8 @@ emulator -avd pixel_light \
   -no-snapshot \
   -no-boot-anim \
   -no-audio \
-  -netdelay none \
-  -netspeed full \
-  -no-metrics
+  -no-metrics \
+  -skin 720x1280 \
+  -dpi-device 320
 
 flutter run -d emulator-5554 --profile
