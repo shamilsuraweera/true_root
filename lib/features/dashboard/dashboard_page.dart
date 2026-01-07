@@ -11,7 +11,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   int _index = 0;
 
-  final List<Widget> _pages = const [
+  static const List<Widget> _pages = [
     HomePage(),
     Center(child: Text('Batches')),
     Center(child: Text('Users')),
@@ -22,7 +22,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Dashboard')),
-      body: _pages[_index],
+      body: IndexedStack(index: _index, children: _pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
