@@ -1,6 +1,6 @@
 PROJECT: Batch Tracking MVP
 LAST UPDATED: 2026-01-07
-OWNER: Shamil
+OWNER: Shamil Suraweera
 
 LEGEND:
 [ ] TODO
@@ -30,15 +30,15 @@ PHASE 2 — APP STRUCTURE
 ==================================================
 
 3. Routing / Navigation
-[ ] App router (routes.dart)
-[ ] Route names
-[ ] Initial route (Splash)
-[ ] Auth vs App flow separation
+[x] App router (routes.dart)
+[x] Route names
+[x] Initial route (Splash)
+[x] Auth vs App flow separation
 
 4. Global App State
-[ ] State management chosen (Riverpod)
-[ ] App-level providers
-[ ] Auth state placeholder
+[x] State management chosen (Riverpod)
+[x] App-level providers
+[x] Auth state placeholder
 
 ==================================================
 PHASE 3 — AUTHENTICATION

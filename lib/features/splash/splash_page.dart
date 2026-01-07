@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_routes.dart';
 import '../../state/auth_state.dart';
+import '../../core/theme/app_colors.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
@@ -16,7 +17,10 @@ class _SplashPageState extends ConsumerState<SplashPage> {
     super.initState();
 
     Future.delayed(const Duration(seconds: 1), () {
+      if (!mounted) return;
+
       final isLoggedIn = ref.read(authProvider).isLoggedIn;
+
       Navigator.pushReplacementNamed(
         context,
         isLoggedIn ? AppRoutes.dashboard : AppRoutes.login,
@@ -26,8 +30,9 @@ class _SplashPageState extends ConsumerState<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('True Root', style: TextStyle(fontSize: 24))),
+    return Scaffold(
+      backgroundColor: AppColors.primary,
+      body: Center(child: Image.asset('assets/icon/app_icon.png', width: 120)),
     );
   }
 }
