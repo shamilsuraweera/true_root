@@ -1,15 +1,26 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+enum UserRole { admin, operator }
+
 class AuthState {
   final bool isLoggedIn;
-  const AuthState({required this.isLoggedIn});
+  final UserRole? role;
+
+  const AuthState({required this.isLoggedIn, this.role});
+
+  AuthState copyWith({bool? isLoggedIn, UserRole? role}) {
+    return AuthState(
+      isLoggedIn: isLoggedIn ?? this.isLoggedIn,
+      role: role ?? this.role,
+    );
+  }
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier() : super(const AuthState(isLoggedIn: false));
 
-  void login() {
-    state = const AuthState(isLoggedIn: true);
+  void login({required UserRole role}) {
+    state = AuthState(isLoggedIn: true, role: role);
   }
 
   void logout() {
