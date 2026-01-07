@@ -16,7 +16,10 @@ class _SplashPageState extends ConsumerState<SplashPage> {
     super.initState();
 
     Future.delayed(const Duration(seconds: 1), () {
+      if (!mounted) return;
+
       final isLoggedIn = ref.read(authProvider).isLoggedIn;
+
       Navigator.pushReplacementNamed(
         context,
         isLoggedIn ? AppRoutes.dashboard : AppRoutes.login,
@@ -27,7 +30,12 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(child: Text('True Root', style: TextStyle(fontSize: 24))),
+      body: Center(
+        child: Text(
+          'True Root',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+      ),
     );
   }
 }

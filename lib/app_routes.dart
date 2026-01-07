@@ -8,7 +8,7 @@ class AppRoutes {
   static const login = '/login';
   static const dashboard = '/dashboard';
 
-  static Map<String, WidgetBuilder> routes = {
+  static final routes = <String, WidgetBuilder>{
     splash: (_) => const SplashPage(),
     login: (_) => const LoginPage(),
     dashboard: (_) => const DashboardPage(),
