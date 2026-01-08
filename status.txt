@@ -45,16 +45,16 @@ PHASE 3 — AUTHENTICATION
 ==================================================
 
 5. Auth UI (Flutter)
-[ ] Login screen
-[ ] Form validation
-[ ] Role-based redirect
+[x] Login screen
+[x] Form validation
+[x] Role-based redirect
 
 6. Backend Auth (NestJS)
-[ ] NestJS project init
-[ ] Auth module
-[ ] User entity
-[ ] JWT login
-[ ] Role guard
+[x] NestJS project init
+[x] Auth module
+[x] User entity
+[x] JWT login
+[x] Role guard
 
 ==================================================
 PHASE 4 — DATABASE & BACKEND
