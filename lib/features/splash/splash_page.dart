@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../app_routes.dart';
 import '../../state/auth_state.dart';
+import '../../core/theme/app_colors.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
@@ -15,25 +17,39 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   void initState() {
     super.initState();
 
-    Future.delayed(const Duration(seconds: 1), () {
-      if (!mounted) return;
+    Future.delayed(const Duration(seconds: 1), _handleNavigation);
+  }
 
-      final isLoggedIn = ref.read(authProvider).isLoggedIn;
+  void _handleNavigation() {
+    if (!mounted) return;
 
-      Navigator.pushReplacementNamed(
-        context,
-        isLoggedIn ? AppRoutes.dashboard : AppRoutes.login,
-      );
-    });
+    final auth = ref.read(authProvider);
+
+    if (!auth.isLoggedIn) {
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
+      return;
+    }
+
+    // Role-based redirect (expand later if needed)
+    switch (auth.role) {
+      case UserRole.admin:
+      case UserRole.operator:
+        Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+        break;
+      default:
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
+      backgroundColor: AppColors.primary,
       body: Center(
-        child: Text(
-          'True Root',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        child: Image.asset(
+          'assets/icon/app_icon.png',
+          width: 140,
+          fit: BoxFit.contain,
         ),
       ),
     );
