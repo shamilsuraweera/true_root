@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum UserRole { admin, operator }
+enum UserRole { admin, user }
 
 class AuthState {
   final bool isLoggedIn;
@@ -19,7 +19,8 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier() : super(const AuthState(isLoggedIn: false));
 
-  void login({required UserRole role}) {
+  /// DEV / MOCK LOGIN — NO VALIDATION
+  void login({UserRole role = UserRole.admin}) {
     state = AuthState(isLoggedIn: true, role: role);
   }
 
