@@ -12,7 +12,7 @@ import { AuthModule } from './auth/auth.module';
       password: 'true_root',
       database: 'true_root',
       autoLoadEntities: true,
-      synchronize: false, // IMPORTANT (no auto schema changes)
+      synchronize: false,
     }),
     AuthModule,
   ],
