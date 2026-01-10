@@ -63,13 +63,13 @@ PHASE 4 — DATABASE & BACKEND
 7. Database Setup
 [x] PostgreSQL local instance
 [x] Tables created
-[ ] Seed users
-[ ] Seed products
+[x] Seed users
+[x] Seed products
 
 8. Backend Core Modules
-[ ] Products module
-[ ] Batches module
-[ ] BatchEvents module
+[x] Products module
+[x] Batches module
+[x] BatchEvents module
 
 9. API Endpoints
 [ ] Create batch
