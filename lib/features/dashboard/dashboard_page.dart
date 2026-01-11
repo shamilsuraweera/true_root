@@ -1,47 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../app_routes.dart';
-import '../../state/auth_state.dart';
 
 import '../home/home_page.dart';
-import '../batches/batches_page.dart';
-import '../users/users_page.dart';
-import '../profile/profile_page.dart';
+import '../batches/batch_list_page.dart';
 
-class DashboardPage extends ConsumerStatefulWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
   @override
-  ConsumerState<DashboardPage> createState() => _DashboardPageState();
+  State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends ConsumerState<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage> {
   int _index = 0;
 
-  static const List<Widget> _pages = [
+  final List<Widget> _pages = const [
     HomePage(),
-    BatchesPage(),
-    UsersPage(),
-    ProfilePage(),
+    BatchListPage(),
+    Center(child: Text('Users')),
+    Center(child: Text('Profile')),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              ref.read(authProvider.notifier).logout();
-              Navigator.pushReplacementNamed(context, AppRoutes.login);
-            },
-          ),
-        ],
-      ),
-      body: IndexedStack(index: _index, children: _pages),
+      appBar: AppBar(title: const Text('Dashboard')),
+      body: _pages[_index],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),

@@ -5,7 +5,7 @@ class Batch {
   final String status;
   final DateTime createdAt;
 
-  const Batch({
+  Batch({
     required this.id,
     required this.product,
     required this.quantity,

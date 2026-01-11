@@ -85,10 +85,10 @@ PHASE 5 — CORE MVP FEATURES
 ==================================================
 
 10. Batch Management (Flutter)
-[ ] Batch list screen
-[ ] Batch detail screen
-[ ] Current state view
-[ ] History timeline view
+[x] Batch list screen
+[x] Batch detail screen
+[x] Current state view
+[x] History timeline view
 
 11. QR Code
 [ ] Generate QR
