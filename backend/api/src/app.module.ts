@@ -1,13 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './auth/auth.module';
-import { ProductsModule } from './products/products.module';
-import { BatchesModule } from './batches/batches.module';
 import { BatchEventsModule } from './batch-events/batch-events.module';
-import { Product } from './products/product.entity';
-import { Batch } from './batches/batch.entity';
-import { BatchEvent } from './batch-events/batch-event.entity';
-
 
 @Module({
   imports: [
@@ -19,11 +12,8 @@ import { BatchEvent } from './batch-events/batch-event.entity';
       password: 'true_root',
       database: 'true_root',
       autoLoadEntities: true,
-      synchronize: false,
+      synchronize: true,
     }),
-    AuthModule,
-    ProductsModule,
-    BatchesModule,
     BatchEventsModule,
   ],
 })

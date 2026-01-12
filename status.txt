@@ -1,12 +1,10 @@
 PROJECT: Batch Tracking MVP
-LAST UPDATED: 2026-01-07
+LAST UPDATED: 2026-01-12
 OWNER: Shamil Suraweera
 
 LEGEND:
 [ ] TODO
-[~] IN PROGRESS
 [x] DONE
-[!] BLOCKED
 
 ==================================================
 PHASE 1 — FOUNDATION
@@ -16,29 +14,29 @@ PHASE 1 — FOUNDATION
 [x] Flutter setup
 [x] Android emulator / device
 [x] VS Code workflow
-[x] Git repo initialized
+[x] Git repository initialized
 
 2. Flutter App Foundation
-[x] Clean template
-[x] Folder structure
-[x] Rename app & package ID
-[x] App icon & name
-[x] Basic theme/colors
+[x] Clean Flutter template
+[x] Scalable folder structure
+[x] App rename & package ID update
+[x] App icon & display name
+[x] Base theme & color system
 
 ==================================================
 PHASE 2 — APP STRUCTURE
 ==================================================
 
-3. Routing / Navigation
-[x] App router (routes.dart)
-[x] Route names
-[x] Initial route (Splash)
+3. Routing & Navigation
+[x] Central route definitions
+[x] Named routes
+[x] Splash as entry route
 [x] Auth vs App flow separation
 
 4. Global App State
-[x] State management chosen (Riverpod)
+[x] Riverpod selected
 [x] App-level providers
-[x] Auth state placeholder
+[x] Auth state placeholder (login / logout)
 
 ==================================================
 PHASE 3 — AUTHENTICATION
@@ -46,15 +44,15 @@ PHASE 3 — AUTHENTICATION
 
 5. Auth UI (Flutter)
 [x] Login screen
-[x] Form validation
-[x] Role-based redirect
+[x] Basic form validation
+[x] Role-based redirect logic
 
-6. Backend Auth (NestJS)
-[x] NestJS project init
-[x] Auth module
-[x] User entity
-[x] JWT login
-[x] Role guard
+6. Backend Authentication (NestJS)
+[x] NestJS project initialized
+[x] Auth module created
+[x] User entity defined
+[x] JWT-based login endpoint
+[x] Role guard implemented
 
 ==================================================
 PHASE 4 — DATABASE & BACKEND
@@ -62,7 +60,9 @@ PHASE 4 — DATABASE & BACKEND
 
 7. Database Setup
 [x] PostgreSQL local instance
-[x] Tables created
+[x] Database created
+[x] Application DB user created
+[x] Core tables created
 [x] Seed users
 [x] Seed products
 
@@ -71,14 +71,14 @@ PHASE 4 — DATABASE & BACKEND
 [x] Batches module
 [x] BatchEvents module
 
-9. API Endpoints
+9. Batch API Endpoints
 [ ] Create batch
 [ ] Get batch by ID
-[ ] Change quantity
-[ ] Change status
-[ ] Change grade
+[ ] Update quantity
+[ ] Update status
+[ ] Update grade
 [ ] Disqualify batch
-[ ] Get batch history
+[ ] Get batch history (events)
 
 ==================================================
 PHASE 5 — CORE MVP FEATURES
@@ -87,13 +87,13 @@ PHASE 5 — CORE MVP FEATURES
 10. Batch Management (Flutter)
 [x] Batch list screen
 [x] Batch detail screen
-[x] Current state view
-[x] History timeline view
+[x] Current batch state view
+[x] Batch history timeline UI
 
-11. QR Code
-[ ] Generate QR
-[ ] Scan QR
-[ ] Fetch batch from backend
+11. QR Code Integration
+[ ] Generate QR for batch
+[ ] Scan QR code
+[ ] Fetch batch via QR
 
 12. Advanced Batch Operations
 [ ] Split batch
@@ -104,33 +104,27 @@ PHASE 5 — CORE MVP FEATURES
 PHASE 6 — ADMIN PANEL
 ==================================================
 
-13. Admin UI (Flutter Web)
+13. Admin Interface (Flutter Web)
 [ ] Admin dashboard
 [ ] User management
 [ ] Product management
-[ ] Batch audit view
+[ ] Batch audit & trace view
 
 ==================================================
 PHASE 7 — FINAL MVP POLISH
 ==================================================
 
-14. Security & Rules
-[ ] Role permissions
-[ ] Input validation
+14. Security & Business Rules
+[ ] Role-based permissions
+[ ] Backend input validation
 [ ] Illegal operation prevention
 
 15. UX & Stability
 [ ] Loading states
 [ ] Error handling
-[ ] Offline-safe reads
+[ ] Offline-safe read views
 
 16. Documentation
 [ ] README
 [ ] Architecture diagram
 [ ] Demo flow explanation
-
-==================================================
-NOTES / BLOCKERS
-==================================================
-
--
