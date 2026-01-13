@@ -5,6 +5,9 @@ import { UpdateQuantityDto } from './dto/update-quantity.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { UpdateGradeDto } from './dto/update-grade.dto';
 import { DisqualifyDto } from './dto/disqualify.dto';
+import { SplitBatchDto } from './dto/split-batch.dto';
+import { MergeBatchesDto } from './dto/merge-batches.dto';
+import { TransformBatchDto } from './dto/transform-batch.dto';
 
 @Controller('batches')
 export class BatchesController {
@@ -38,6 +41,21 @@ export class BatchesController {
   @Patch(':id/disqualify')
   disqualify(@Param('id') id: string, @Body() body: DisqualifyDto) {
     return this.service.disqualify(Number(id), body.reason);
+  }
+
+  @Post(':id/split')
+  split(@Param('id') id: string, @Body() body: SplitBatchDto) {
+    return this.service.splitBatch(Number(id), body.items);
+  }
+
+  @Post('merge')
+  merge(@Body() body: MergeBatchesDto) {
+    return this.service.mergeBatches(body);
+  }
+
+  @Post(':id/transform')
+  transform(@Param('id') id: string, @Body() body: TransformBatchDto) {
+    return this.service.transformBatch(Number(id), body);
   }
 
   @Get(':id/history')
