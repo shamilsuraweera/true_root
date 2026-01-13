@@ -32,7 +32,7 @@ export class Batch {
   @Column({ name: 'stage_id', type: 'int', nullable: true })
   stageId: number | null;
 
-  @Column({ name: 'qr_payload', nullable: true, unique: true })
+  @Column({ name: 'qr_payload', type: 'text', nullable: true, unique: true })
   qrPayload: string | null;
 
   @Column({ name: 'is_disqualified', default: false })

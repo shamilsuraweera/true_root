@@ -34,7 +34,7 @@ class _QrScanPageState extends State<QrScanPage> {
 
           final batchId = _parseBatchId(rawValue);
           if (batchId == null) {
-            if (!mounted) return;
+            if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Invalid batch QR')),
             );
@@ -43,7 +43,7 @@ class _QrScanPageState extends State<QrScanPage> {
 
           _isProcessing = true;
           await _controller.stop();
-          if (!mounted) return;
+          if (!context.mounted) return;
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
