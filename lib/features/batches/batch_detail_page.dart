@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'batch_history_timeline.dart';
 import 'state/batch_provider.dart';
 
@@ -28,6 +29,16 @@ class BatchDetailPage extends ConsumerWidget {
             Text('Quantity: ${batch.quantity}'),
             Text('Status: ${batch.status}'),
             Text('Created: ${batch.createdAt}'),
+            const SizedBox(height: 16),
+            Text('QR Code', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Center(
+              child: QrImageView(
+                data: 'true_root://batch/${batch.id}',
+                size: 180,
+                backgroundColor: Colors.white,
+              ),
+            ),
             const SizedBox(height: 24),
             const Text(
               'History',

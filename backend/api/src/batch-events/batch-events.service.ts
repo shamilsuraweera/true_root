@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { BatchEvent } from './batch-event.entity';
+import { BatchEvent, BatchEventType } from './batch-event.entity';
 
 @Injectable()
 export class BatchEventsService {
@@ -10,7 +10,12 @@ export class BatchEventsService {
     private readonly repo: Repository<BatchEvent>,
   ) {}
 
-  findByBatchId(batchId: string) {
+  async log(batchId: number, type: BatchEventType, description: string) {
+    const event = this.repo.create({ batchId, type, description });
+    return this.repo.save(event);
+  }
+
+  async getByBatch(batchId: number) {
     return this.repo.find({
       where: { batchId },
       order: { createdAt: 'ASC' },

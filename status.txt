@@ -72,13 +72,13 @@ PHASE 4 — DATABASE & BACKEND
 [x] BatchEvents module
 
 9. Batch API Endpoints
-[ ] Create batch
-[ ] Get batch by ID
-[ ] Update quantity
-[ ] Update status
-[ ] Update grade
-[ ] Disqualify batch
-[ ] Get batch history (events)
+[x] Create batch
+[x] Get batch by ID
+[x] Update quantity
+[x] Update status
+[x] Update grade
+[x] Disqualify batch
+[x] Get batch history (events)
 
 ==================================================
 PHASE 5 — CORE MVP FEATURES

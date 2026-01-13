@@ -14,7 +14,7 @@ class BatchHistoryTimeline extends StatelessWidget {
 
     return ListView.separated(
       itemCount: events.length,
-      separatorBuilder: (_, __) => const Divider(),
+      separatorBuilder: (context, index) => const Divider(),
       itemBuilder: (context, index) {
         return ListTile(
           leading: CircleAvatar(

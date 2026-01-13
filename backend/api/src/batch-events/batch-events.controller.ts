@@ -1,12 +1,12 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { BatchEventsService } from './batch-events.service';
 
-@Controller('batches')
+@Controller('batch-events')
 export class BatchEventsController {
   constructor(private readonly service: BatchEventsService) {}
 
-  @Get(':id/history')
-  getHistory(@Param('id') id: string) {
-    return this.service.findByBatchId(id);
+  @Get(':batchId')
+  getByBatch(@Param('batchId') batchId: string) {
+    return this.service.getByBatch(Number(batchId));
   }
 }
