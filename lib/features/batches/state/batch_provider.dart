@@ -7,14 +7,14 @@ final batchListProvider = Provider<List<Batch>>((ref) {
   return [
     Batch(
       id: 'BATCH-001',
-      product: 'Cinnamon',
+      productName: 'Cinnamon',
       quantity: 120.5,
       status: 'ACTIVE',
       createdAt: DateTime.now().subtract(const Duration(days: 2)),
     ),
     Batch(
       id: 'BATCH-002',
-      product: 'Tea',
+      productName: 'Tea',
       quantity: 75,
       status: 'HOLD',
       createdAt: DateTime.now().subtract(const Duration(days: 5)),
@@ -22,12 +22,22 @@ final batchListProvider = Provider<List<Batch>>((ref) {
   ];
 });
 
-final batchByIdProvider = Provider.family<Batch?, String>((ref, batchId) {
-  final batches = ref.watch(batchListProvider);
+final batchByIdProvider = FutureProvider.family<Batch?, String>((ref, batchId) async {
+  final api = ref.read(batchApiProvider);
+  final normalized = _normalizeBatchId(batchId);
+  if (normalized == null) {
+    throw Exception('Invalid batch id');
+  }
+
   try {
-    return batches.firstWhere((b) => b.id == batchId);
+    return await api.fetchBatch(normalized);
   } catch (_) {
-    return null;
+    final batches = ref.read(batchListProvider);
+    try {
+      return batches.firstWhere((b) => b.id == batchId);
+    } catch (_) {
+      rethrow;
+    }
   }
 });
 

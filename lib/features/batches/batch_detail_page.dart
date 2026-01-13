@@ -11,37 +11,48 @@ class BatchDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final batch = ref.watch(batchByIdProvider(batchId));
+    final batchAsync = ref.watch(batchByIdProvider(batchId));
 
-    if (batch == null) {
-      return const Scaffold(body: Center(child: Text('Batch not found')));
-    }
+    return batchAsync.when(
+      data: (batch) {
+        if (batch == null) {
+          return const Scaffold(body: Center(child: Text('Batch not found')));
+        }
 
-    return Scaffold(
-      appBar: AppBar(title: Text('Batch ${batch.id}')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(batch.product, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text('Quantity: ${batch.quantity}'),
-            Text('Status: ${batch.status}'),
-            Text('Created: ${batch.createdAt}'),
-            const SizedBox(height: 16),
-            Text('QR Code', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            _QrPayloadView(batchId: batch.id),
-            const SizedBox(height: 24),
-            const Text(
-              'History',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        return Scaffold(
+          appBar: AppBar(title: Text('Batch ${batch.id}')),
+          body: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(batch.displayProduct, style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 8),
+                Text('Quantity: ${batch.quantity} ${batch.unit}'),
+                Text('Status: ${batch.status}'),
+                if (batch.grade != null && batch.grade!.isNotEmpty) Text('Grade: ${batch.grade}'),
+                Text('Created: ${batch.createdAt}'),
+                const SizedBox(height: 16),
+                Text('QR Code', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                _QrPayloadView(batchId: batch.id),
+                const SizedBox(height: 24),
+                const Text(
+                  'History',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Expanded(child: BatchHistoryTimeline()),
+              ],
             ),
-            const SizedBox(height: 8),
-            const Expanded(child: BatchHistoryTimeline()),
-          ],
-        ),
+          ),
+        );
+      },
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stackTrace) => const Scaffold(
+        body: Center(child: Text('Failed to load batch')),
       ),
     );
   }

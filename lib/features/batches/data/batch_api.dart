@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../models/batch.dart';
 
 class BatchApi {
   const BatchApi(this.baseUrl);
@@ -18,5 +19,15 @@ class BatchApi {
       throw Exception('Invalid QR payload');
     }
     return payload;
+  }
+
+  Future<Batch> fetchBatch(String batchId) async {
+    final uri = Uri.parse('$baseUrl/batches/$batchId');
+    final response = await http.get(uri);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load batch');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return Batch.fromApi(data);
   }
 }

@@ -4,18 +4,20 @@ import {
   Column,
   CreateDateColumn,
 } from 'typeorm';
-import { UserRole } from '../auth/auth.types';
 
-@Entity({ name: 'users' })
-export class User {
+@Entity({ name: 'stages' })
+export class Stage {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ unique: true })
-  email: string;
+  name: string;
 
-  @Column()
-  role: UserRole;
+  @Column({ type: 'int' })
+  sequence: number;
+
+  @Column({ default: true })
+  active: boolean;
 
   @CreateDateColumn()
   createdAt: Date;
