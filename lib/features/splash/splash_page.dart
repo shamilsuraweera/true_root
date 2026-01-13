@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_routes.dart';
+import '../../core/theme/app_colors.dart';
 import '../../state/auth_state.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
@@ -30,7 +31,14 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(child: Text('True Root', style: TextStyle(fontSize: 24))),
+      backgroundColor: AppColors.primary,
+      body: Center(
+        child: Image(
+          image: AssetImage('assets/icon/app_icon.png'),
+          width: 120,
+          height: 120,
+        ),
+      ),
     );
   }
 }
