@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Param, Body } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Param, Body, Query } from '@nestjs/common';
 import { BatchesService } from './batches.service';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { UpdateQuantityDto } from './dto/update-quantity.dto';
@@ -16,6 +16,19 @@ export class BatchesController {
   @Post()
   create(@Body() body: CreateBatchDto) {
     return this.service.createBatch(body.productId, body.quantity, body.grade);
+  }
+
+  @Get()
+  list(
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    const parsedLimit = limit ? Number(limit) : undefined;
+    const parsedOffset = offset ? Number(offset) : undefined;
+    return this.service.listBatches(
+      Number.isFinite(parsedLimit) ? parsedLimit : undefined,
+      Number.isFinite(parsedOffset) ? parsedOffset : undefined,
+    );
   }
 
   @Get(':id')

@@ -35,6 +35,14 @@ export class BatchesService {
     return saved;
   }
 
+  async listBatches(limit = 20, offset = 0) {
+    return this.repo.find({
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
+    });
+  }
+
   async getBatch(id: number) {
     const batch = await this.repo.findOne({ where: { id } });
     if (!batch) throw new NotFoundException('Batch not found');
