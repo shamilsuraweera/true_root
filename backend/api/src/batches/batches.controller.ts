@@ -44,4 +44,9 @@ export class BatchesController {
   history(@Param('id') id: string) {
     return this.service.history(Number(id));
   }
+
+  @Get(':id/qr')
+  qr(@Param('id') id: string) {
+    return this.service.getQrPayload(Number(id));
+  }
 }

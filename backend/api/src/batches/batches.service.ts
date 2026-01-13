@@ -68,4 +68,12 @@ export class BatchesService {
     await this.getBatch(id);
     return this.events.getByBatch(id);
   }
+
+  async getQrPayload(id: number) {
+    const batch = await this.getBatch(id);
+    return {
+      batchId: batch.id,
+      payload: `true_root://batch/${batch.id}`,
+    };
+  }
 }
