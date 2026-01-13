@@ -16,7 +16,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   void initState() {
     super.initState();
 
-    Future.delayed(const Duration(seconds: 1), () {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
       final isLoggedIn = ref.read(authProvider).isLoggedIn;
