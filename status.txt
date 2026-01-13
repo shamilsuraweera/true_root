@@ -154,7 +154,7 @@ PHASE 6 — MOBILE UI: DASHBOARD / USERS / PROFILE
 [x] Edit profile (all fields editable)
 [x] Company account: add members (existing users)
 [x] Company members list + remove
-[ ] Profile wired to API
+[x] Profile wired to API
 
 ==================================================
 PHASE 7 — OWNERSHIP / REQUEST FLOW

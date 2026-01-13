@@ -16,8 +16,8 @@ class UserDetailPage extends StatelessWidget {
         children: [
           _InfoRow(label: 'Email', value: user.email),
           _InfoRow(label: 'Role', value: user.roleLabel),
-          _InfoRow(label: 'Organization', value: user.organization),
-          _InfoRow(label: 'Location', value: user.location),
+          _InfoRow(label: 'Organization', value: user.organizationLabel),
+          _InfoRow(label: 'Location', value: user.locationLabel),
           const SizedBox(height: 24),
           Text('Batches', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),

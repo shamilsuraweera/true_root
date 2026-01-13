@@ -50,12 +50,12 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                 }
                 return ListView.separated(
                   itemCount: filtered.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final user = filtered[index];
                     return ListTile(
                       title: Text(user.displayName),
-                      subtitle: Text('${user.organization} • ${user.roleLabel} • ${user.location}'),
+                      subtitle: Text('${user.organizationLabel} • ${user.roleLabel} • ${user.locationLabel}'),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () {
                         Navigator.push(
@@ -70,7 +70,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => const Center(child: Text('Failed to load users')),
+              error: (_, _) => const Center(child: Text('Failed to load users')),
             ),
           ),
         ],

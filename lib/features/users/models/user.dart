@@ -5,6 +5,8 @@ class AppUser {
   final String? name;
   final String? organization;
   final String? location;
+  final String? accountType;
+  final List<String> members;
 
   AppUser({
     required this.id,
@@ -13,9 +15,14 @@ class AppUser {
     this.name,
     this.organization,
     this.location,
+    this.accountType,
+    this.members = const [],
   });
 
-  String get displayName => name?.isNotEmpty == true ? name! : email;
+  String get displayName {
+    final candidate = name;
+    return candidate != null && candidate.isNotEmpty ? candidate : email;
+  }
 
   String get roleLabel {
     switch (role) {
@@ -32,19 +39,26 @@ class AppUser {
     }
   }
 
-  String get organization => this.organization?.isNotEmpty == true ? this.organization! : 'No org';
+  String get organizationLabel {
+    final value = organization;
+    return value != null && value.isNotEmpty ? value : 'No org';
+  }
 
-  String get location => this.location?.isNotEmpty == true ? this.location! : 'Unknown';
+  String get locationLabel {
+    final value = location;
+    return value != null && value.isNotEmpty ? value : 'Unknown';
+  }
 
   bool matches(String query) {
     return displayName.toLowerCase().contains(query) ||
         email.toLowerCase().contains(query) ||
-        organization.toLowerCase().contains(query) ||
+        organizationLabel.toLowerCase().contains(query) ||
         roleLabel.toLowerCase().contains(query) ||
-        location.toLowerCase().contains(query);
+        locationLabel.toLowerCase().contains(query);
   }
 
   factory AppUser.fromApi(Map<String, dynamic> json) {
+    final members = json['members'];
     return AppUser(
       id: json['id']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
@@ -52,6 +66,8 @@ class AppUser {
       name: json['name']?.toString(),
       organization: json['organization']?.toString(),
       location: json['location']?.toString(),
+      accountType: json['accountType']?.toString(),
+      members: members is List ? members.map((item) => item.toString()).toList() : const [],
     );
   }
 }
