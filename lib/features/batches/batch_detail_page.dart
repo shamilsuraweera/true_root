@@ -32,13 +32,7 @@ class BatchDetailPage extends ConsumerWidget {
             const SizedBox(height: 16),
             Text('QR Code', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            Center(
-              child: QrImageView(
-                data: 'true_root://batch/${batch.id}',
-                size: 180,
-                backgroundColor: Colors.white,
-              ),
-            ),
+            _QrPayloadView(batchId: batch.id),
             const SizedBox(height: 24),
             const Text(
               'History',
@@ -47,6 +41,40 @@ class BatchDetailPage extends ConsumerWidget {
             const SizedBox(height: 8),
             const Expanded(child: BatchHistoryTimeline()),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QrPayloadView extends ConsumerWidget {
+  final String batchId;
+
+  const _QrPayloadView({required this.batchId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final qrPayload = ref.watch(batchQrPayloadProvider(batchId));
+
+    return qrPayload.when(
+      data: (payload) => Center(
+        child: QrImageView(
+          data: payload,
+          size: 180,
+          backgroundColor: Colors.white,
+        ),
+      ),
+      loading: () => const SizedBox(
+        height: 180,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stackTrace) => SizedBox(
+        height: 180,
+        child: Center(
+          child: Text(
+            'Failed to load QR',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
         ),
       ),
     );
