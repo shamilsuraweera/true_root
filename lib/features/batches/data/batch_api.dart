@@ -31,6 +31,16 @@ class BatchApi {
     return Batch.fromApi(data);
   }
 
+  Future<List<Batch>> fetchBatches({int limit = 5, int offset = 0}) async {
+    final uri = Uri.parse('$baseUrl/batches?limit=$limit&offset=$offset');
+    final response = await http.get(uri);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load batches');
+    }
+    final data = jsonDecode(response.body) as List<dynamic>;
+    return data.map((item) => Batch.fromApi(item as Map<String, dynamic>)).toList();
+  }
+
   Future<Map<String, dynamic>> splitBatch(String batchId, List<Map<String, dynamic>> items) async {
     final uri = Uri.parse('$baseUrl/batches/$batchId/split');
     final response = await http.post(

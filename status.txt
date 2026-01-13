@@ -137,9 +137,10 @@ PHASE 6 — MOBILE UI: DASHBOARD / USERS / PROFILE
 [ ] Centered logo (no text)
 
 16. Dashboard (Mobile)
-[ ] Pending purchase requests panel (incoming approvals)
-[ ] Recent activity list (actions done by user)
-[ ] My batches preview list (top 3-5)
+[x] Pending purchase requests panel (incoming approvals)
+[x] Recent activity list (actions done by user)
+[x] My batches preview list (top 3-5)
+[x] Dashboard wired to API (requests, batches, activity)
 
 17. Users (Mobile)
 [ ] Search users by name/org/role/location

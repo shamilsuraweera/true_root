@@ -42,4 +42,11 @@ export class BatchEventsService {
       order: { createdAt: 'ASC' },
     });
   }
+
+  async getRecent(limit = 10) {
+    return this.repo.find({
+      order: { createdAt: 'DESC' },
+      take: limit,
+    });
+  }
 }
