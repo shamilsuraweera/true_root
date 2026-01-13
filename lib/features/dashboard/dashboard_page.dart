@@ -43,18 +43,20 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
         final currentNavigator = _navigatorKeys[_index].currentState;
         if (currentNavigator != null && currentNavigator.canPop()) {
           currentNavigator.pop();
-          return false;
+          return;
         }
         if (_index != 0) {
           setState(() => _index = 0);
-          return false;
+        } else {
+          Navigator.of(context).maybePop();
         }
-        return true;
       },
       child: Scaffold(
         body: IndexedStack(index: _index, children: _pages),
