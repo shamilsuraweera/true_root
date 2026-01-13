@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'batch_history_timeline.dart';
 import 'state/batch_provider.dart';
+import '../products/state/product_provider.dart';
 
 class BatchDetailPage extends ConsumerWidget {
   final String batchId;
@@ -17,6 +18,17 @@ class BatchDetailPage extends ConsumerWidget {
       data: (batch) {
         if (batch == null) {
           return const Scaffold(body: Center(child: Text('Batch not found')));
+        }
+
+        final products = ref.watch(productListProvider).valueOrNull;
+        String? productName;
+        if (products != null && batch.productId != null) {
+          for (final product in products) {
+            if (product.id == batch.productId) {
+              productName = product.name;
+              break;
+            }
+          }
         }
 
         return Scaffold(
@@ -50,7 +62,10 @@ class BatchDetailPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(batch.displayProduct, style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  productName?.name ?? batch.displayProduct,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 const SizedBox(height: 8),
                 Text('Quantity: ${batch.quantity} ${batch.unit}'),
                 Text('Status: ${batch.status}'),

@@ -45,7 +45,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         final currentNavigator = _navigatorKeys[_index].currentState;
         if (currentNavigator != null && currentNavigator.canPop()) {

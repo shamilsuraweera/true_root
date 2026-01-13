@@ -31,7 +31,7 @@ class BatchApi {
     return Batch.fromApi(data);
   }
 
-  Future<List<Batch>> fetchBatches({int limit = 5, int offset = 0}) async {
+  Future<List<Batch>> fetchBatches({int limit = 50, int offset = 0}) async {
     final uri = Uri.parse('$baseUrl/batches?limit=$limit&offset=$offset');
     final response = await http.get(uri);
     if (response.statusCode != 200) {
