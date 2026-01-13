@@ -142,11 +142,11 @@ Future<void> _showSplitDialog(BuildContext context, WidgetRef ref, String batchI
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Split'),
           ),
         ],
@@ -240,11 +240,11 @@ Future<void> _showMergeDialog(BuildContext context, WidgetRef ref, String batchI
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Merge'),
           ),
         ],
@@ -330,11 +330,11 @@ Future<void> _showTransformDialog(BuildContext context, WidgetRef ref, String ba
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Transform'),
           ),
         ],
@@ -442,11 +442,11 @@ Future<void> _disqualifyBatch(BuildContext context, WidgetRef ref, String batchI
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Confirm'),
           ),
         ],
@@ -520,11 +520,11 @@ Future<bool?> _confirmAction(
       content: Text(message),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(dialogContext, false),
+          onPressed: () => Navigator.of(dialogContext).pop(false),
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: () => Navigator.pop(dialogContext, true),
+          onPressed: () => Navigator.of(dialogContext).pop(true),
           child: Text(confirmLabel),
         ),
       ],
