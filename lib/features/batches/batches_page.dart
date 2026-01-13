@@ -18,7 +18,7 @@ class BatchesPage extends ConsumerWidget {
           final Batch batch = batches[index];
           return ListTile(
             title: Text(batch.id),
-            subtitle: Text('${batch.product} • ${batch.quantity} kg'),
+            subtitle: Text('${batch.displayProduct} • ${batch.quantity} ${batch.unit}'),
             trailing: Text(batch.status),
           );
         },

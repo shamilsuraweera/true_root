@@ -91,9 +91,9 @@ PHASE 5 — CORE MVP FEATURES
 [x] Batch history timeline UI
 
 11. QR Code Integration
-[ ] Generate QR for batch
-[ ] Scan QR code
-[ ] Fetch batch via QR
+[x] Generate QR for batch
+[x] Scan QR code
+[x] Fetch batch via QR
 
 12. Advanced Batch Operations
 [ ] Split batch
