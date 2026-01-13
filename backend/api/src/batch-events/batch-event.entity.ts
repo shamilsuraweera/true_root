@@ -11,6 +11,9 @@ export enum BatchEventType {
   STATUS_CHANGED = 'STATUS_CHANGED',
   GRADE_CHANGED = 'GRADE_CHANGED',
   DISQUALIFIED = 'DISQUALIFIED',
+  SPLIT = 'SPLIT',
+  MERGED = 'MERGED',
+  TRANSFORMED = 'TRANSFORMED',
 }
 
 @Entity({ name: 'batch_events' })

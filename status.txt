@@ -96,9 +96,9 @@ PHASE 5 — CORE MVP FEATURES
 [x] Fetch batch via QR
 
 12. Advanced Batch Operations
-[ ] Split batch
-[ ] Merge batches
-[ ] Transform batch
+[x] Split batch
+[x] Merge batches
+[x] Transform batch
 
 ==================================================
 PHASE 6 — ADMIN PANEL
