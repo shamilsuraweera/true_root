@@ -4,6 +4,11 @@ create table if not exists users (
   id bigserial primary key,
   email text not null unique,
   role text not null,
+  name text,
+  organization text,
+  location text,
+  account_type text,
+  members jsonb,
   created_at timestamptz not null default now()
 );
 

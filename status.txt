@@ -143,17 +143,18 @@ PHASE 6 — MOBILE UI: DASHBOARD / USERS / PROFILE
 [x] Dashboard wired to API (requests, batches, activity)
 
 17. Users (Mobile)
-[ ] Search users by name/org/role/location
-[ ] User list card (Name, Org, Role, Location)
-[ ] User detail page (profile + batches)
-[ ] Request ownership button on batch card
-[ ] Users list wired to API
+[x] Search users by name/org/role/location
+[x] User list card (Name, Org, Role, Location)
+[x] User detail page (profile + batches)
+[x] Request ownership button on batch card
+[x] Users list wired to API
 
 18. Profile (Mobile)
-[ ] Profile view: photo, name, org, role, region, account type
-[ ] Edit profile (all fields editable)
-[ ] Company account: add members (existing users)
-[ ] Company members list + remove
+[x] Profile view: photo, name, org, role, region, account type
+[x] Edit profile (all fields editable)
+[x] Company account: add members (existing users)
+[x] Company members list + remove
+[x] Profile wired to API
 
 ==================================================
 PHASE 7 — OWNERSHIP / REQUEST FLOW
