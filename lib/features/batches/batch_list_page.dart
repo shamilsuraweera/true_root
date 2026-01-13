@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'state/batch_provider.dart';
 import 'batch_detail_page.dart';
+import 'create_batch_page.dart';
 import 'qr_scan_page.dart';
 
 class BatchListPage extends ConsumerWidget {
@@ -25,6 +26,15 @@ class BatchListPage extends ConsumerWidget {
             },
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CreateBatchPage()),
+          );
+        },
+        child: const Icon(Icons.add),
       ),
       body: ListView.builder(
         itemCount: batches.length,

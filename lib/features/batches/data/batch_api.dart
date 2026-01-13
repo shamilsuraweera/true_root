@@ -99,4 +99,26 @@ class BatchApi {
     }
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
+
+  Future<Batch> createBatch({
+    required int productId,
+    required int quantity,
+    String? grade,
+  }) async {
+    final uri = Uri.parse('$baseUrl/batches');
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'productId': productId,
+        'quantity': quantity,
+        if (grade != null) 'grade': grade,
+      }),
+    );
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception('Failed to create batch');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return Batch.fromApi(data);
+  }
 }
