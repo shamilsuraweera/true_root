@@ -6,7 +6,8 @@ import { BatchEventsController } from './batch-events.controller';
 
 @Module({
   imports: [TypeOrmModule.forFeature([BatchEvent])],
-  controllers: [BatchEventsController],
   providers: [BatchEventsService],
+  controllers: [BatchEventsController],
+  exports: [BatchEventsService],
 })
 export class BatchEventsModule {}
