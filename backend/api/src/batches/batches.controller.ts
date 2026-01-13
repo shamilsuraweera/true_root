@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Param, Body, Query } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Param, Body, Query, Delete } from '@nestjs/common';
 import { BatchesService } from './batches.service';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { UpdateQuantityDto } from './dto/update-quantity.dto';
@@ -54,6 +54,16 @@ export class BatchesController {
   @Patch(':id/disqualify')
   disqualify(@Param('id') id: string, @Body() body: DisqualifyDto) {
     return this.service.disqualify(Number(id), body.reason);
+  }
+
+  @Patch(':id/archive')
+  archive(@Param('id') id: string) {
+    return this.service.archiveBatch(Number(id));
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.service.deleteBatch(Number(id));
   }
 
   @Post(':id/split')

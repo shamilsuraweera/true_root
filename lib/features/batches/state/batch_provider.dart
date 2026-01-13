@@ -3,23 +3,9 @@ import '../../../core/api/api_config.dart';
 import '../data/batch_api.dart';
 import '../models/batch.dart';
 
-final batchListProvider = Provider<List<Batch>>((ref) {
-  return [
-    Batch(
-      id: 'BATCH-001',
-      productName: 'Cinnamon',
-      quantity: 120.5,
-      status: 'ACTIVE',
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-    ),
-    Batch(
-      id: 'BATCH-002',
-      productName: 'Tea',
-      quantity: 75,
-      status: 'HOLD',
-      createdAt: DateTime.now().subtract(const Duration(days: 5)),
-    ),
-  ];
+final batchListProvider = FutureProvider<List<Batch>>((ref) async {
+  final api = ref.read(batchApiProvider);
+  return api.fetchBatches(limit: 50);
 });
 
 final batchByIdProvider = FutureProvider.family<Batch?, String>((ref, batchId) async {
@@ -32,7 +18,7 @@ final batchByIdProvider = FutureProvider.family<Batch?, String>((ref, batchId) a
   try {
     return await api.fetchBatch(normalized);
   } catch (_) {
-    final batches = ref.read(batchListProvider);
+    final batches = await ref.read(batchListProvider.future);
     try {
       return batches.firstWhere((b) => b.id == batchId);
     } catch (_) {

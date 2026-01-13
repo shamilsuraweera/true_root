@@ -98,6 +98,24 @@ export class BatchesService {
     return saved;
   }
 
+  async archiveBatch(id: number) {
+    const batch = await this.getBatch(id);
+    const previous = batch.status;
+    batch.status = 'ARCHIVED';
+    const saved = await this.repo.save(batch);
+    await this.events.log(id, BatchEventType.ARCHIVED, 'Batch archived', {
+      statusBefore: previous,
+      statusAfter: batch.status,
+    });
+    return saved;
+  }
+
+  async deleteBatch(id: number) {
+    const batch = await this.getBatch(id);
+    await this.repo.remove(batch);
+    return { deleted: true };
+  }
+
   async history(id: number) {
     await this.getBatch(id);
     return this.events.getByBatch(id);

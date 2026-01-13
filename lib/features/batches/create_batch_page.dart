@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'batch_detail_page.dart';
 import 'state/batch_provider.dart';
+import '../products/state/product_provider.dart';
+import '../products/models/product.dart';
 
 class CreateBatchPage extends ConsumerStatefulWidget {
   const CreateBatchPage({super.key});
@@ -35,19 +37,52 @@ class _CreateBatchPageState extends ConsumerState<CreateBatchPage> {
           key: _formKey,
           child: Column(
             children: [
-              TextFormField(
-                controller: _productIdController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Product ID',
-                  hintText: '1',
-                ),
-                validator: (value) {
-                  final parsed = int.tryParse(value?.trim() ?? '');
-                  if (parsed == null || parsed <= 0) {
-                    return 'Enter a valid product ID';
-                  }
-                  return null;
+              Consumer(
+                builder: (context, ref, _) {
+                  final productsAsync = ref.watch(productListProvider);
+                  return productsAsync.when(
+                    data: (products) {
+                      return DropdownButtonFormField<int>(
+                        initialValue: _selectedProductId(products),
+                        items: products
+                            .map(
+                              (product) => DropdownMenuItem(
+                                value: product.id,
+                                child: Text(product.name),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          _productIdController.text = value.toString();
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Product',
+                        ),
+                        validator: (value) {
+                          if (value == null || value <= 0) {
+                            return 'Select a product';
+                          }
+                          return null;
+                        },
+                      );
+                    },
+                    loading: () => const LinearProgressIndicator(),
+                    error: (_, _) => TextFormField(
+                      controller: _productIdController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Product ID',
+                      ),
+                      validator: (value) {
+                        final parsed = int.tryParse(value?.trim() ?? '');
+                        if (parsed == null || parsed <= 0) {
+                          return 'Enter a valid product ID';
+                        }
+                        return null;
+                      },
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 12),
@@ -123,5 +158,16 @@ class _CreateBatchPageState extends ConsumerState<CreateBatchPage> {
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
+  }
+
+  int? _selectedProductId(List<Product> products) {
+    final current = int.tryParse(_productIdController.text.trim());
+    final selected = current != null && products.any((product) => product.id == current)
+        ? current
+        : (products.isNotEmpty ? products.first.id : null);
+    if (selected != null && _productIdController.text.isEmpty) {
+      _productIdController.text = selected.toString();
+    }
+    return selected;
   }
 }

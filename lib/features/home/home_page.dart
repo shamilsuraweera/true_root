@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import 'state/dashboard_provider.dart';
+import '../products/state/product_provider.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -11,6 +12,10 @@ class HomePage extends ConsumerWidget {
     final requestsAsync = ref.watch(pendingRequestsProvider);
     final batchesAsync = ref.watch(recentBatchesProvider);
     final activityAsync = ref.watch(recentActivityProvider);
+    final products = ref.watch(productListProvider).valueOrNull;
+    final productMap = {
+      for (final product in products ?? []) product.id: product.name,
+    };
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dashboard')),
@@ -46,7 +51,7 @@ class HomePage extends ConsumerWidget {
               );
             },
             loading: () => const _LoadingState(),
-            error: (_, __) => const _ErrorState(message: 'Failed to load requests'),
+            error: (_, _) => const _ErrorState(message: 'Failed to load requests'),
           ),
           const SizedBox(height: 24),
           _SectionHeader(
@@ -66,7 +71,7 @@ class HomePage extends ConsumerWidget {
                 children: items
                     .map(
                       (item) => _InfoTile(
-                        title: item.displayProduct,
+                        title: productMap[item.productId] ?? item.displayProduct,
                         subtitle: 'Batch ${item.id} • ${item.quantity} ${item.unit}',
                         trailing: _StatusChip(label: item.status),
                       ),
@@ -75,7 +80,7 @@ class HomePage extends ConsumerWidget {
               );
             },
             loading: () => const _LoadingState(),
-            error: (_, __) => const _ErrorState(message: 'Failed to load batches'),
+            error: (_, _) => const _ErrorState(message: 'Failed to load batches'),
           ),
           const SizedBox(height: 24),
           _SectionHeader(
@@ -103,7 +108,7 @@ class HomePage extends ConsumerWidget {
               );
             },
             loading: () => const _LoadingState(),
-            error: (_, __) => const _ErrorState(message: 'Failed to load activity'),
+            error: (_, _) => const _ErrorState(message: 'Failed to load activity'),
           ),
         ],
       ),
@@ -146,7 +151,7 @@ class _RequestCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.accent.withOpacity(0.5)),
+        side: BorderSide(color: AppColors.accent.withValues(alpha: 0.5)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -273,7 +278,7 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.secondary.withOpacity(0.2),
+        color: AppColors.secondary.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(

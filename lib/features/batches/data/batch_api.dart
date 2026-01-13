@@ -31,7 +31,7 @@ class BatchApi {
     return Batch.fromApi(data);
   }
 
-  Future<List<Batch>> fetchBatches({int limit = 5, int offset = 0}) async {
+  Future<List<Batch>> fetchBatches({int limit = 50, int offset = 0}) async {
     final uri = Uri.parse('$baseUrl/batches?limit=$limit&offset=$offset');
     final response = await http.get(uri);
     if (response.statusCode != 200) {
@@ -130,5 +130,37 @@ class BatchApi {
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return Batch.fromApi(data);
+  }
+
+  Future<Batch> disqualifyBatch(String batchId, String reason) async {
+    final uri = Uri.parse('$baseUrl/batches/$batchId/disqualify');
+    final response = await http.patch(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'reason': reason}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to disqualify batch');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return Batch.fromApi(data);
+  }
+
+  Future<Batch> archiveBatch(String batchId) async {
+    final uri = Uri.parse('$baseUrl/batches/$batchId/archive');
+    final response = await http.patch(uri);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to archive batch');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return Batch.fromApi(data);
+  }
+
+  Future<void> deleteBatch(String batchId) async {
+    final uri = Uri.parse('$baseUrl/batches/$batchId');
+    final response = await http.delete(uri);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete batch');
+    }
   }
 }
