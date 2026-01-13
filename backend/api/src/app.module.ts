@@ -6,6 +6,7 @@ import { ProductsModule } from './products/products.module';
 import { BatchesModule } from './batches/batches.module';
 import { BatchEventsModule } from './batch-events/batch-events.module';
 import { StagesModule } from './stages/stages.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { StagesModule } from './stages/stages.module';
     BatchesModule,
     BatchEventsModule,
     StagesModule,
+    UsersModule,
   ],
 })
 export class AppModule {}
