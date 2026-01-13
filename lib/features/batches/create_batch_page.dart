@@ -68,7 +68,7 @@ class _CreateBatchPageState extends ConsumerState<CreateBatchPage> {
                       );
                     },
                     loading: () => const LinearProgressIndicator(),
-                    error: (_, __) => TextFormField(
+                    error: (_, _) => TextFormField(
                       controller: _productIdController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(

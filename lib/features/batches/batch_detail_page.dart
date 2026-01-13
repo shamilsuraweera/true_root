@@ -47,12 +47,25 @@ class BatchDetailPage extends ConsumerWidget {
                     case 'transform':
                       _showTransformDialog(context, ref, batch.id);
                       break;
+                    case 'archive':
+                      _archiveBatch(context, ref, batch.id);
+                      break;
+                    case 'disqualify':
+                      _disqualifyBatch(context, ref, batch.id);
+                      break;
+                    case 'delete':
+                      _deleteBatch(context, ref, batch.id);
+                      break;
                   }
                 },
                 itemBuilder: (context) => const [
                   PopupMenuItem(value: 'split', child: Text('Split batch')),
                   PopupMenuItem(value: 'merge', child: Text('Merge batches')),
                   PopupMenuItem(value: 'transform', child: Text('Transform batch')),
+                  PopupMenuDivider(),
+                  PopupMenuItem(value: 'archive', child: Text('Archive batch')),
+                  PopupMenuItem(value: 'disqualify', child: Text('Mark not suitable')),
+                  PopupMenuItem(value: 'delete', child: Text('Delete batch')),
                 ],
               ),
             ],
@@ -63,7 +76,7 @@ class BatchDetailPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  productName?.name ?? batch.displayProduct,
+                  productName ?? batch.displayProduct,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
@@ -385,6 +398,138 @@ Future<void> _showTransformDialog(BuildContext context, WidgetRef ref, String ba
       const SnackBar(content: Text('Failed to transform batch')),
     );
   }
+}
+
+Future<void> _archiveBatch(BuildContext context, WidgetRef ref, String batchId) async {
+  final confirmed = await _confirmAction(
+    context,
+    title: 'Archive batch?',
+    message: 'This will hide the batch from active lists.',
+    confirmLabel: 'Archive',
+  );
+  if (confirmed != true) return;
+
+  try {
+    final api = ref.read(batchApiProvider);
+    await api.archiveBatch(batchId);
+    if (!context.mounted) return;
+    ref.invalidate(batchByIdProvider(batchId));
+    ref.invalidate(batchListProvider);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Batch archived')),
+    );
+  } catch (_) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Failed to archive batch')),
+    );
+  }
+}
+
+Future<void> _disqualifyBatch(BuildContext context, WidgetRef ref, String batchId) async {
+  final reasonController = TextEditingController();
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: const Text('Mark not suitable'),
+        content: TextField(
+          controller: reasonController,
+          decoration: const InputDecoration(
+            labelText: 'Reason',
+            hintText: 'Contaminated / damaged',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirmed != true) {
+    reasonController.dispose();
+    return;
+  }
+
+  final reason = reasonController.text.trim().isEmpty
+      ? 'Marked not suitable for use'
+      : reasonController.text.trim();
+  reasonController.dispose();
+
+  try {
+    final api = ref.read(batchApiProvider);
+    await api.disqualifyBatch(batchId, reason);
+    if (!context.mounted) return;
+    ref.invalidate(batchByIdProvider(batchId));
+    ref.invalidate(batchListProvider);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Batch marked not suitable')),
+    );
+  } catch (_) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Failed to update batch')),
+    );
+  }
+}
+
+Future<void> _deleteBatch(BuildContext context, WidgetRef ref, String batchId) async {
+  final confirmed = await _confirmAction(
+    context,
+    title: 'Delete batch?',
+    message: 'This will permanently remove the batch.',
+    confirmLabel: 'Delete',
+  );
+  if (confirmed != true) return;
+
+  try {
+    final api = ref.read(batchApiProvider);
+    await api.deleteBatch(batchId);
+    if (!context.mounted) return;
+    ref.invalidate(batchListProvider);
+    Navigator.of(context).maybePop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Batch deleted')),
+    );
+  } catch (_) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Failed to delete batch')),
+    );
+  }
+}
+
+Future<bool?> _confirmAction(
+  BuildContext context, {
+  required String title,
+  required String message,
+  required String confirmLabel,
+}) {
+  return showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: Text(confirmLabel),
+        ),
+      ],
+    ),
+  );
 }
 
 List<double> _parseDoubles(String input) {
