@@ -1,5 +1,5 @@
 PROJECT: Batch Tracking MVP
-LAST UPDATED: 2026-01-12
+LAST UPDATED: 2026-01-13
 OWNER: Shamil Suraweera
 
 LEGEND:
@@ -21,7 +21,7 @@ PHASE 1 — FOUNDATION
 [x] Scalable folder structure
 [x] App rename & package ID update
 [x] App icon & display name
-[x] Base theme & color system
+[x] Base theme & color system (AppTheme/AppColors)
 
 ==================================================
 PHASE 2 — APP STRUCTURE
@@ -50,12 +50,12 @@ PHASE 3 — AUTHENTICATION
 6. Backend Authentication (NestJS)
 [x] NestJS project initialized
 [x] Auth module created
-[x] User entity defined
-[x] JWT-based login endpoint
+[x] User entity scaffolded
+[x] JWT-based login endpoint (mock)
 [x] Role guard implemented
 
 ==================================================
-PHASE 4 — DATABASE & BACKEND
+PHASE 4 — DATABASE & BACKEND CORE
 ==================================================
 
 7. Database Setup
@@ -70,8 +70,11 @@ PHASE 4 — DATABASE & BACKEND
 [x] Products module
 [x] Batches module
 [x] BatchEvents module
+[x] Stages module
+[x] Users module
+[x] Batch relations entity for lineage
 
-9. Batch API Endpoints
+9. Batch API Endpoints (Core)
 [x] Create batch
 [x] Get batch by ID
 [x] Update quantity
@@ -79,52 +82,127 @@ PHASE 4 — DATABASE & BACKEND
 [x] Update grade
 [x] Disqualify batch
 [x] Get batch history (events)
-
-==================================================
-PHASE 5 — CORE MVP FEATURES
-==================================================
-
-10. Batch Management (Flutter)
-[x] Batch list screen
-[x] Batch detail screen
-[x] Current batch state view
-[x] Batch history timeline UI
-
-11. QR Code Integration
-[x] Generate QR for batch
-[x] Scan QR code
-[x] Fetch batch via QR
-
-12. Advanced Batch Operations
+[x] Get batch QR payload
 [x] Split batch
 [x] Merge batches
 [x] Transform batch
 
+10. Schema Alignment
+[x] Batch entity aligned to new schema (batch_code, unit, stage, qr_payload, is_disqualified)
+[x] Batch event entity expanded (before/after fields + metadata)
+[x] Stages schema + endpoints
+[x] Users schema + endpoints
+[x] SQL schema drafted (sql/schema.sql)
+[ ] Migrations created for schema
+[ ] Drop/recreate tables for clean schema (dev)
+
 ==================================================
-PHASE 6 — ADMIN PANEL
+PHASE 5 — CORE MVP FEATURES (MOBILE)
 ==================================================
 
-13. Admin Interface (Flutter Web)
+11. Batch Management (Flutter)
+[x] Batch list screen
+[x] Batch detail screen
+[x] Current batch state view
+[x] Batch history timeline UI
+[x] Batch detail uses API (GET /batches/:id)
+[ ] Batch list uses API (GET /batches)
+[ ] Batch history uses API (GET /batches/:id/history)
+
+12. QR Code Integration
+[x] Generate QR for batch (backend payload + UI)
+[x] Scan QR code (mobile_scanner)
+[x] Fetch batch via QR
+[x] Android camera permission
+[x] iOS camera permission
+
+13. Advanced Batch Operations (UI + API)
+[x] Split batch (API + UI dialog)
+[x] Merge batches (API + UI dialog)
+[x] Transform batch (API + UI dialog)
+[ ] Split/Merge/Transform validation feedback (detailed errors)
+[ ] Refresh batch history after operations
+
+==================================================
+PHASE 6 — MOBILE UI: DASHBOARD / USERS / PROFILE
+==================================================
+
+14. Mobile Navigation Shell
+[ ] Bottom tab navigation with per-tab back stack
+[ ] Tabs order: Dashboard, Batches, Users, Profile
+[ ] Android back button returns within tab stack
+
+15. Splash Screen
+[ ] Primary color background
+[ ] Centered logo (no text)
+
+16. Dashboard (Mobile)
+[ ] Pending purchase requests panel (incoming approvals)
+[ ] Recent activity list (actions done by user)
+[ ] My batches preview list (top 3-5)
+
+17. Users (Mobile)
+[ ] Search users by name/org/role/location
+[ ] User list card (Name, Org, Role, Location)
+[ ] User detail page (profile + batches)
+[ ] Request ownership button on batch card
+[ ] Users list wired to API
+
+18. Profile (Mobile)
+[ ] Profile view: photo, name, org, role, region, account type
+[ ] Edit profile (all fields editable)
+[ ] Company account: add members (existing users)
+[ ] Company members list + remove
+
+==================================================
+PHASE 7 — OWNERSHIP / REQUEST FLOW
+==================================================
+
+19. Ownership Requests (Backend)
+[ ] Request ownership endpoint (buyer -> owner)
+[ ] Approve/reject endpoint (owner)
+[ ] Ownership transfer audit log (events + history)
+[ ] Partial quantity transfer support
+[ ] Buyer batches list (owned + pending)
+[ ] Old QR mapping stored but not listed in owner batch list
+
+20. Ownership Requests (Mobile)
+[ ] Request create flow from user batch card
+[ ] Requests inbox/outbox screens
+[ ] Approve/reject actions
+[ ] Batch list updates after transfer
+
+==================================================
+PHASE 8 — ADMIN PANEL (WEB, LATER)
+==================================================
+
+21. Admin Interface (Flutter Web)
 [ ] Admin dashboard
 [ ] User management
 [ ] Product management
 [ ] Batch audit & trace view
 
 ==================================================
-PHASE 7 — FINAL MVP POLISH
+PHASE 9 — SECURITY, VALIDATION, STABILITY
 ==================================================
 
-14. Security & Business Rules
-[ ] Role-based permissions
-[ ] Backend input validation
-[ ] Illegal operation prevention
+22. Security & Business Rules
+[ ] Role-based permissions per endpoint
+[ ] Input validation for all DTOs
+[ ] Illegal operation prevention (split/merge/transform/ownership)
+[ ] Stage transitions validation
 
-15. UX & Stability
-[ ] Loading states
-[ ] Error handling
+23. UX & Stability
+[ ] Loading states for all API screens
+[ ] Error handling with retry
 [ ] Offline-safe read views
 
-16. Documentation
-[ ] README
+==================================================
+PHASE 10 — DOCUMENTATION & DEMO
+==================================================
+
+24. Documentation
+[ ] README (setup + run)
 [ ] Architecture diagram
 [ ] Demo flow explanation
+[ ] API reference
