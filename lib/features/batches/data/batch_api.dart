@@ -31,8 +31,12 @@ class BatchApi {
     return Batch.fromApi(data);
   }
 
-  Future<List<Batch>> fetchBatches({int limit = 50, int offset = 0}) async {
-    final uri = Uri.parse('$baseUrl/batches?limit=$limit&offset=$offset');
+  Future<List<Batch>> fetchBatches({int limit = 50, int offset = 0, String? ownerId}) async {
+    final query = StringBuffer('limit=$limit&offset=$offset');
+    if (ownerId != null) {
+      query.write('&ownerId=$ownerId');
+    }
+    final uri = Uri.parse('$baseUrl/batches?$query');
     final response = await http.get(uri);
     if (response.statusCode != 200) {
       throw Exception('Failed to load batches');

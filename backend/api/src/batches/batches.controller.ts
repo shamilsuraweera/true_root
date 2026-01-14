@@ -15,19 +15,22 @@ export class BatchesController {
 
   @Post()
   create(@Body() body: CreateBatchDto) {
-    return this.service.createBatch(body.productId, body.quantity, body.grade);
+    return this.service.createBatch(body.productId, body.quantity, body.grade, body.ownerId);
   }
 
   @Get()
   list(
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
+    @Query('ownerId') ownerId?: string,
   ) {
     const parsedLimit = limit ? Number(limit) : undefined;
     const parsedOffset = offset ? Number(offset) : undefined;
+    const parsedOwnerId = ownerId ? Number(ownerId) : undefined;
     return this.service.listBatches(
       Number.isFinite(parsedLimit) ? parsedLimit : undefined,
       Number.isFinite(parsedOffset) ? parsedOffset : undefined,
+      Number.isFinite(parsedOwnerId) ? parsedOwnerId : undefined,
     );
   }
 

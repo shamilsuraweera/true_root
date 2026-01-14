@@ -18,7 +18,7 @@ export class BatchesService {
     private readonly events: BatchEventsService,
   ) {}
 
-  async createBatch(productId: number, quantity: number, grade?: string) {
+  async createBatch(productId: number, quantity: number, grade?: string, ownerId?: number) {
     const saved = await this.createBatchRecord({
       productId,
       quantity,
@@ -26,6 +26,7 @@ export class BatchesService {
       status: 'CREATED',
       unit: 'kg',
       stageId: null,
+      ownerId: ownerId ?? 1,
     });
     await this.events.log(saved.id, BatchEventType.CREATED, 'Batch created', {
       quantityAfter: saved.quantity,
@@ -35,8 +36,9 @@ export class BatchesService {
     return saved;
   }
 
-  async listBatches(limit = 20, offset = 0) {
+  async listBatches(limit = 20, offset = 0, ownerId?: number) {
     return this.repo.find({
+      where: ownerId ? { ownerId } : {},
       order: { createdAt: 'DESC' },
       take: limit,
       skip: offset,
@@ -152,14 +154,15 @@ export class BatchesService {
 
     const children: Batch[] = [];
     for (const item of items) {
-      const child = await this.createBatchRecord({
-        productId: parent.productId,
-        quantity: item.quantity,
-        grade: item.grade ?? parent.grade ?? null,
-        status: parent.status === 'SPLIT' ? 'CREATED' : parent.status,
-        unit: parent.unit,
-        stageId: parent.stageId ?? null,
-      });
+    const child = await this.createBatchRecord({
+      productId: parent.productId,
+      quantity: item.quantity,
+      grade: item.grade ?? parent.grade ?? null,
+      status: parent.status === 'SPLIT' ? 'CREATED' : parent.status,
+      unit: parent.unit,
+      stageId: parent.stageId ?? null,
+      ownerId: parent.ownerId ?? null,
+    });
       await this.createRelation(parent.id, child.id, 'SPLIT', child.quantity);
       await this.events.log(child.id, BatchEventType.SPLIT, `Split from batch ${parent.id}`, {
         quantityAfter: child.quantity,
@@ -195,6 +198,7 @@ export class BatchesService {
       status: body.status ?? 'MERGED',
       unit: body.unit ?? batches[0].unit,
       stageId: body.stageId ?? null,
+      ownerId: batches[0].ownerId ?? null,
     });
 
     for (const batch of batches) {
@@ -242,6 +246,7 @@ export class BatchesService {
       status: body.status ?? 'TRANSFORMED',
       unit: body.unit ?? parent.unit,
       stageId: body.stageId ?? parent.stageId ?? null,
+      ownerId: parent.ownerId ?? null,
     });
 
     await this.createRelation(parent.id, newBatch.id, 'TRANSFORM', quantity);
@@ -272,10 +277,12 @@ export class BatchesService {
     status: string;
     unit: string;
     stageId: number | null;
+    ownerId: number | null;
   }) {
     const batchCode = this.buildBatchCode();
     const batch = this.repo.create({
       productId: params.productId,
+      ownerId: params.ownerId,
       quantity: params.quantity,
       batchCode,
       unit: params.unit,

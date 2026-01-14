@@ -141,6 +141,7 @@ PHASE 6 — MOBILE UI: DASHBOARD / USERS / PROFILE
 [x] Recent activity list (actions done by user)
 [x] My batches preview list (top 3-5)
 [x] Dashboard wired to API (requests, batches, activity)
+[x] Dashboard View All buttons wired (requests, batches, activity)
 
 17. Users (Mobile)
 [x] Search users by name/org/role/location
@@ -161,17 +162,17 @@ PHASE 7 — OWNERSHIP / REQUEST FLOW
 ==================================================
 
 19. Ownership Requests (Backend)
-[ ] Request ownership endpoint (buyer -> owner)
-[ ] Approve/reject endpoint (owner)
-[ ] Ownership transfer audit log (events + history)
-[ ] Partial quantity transfer support
+[x] Request ownership endpoint (buyer -> owner)
+[x] Approve/reject endpoint (owner)
+[x] Ownership transfer audit log (events + history)
+[x] Partial quantity transfer support
 [ ] Buyer batches list (owned + pending)
 [ ] Old QR mapping stored but not listed in owner batch list
 
 20. Ownership Requests (Mobile)
-[ ] Request create flow from user batch card
-[ ] Requests inbox/outbox screens
-[ ] Approve/reject actions
+[x] Request create flow from user batch card
+[x] Requests inbox/outbox screens
+[x] Approve/reject actions
 [ ] Batch list updates after transfer
 
 ==================================================

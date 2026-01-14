@@ -17,16 +17,16 @@ export class User {
   @Column()
   role: UserRole;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   name: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   organization: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   location: string | null;
 
-  @Column({ name: 'account_type', nullable: true })
+  @Column({ name: 'account_type', type: 'text', nullable: true })
   accountType: string | null;
 
   @Column({ type: 'jsonb', nullable: true })
