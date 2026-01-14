@@ -3,21 +3,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_routes.dart';
 import 'state/auth_provider.dart';
 
-class LoginPage extends ConsumerStatefulWidget {
-  const LoginPage({super.key});
+class RegisterPage extends ConsumerStatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  ConsumerState<LoginPage> createState() => _LoginPageState();
+  ConsumerState<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends ConsumerState<LoginPage> {
+class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  String _role = 'admin';
   bool _isSubmitting = false;
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -26,13 +29,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: const Text('Register')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Full name'),
+                validator: (value) => value == null || value.trim().isEmpty ? 'Name is required' : null,
+              ),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -49,8 +58,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 obscureText: true,
                 decoration: const InputDecoration(labelText: 'Password'),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Password is required';
+                  if (value == null || value.length < 6) return 'Min 6 characters';
                   return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _role,
+                decoration: const InputDecoration(labelText: 'Role'),
+                items: const [
+                  DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                  DropdownMenuItem(value: 'farmer', child: Text('Farmer')),
+                  DropdownMenuItem(value: 'trader', child: Text('Trader')),
+                  DropdownMenuItem(value: 'exporter', child: Text('Exporter')),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _role = value);
                 },
               ),
               const SizedBox(height: 24),
@@ -64,15 +88,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           width: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Login'),
+                      : const Text('Create account'),
                 ),
               ),
               const SizedBox(height: 12),
               TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.register);
-                },
-                child: const Text('Create account'),
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Back to login'),
               ),
             ],
           ),
@@ -86,16 +108,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     setState(() => _isSubmitting = true);
     try {
       final controller = ref.read(authControllerProvider);
-      await controller.login(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
+      await controller.register(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        role: _role,
       );
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login failed')),
+        const SnackBar(content: Text('Registration failed')),
       );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

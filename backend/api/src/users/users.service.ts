@@ -16,13 +16,23 @@ export class UsersService {
     return this.repo.find({ order: { createdAt: 'DESC' } });
   }
 
-  create(email: string, role: UserRole) {
-    const user = this.repo.create({ email, role });
+  create(email: string, role: UserRole, password?: string) {
+    const user = this.repo.create({ email, role, password: password ?? 'password' });
     return this.repo.save(user);
   }
 
   async getById(id: number) {
     const user = await this.repo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  async getByEmail(email: string, includePassword = false) {
+    const query = this.repo.createQueryBuilder('user').where('user.email = :email', { email });
+    if (includePassword) {
+      query.addSelect('user.password');
+    }
+    const user = await query.getOne();
     if (!user) throw new NotFoundException('User not found');
     return user;
   }

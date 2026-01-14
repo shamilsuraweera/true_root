@@ -19,7 +19,7 @@ export class UsersController {
 
   @Post()
   create(@Body() body: CreateUserDto) {
-    return this.service.create(body.email, body.role);
+    return this.service.create(body.email, body.role, body.password);
   }
 
   @Patch(':id')
