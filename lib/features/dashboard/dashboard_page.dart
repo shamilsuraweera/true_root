@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../home/home_page.dart';
 import '../batches/batch_list_page.dart';
 import '../profile/profile_page.dart';
 import '../users/users_page.dart';
+import 'state/dashboard_tab_provider.dart';
 
-class DashboardPage extends StatefulWidget {
+class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
 
   @override
-  State<DashboardPage> createState() => _DashboardPageState();
+  ConsumerState<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
-  int _index = 0;
+class _DashboardPageState extends ConsumerState<DashboardPage> {
 
   final List<GlobalKey<NavigatorState>> _navigatorKeys = [
     GlobalKey<NavigatorState>(),
@@ -43,30 +44,31 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final index = ref.watch(dashboardTabProvider);
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        final currentNavigator = _navigatorKeys[_index].currentState;
+        final currentNavigator = _navigatorKeys[index].currentState;
         if (currentNavigator != null && currentNavigator.canPop()) {
           currentNavigator.pop();
           return;
         }
-        if (_index != 0) {
-          setState(() => _index = 0);
+        if (index != 0) {
+          ref.read(dashboardTabProvider.notifier).state = 0;
         } else {
           Navigator.of(context).maybePop();
         }
       },
       child: Scaffold(
-        body: IndexedStack(index: _index, children: _pages),
+        body: IndexedStack(index: index, children: _pages),
         bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _index,
+          currentIndex: index,
           onTap: (i) {
-            if (i == _index) {
+            if (i == index) {
               _navigatorKeys[i].currentState?.popUntil((route) => route.isFirst);
             } else {
-              setState(() => _index = i);
+              ref.read(dashboardTabProvider.notifier).state = i;
             }
           },
           type: BottomNavigationBarType.fixed,

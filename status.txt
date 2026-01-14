@@ -141,6 +141,7 @@ PHASE 6 — MOBILE UI: DASHBOARD / USERS / PROFILE
 [x] Recent activity list (actions done by user)
 [x] My batches preview list (top 3-5)
 [x] Dashboard wired to API (requests, batches, activity)
+[x] Dashboard View All buttons wired (requests, batches, activity)
 
 17. Users (Mobile)
 [x] Search users by name/org/role/location

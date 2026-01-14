@@ -4,6 +4,8 @@ import '../../core/theme/app_colors.dart';
 import 'state/dashboard_provider.dart';
 import '../products/state/product_provider.dart';
 import '../requests/requests_page.dart';
+import '../dashboard/state/dashboard_tab_provider.dart';
+import '../activity/activity_page.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -63,7 +65,9 @@ class HomePage extends ConsumerWidget {
           _SectionHeader(
             title: 'My Batches',
             action: TextButton(
-              onPressed: () {},
+              onPressed: () {
+                ref.read(dashboardTabProvider.notifier).state = 1;
+              },
               child: const Text('View all'),
             ),
           ),
@@ -92,7 +96,12 @@ class HomePage extends ConsumerWidget {
           _SectionHeader(
             title: 'Recent Activity',
             action: TextButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ActivityPage()),
+                );
+              },
               child: const Text('View all'),
             ),
           ),
