@@ -94,7 +94,7 @@ class BatchDetailPage extends ConsumerWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                const Expanded(child: BatchHistoryTimeline()),
+                Expanded(child: BatchHistoryTimeline(batchId: batch.id)),
               ],
             ),
           ),

@@ -7,7 +7,6 @@ import { BatchesModule } from './batches/batches.module';
 import { BatchEventsModule } from './batch-events/batch-events.module';
 import { StagesModule } from './stages/stages.module';
 import { UsersModule } from './users/users.module';
-import { RequestsModule } from './requests/requests.module';
 import { OwnershipRequestsModule } from './ownership-requests/ownership-requests.module';
 
 @Module({
@@ -29,7 +28,6 @@ import { OwnershipRequestsModule } from './ownership-requests/ownership-requests
     BatchEventsModule,
     StagesModule,
     UsersModule,
-    RequestsModule,
     OwnershipRequestsModule,
   ],
 })

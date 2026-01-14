@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/batch.dart';
+import '../models/batch_event.dart';
 
 class BatchApi {
   const BatchApi(this.baseUrl);
@@ -29,6 +30,16 @@ class BatchApi {
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return Batch.fromApi(data);
+  }
+
+  Future<List<BatchEvent>> fetchBatchHistory(String batchId) async {
+    final uri = Uri.parse('$baseUrl/batches/$batchId/history');
+    final response = await http.get(uri);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load batch history');
+    }
+    final data = jsonDecode(response.body) as List<dynamic>;
+    return data.map((item) => BatchEvent.fromApi(item as Map<String, dynamic>)).toList();
   }
 
   Future<List<Batch>> fetchBatches({int limit = 50, int offset = 0, String? ownerId}) async {
