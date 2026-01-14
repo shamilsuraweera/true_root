@@ -111,8 +111,8 @@ class BatchDetailPage extends ConsumerWidget {
 }
 
 Future<void> _showSplitDialog(BuildContext context, WidgetRef ref, String batchId) async {
-  final quantitiesController = TextEditingController();
-  final gradesController = TextEditingController();
+  var quantitiesText = '';
+  var gradesText = '';
 
   final result = await showDialog<bool>(
     context: context,
@@ -122,21 +122,21 @@ Future<void> _showSplitDialog(BuildContext context, WidgetRef ref, String batchI
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: quantitiesController,
+            TextFormField(
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Quantities (comma separated)',
                 hintText: '10,20,30',
               ),
+              onChanged: (value) => quantitiesText = value,
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: gradesController,
+            TextFormField(
               decoration: const InputDecoration(
                 labelText: 'Grades (optional, comma separated)',
                 hintText: 'A,B',
               ),
+              onChanged: (value) => gradesText = value,
             ),
           ],
         ),
@@ -155,15 +155,11 @@ Future<void> _showSplitDialog(BuildContext context, WidgetRef ref, String batchI
   );
 
   if (result != true) {
-    quantitiesController.dispose();
-    gradesController.dispose();
     return;
   }
 
-  final quantities = _parseDoubles(quantitiesController.text);
-  final grades = _parseStrings(gradesController.text);
-  quantitiesController.dispose();
-  gradesController.dispose();
+  final quantities = _parseDoubles(quantitiesText);
+  final grades = _parseStrings(gradesText);
 
   if (quantities.length < 2) {
     if (!context.mounted) return;
@@ -200,9 +196,9 @@ Future<void> _showSplitDialog(BuildContext context, WidgetRef ref, String batchI
 }
 
 Future<void> _showMergeDialog(BuildContext context, WidgetRef ref, String batchId) async {
-  final idsController = TextEditingController(text: batchId);
-  final productController = TextEditingController();
-  final gradeController = TextEditingController();
+  var idsText = batchId;
+  var productText = '';
+  var gradeText = '';
 
   final result = await showDialog<bool>(
     context: context,
@@ -212,29 +208,30 @@ Future<void> _showMergeDialog(BuildContext context, WidgetRef ref, String batchI
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: idsController,
+            TextFormField(
+              initialValue: idsText,
               keyboardType: TextInputType.text,
               decoration: const InputDecoration(
                 labelText: 'Batch IDs (comma separated)',
                 hintText: '1,2,3',
               ),
+              onChanged: (value) => idsText = value,
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: productController,
+            TextFormField(
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'New product ID',
                 hintText: '1',
               ),
+              onChanged: (value) => productText = value,
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: gradeController,
+            TextFormField(
               decoration: const InputDecoration(
                 labelText: 'Grade (optional)',
               ),
+              onChanged: (value) => gradeText = value,
             ),
           ],
         ),
@@ -253,18 +250,12 @@ Future<void> _showMergeDialog(BuildContext context, WidgetRef ref, String batchI
   );
 
   if (result != true) {
-    idsController.dispose();
-    productController.dispose();
-    gradeController.dispose();
     return;
   }
 
-  final ids = _parseInts(idsController.text);
-  final productId = int.tryParse(productController.text.trim());
-  final grade = gradeController.text.trim().isEmpty ? null : gradeController.text.trim();
-  idsController.dispose();
-  productController.dispose();
-  gradeController.dispose();
+  final ids = _parseInts(idsText);
+  final productId = int.tryParse(productText.trim());
+  final grade = gradeText.trim().isEmpty ? null : gradeText.trim();
 
   if (ids.length < 2 || productId == null) {
     if (!context.mounted) return;
@@ -291,9 +282,9 @@ Future<void> _showMergeDialog(BuildContext context, WidgetRef ref, String batchI
 }
 
 Future<void> _showTransformDialog(BuildContext context, WidgetRef ref, String batchId) async {
-  final productController = TextEditingController();
-  final quantityController = TextEditingController();
-  final gradeController = TextEditingController();
+  var productText = '';
+  var quantityText = '';
+  var gradeText = '';
 
   final result = await showDialog<bool>(
     context: context,
@@ -303,28 +294,28 @@ Future<void> _showTransformDialog(BuildContext context, WidgetRef ref, String ba
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: productController,
+            TextFormField(
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'New product ID',
                 hintText: '2',
               ),
+              onChanged: (value) => productText = value,
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: quantityController,
+            TextFormField(
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Quantity (optional)',
               ),
+              onChanged: (value) => quantityText = value,
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: gradeController,
+            TextFormField(
               decoration: const InputDecoration(
                 labelText: 'Grade (optional)',
               ),
+              onChanged: (value) => gradeText = value,
             ),
           ],
         ),
@@ -343,18 +334,12 @@ Future<void> _showTransformDialog(BuildContext context, WidgetRef ref, String ba
   );
 
   if (result != true) {
-    productController.dispose();
-    quantityController.dispose();
-    gradeController.dispose();
     return;
   }
 
-  final productId = int.tryParse(productController.text.trim());
-  final quantity = double.tryParse(quantityController.text.trim());
-  final grade = gradeController.text.trim().isEmpty ? null : gradeController.text.trim();
-  productController.dispose();
-  quantityController.dispose();
-  gradeController.dispose();
+  final productId = int.tryParse(productText.trim());
+  final quantity = double.tryParse(quantityText.trim());
+  final grade = gradeText.trim().isEmpty ? null : gradeText.trim();
 
   if (productId == null) {
     if (!context.mounted) return;
