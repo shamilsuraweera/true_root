@@ -29,6 +29,7 @@ create table if not exists stages (
 create table if not exists batches (
   id bigserial primary key,
   product_id bigint not null references products(id),
+  owner_id bigint references users(id),
   batch_code text not null unique,
   quantity numeric(14,3) not null,
   unit text not null default 'kg',
@@ -76,3 +77,17 @@ create table if not exists batch_relations (
 
 create index if not exists idx_batch_relations_parent on batch_relations(parent_batch_id);
 create index if not exists idx_batch_relations_child on batch_relations(child_batch_id);
+
+create table if not exists ownership_requests (
+  id bigserial primary key,
+  batch_id bigint not null references batches(id) on delete cascade,
+  requester_id bigint not null references users(id),
+  owner_id bigint not null references users(id),
+  quantity numeric(14,3) not null,
+  status text not null,
+  note text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_ownership_requests_owner on ownership_requests(owner_id);
+create index if not exists idx_ownership_requests_requester on ownership_requests(requester_id);

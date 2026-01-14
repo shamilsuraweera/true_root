@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../core/api/api_config.dart';
-import '../models/purchase_request.dart';
+import '../../requests/models/ownership_request.dart';
 import '../models/recent_activity.dart';
 
 class DashboardApi {
@@ -9,16 +9,14 @@ class DashboardApi {
 
   final String baseUrl;
 
-  Future<List<PurchaseRequest>> fetchPendingRequests({int limit = 5}) async {
-    final uri = Uri.parse('$baseUrl/requests/pending?limit=$limit');
+  Future<List<OwnershipRequest>> fetchPendingRequests({required String ownerId, int limit = 5}) async {
+    final uri = Uri.parse('$baseUrl/ownership-requests/inbox?ownerId=$ownerId&limit=$limit');
     final response = await http.get(uri);
     if (response.statusCode != 200) {
       throw Exception('Failed to load requests');
     }
     final data = jsonDecode(response.body) as List<dynamic>;
-    return data
-        .map((item) => PurchaseRequest.fromApi(item as Map<String, dynamic>))
-        .toList();
+    return data.map((item) => OwnershipRequest.fromApi(item as Map<String, dynamic>)).toList();
   }
 
   Future<List<RecentActivity>> fetchRecentActivity({int limit = 5}) async {

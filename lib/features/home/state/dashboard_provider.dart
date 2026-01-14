@@ -2,16 +2,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../batches/models/batch.dart';
 import '../../batches/state/batch_provider.dart';
 import '../data/dashboard_api.dart';
-import '../models/purchase_request.dart';
 import '../models/recent_activity.dart';
+import '../../profile/state/profile_provider.dart';
+import '../../requests/models/ownership_request.dart';
 
 final dashboardApiProvider = Provider<DashboardApi>((ref) {
   return DashboardApi();
 });
 
-final pendingRequestsProvider = FutureProvider<List<PurchaseRequest>>((ref) async {
+final pendingRequestsProvider = FutureProvider<List<OwnershipRequest>>((ref) async {
   final api = ref.read(dashboardApiProvider);
-  return api.fetchPendingRequests(limit: 5);
+  final ownerId = ref.read(currentUserIdProvider);
+  return api.fetchPendingRequests(ownerId: ownerId, limit: 5);
 });
 
 final recentActivityProvider = FutureProvider<List<RecentActivity>>((ref) async {

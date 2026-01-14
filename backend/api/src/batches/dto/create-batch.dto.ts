@@ -10,6 +10,11 @@ export class CreateBatchDto {
   quantity: number;
 
   @IsOptional()
+  @IsInt()
+  @IsPositive()
+  ownerId?: number;
+
+  @IsOptional()
   @IsString()
   grade?: string;
 }

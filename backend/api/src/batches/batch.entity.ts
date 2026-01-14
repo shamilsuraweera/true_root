@@ -14,6 +14,9 @@ export class Batch {
   @Column({ name: 'product_id' })
   productId: number;
 
+  @Column({ name: 'owner_id', type: 'int', nullable: true })
+  ownerId: number | null;
+
   @Column({ name: 'batch_code', unique: true })
   batchCode: string;
 
