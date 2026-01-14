@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api/api_config.dart';
 import '../data/batch_api.dart';
 import '../models/batch.dart';
+import '../models/batch_event.dart';
 
 final batchListProvider = FutureProvider<List<Batch>>((ref) async {
   final api = ref.read(batchApiProvider);
@@ -38,6 +39,15 @@ final batchQrPayloadProvider = FutureProvider.family<String, String>((ref, batch
     throw Exception('Invalid batch id');
   }
   return api.fetchQrPayload(normalized);
+});
+
+final batchHistoryProvider = FutureProvider.family<List<BatchEvent>, String>((ref, batchId) async {
+  final api = ref.read(batchApiProvider);
+  final normalized = _normalizeBatchId(batchId);
+  if (normalized == null) {
+    throw Exception('Invalid batch id');
+  }
+  return api.fetchBatchHistory(normalized);
 });
 
 String? _normalizeBatchId(String batchId) {
