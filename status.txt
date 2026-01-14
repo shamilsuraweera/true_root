@@ -44,6 +44,7 @@ PHASE 3 — AUTHENTICATION
 
 5. Auth UI (Flutter)
 [x] Login screen
+[x] Register screen
 [x] Basic form validation
 [x] Role-based redirect logic
 
@@ -51,7 +52,9 @@ PHASE 3 — AUTHENTICATION
 [x] NestJS project initialized
 [x] Auth module created
 [x] User entity scaffolded
-[x] JWT-based login endpoint (mock)
+[x] Email/password login endpoint
+[x] Register endpoint
+[ ] JWT-based auth (real tokens)
 [x] Role guard implemented
 
 ==================================================

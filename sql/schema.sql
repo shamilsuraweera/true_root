@@ -3,6 +3,7 @@
 create table if not exists users (
   id bigserial primary key,
   email text not null unique,
+  password text not null,
   role text not null,
   name text,
   organization text,

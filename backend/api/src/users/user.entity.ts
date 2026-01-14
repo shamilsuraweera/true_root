@@ -14,6 +14,9 @@ export class User {
   @Column({ unique: true })
   email: string;
 
+  @Column({ type: 'text', select: false })
+  password: string;
+
   @Column()
   role: UserRole;
 
