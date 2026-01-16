@@ -1,5 +1,5 @@
 PROJECT: Batch Tracking MVP
-LAST UPDATED: 2026-01-13
+LAST UPDATED: 2026-01-14
 OWNER: Shamil Suraweera
 
 LEGEND:
@@ -54,7 +54,7 @@ PHASE 3 — AUTHENTICATION
 [x] User entity scaffolded
 [x] Email/password login endpoint
 [x] Register endpoint
-[ ] JWT-based auth (real tokens)
+[x] JWT-based auth (real tokens)
 [x] Role guard implemented
 
 ==================================================
@@ -96,8 +96,8 @@ PHASE 4 — DATABASE & BACKEND CORE
 [x] Stages schema + endpoints
 [x] Users schema + endpoints
 [x] SQL schema drafted (sql/schema.sql)
-[ ] Migrations created for schema
-[ ] Drop/recreate tables for clean schema (dev)
+[x] Migrations created for schema
+[x] Drop/recreate tables for clean schema (dev)
 
 ==================================================
 PHASE 5 — CORE MVP FEATURES (MOBILE)
@@ -109,8 +109,8 @@ PHASE 5 — CORE MVP FEATURES (MOBILE)
 [x] Current batch state view
 [x] Batch history timeline UI
 [x] Batch detail uses API (GET /batches/:id)
-[ ] Batch list uses API (GET /batches)
-[ ] Batch history uses API (GET /batches/:id/history)
+[x] Batch list uses API (GET /batches)
+[x] Batch history uses API (GET /batches/:id/history)
 
 12. QR Code Integration
 [x] Generate QR for batch (backend payload + UI)
@@ -123,21 +123,21 @@ PHASE 5 — CORE MVP FEATURES (MOBILE)
 [x] Split batch (API + UI dialog)
 [x] Merge batches (API + UI dialog)
 [x] Transform batch (API + UI dialog)
-[ ] Split/Merge/Transform validation feedback (detailed errors)
-[ ] Refresh batch history after operations
+[x] Split/Merge/Transform validation feedback (detailed errors)
+[x] Refresh batch history after operations
 
 ==================================================
 PHASE 6 — MOBILE UI: DASHBOARD / USERS / PROFILE
 ==================================================
 
 14. Mobile Navigation Shell
-[ ] Bottom tab navigation with per-tab back stack
-[ ] Tabs order: Dashboard, Batches, Users, Profile
-[ ] Android back button returns within tab stack
+[x] Bottom tab navigation with per-tab back stack
+[x] Tabs order: Dashboard, Batches, Users, Profile
+[x] Android back button returns within tab stack
 
 15. Splash Screen
-[ ] Primary color background
-[ ] Centered logo (no text)
+[x] Primary color background
+[x] Centered logo (custom asset)
 
 16. Dashboard (Mobile)
 [x] Pending purchase requests panel (incoming approvals)
@@ -169,14 +169,14 @@ PHASE 7 — OWNERSHIP / REQUEST FLOW
 [x] Approve/reject endpoint (owner)
 [x] Ownership transfer audit log (events + history)
 [x] Partial quantity transfer support
-[ ] Buyer batches list (owned + pending)
-[ ] Old QR mapping stored but not listed in owner batch list
+[x] Buyer batches list (owned + pending)
+[x] Old QR mapping stored but not listed in owner batch list
 
 20. Ownership Requests (Mobile)
 [x] Request create flow from user batch card
 [x] Requests inbox/outbox screens
 [x] Approve/reject actions
-[ ] Batch list updates after transfer
+[x] Batch list updates after transfer
 
 ==================================================
 PHASE 8 — ADMIN PANEL (WEB, LATER)

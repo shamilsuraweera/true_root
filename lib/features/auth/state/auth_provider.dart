@@ -21,10 +21,15 @@ class AuthController {
   Future<void> login(String email, String password) async {
     final response = await api.login(email, password);
     final user = response['user'] as Map<String, dynamic>;
+    final token = response['accessToken'] as String?;
+    if (token == null || token.isEmpty) {
+      throw Exception('Missing access token');
+    }
     authNotifier.login(
       userId: user['id'].toString(),
       role: _parseRole(user['role']?.toString()),
       email: email,
+      accessToken: token,
     );
   }
 
@@ -41,10 +46,15 @@ class AuthController {
       name: name,
     );
     final user = response['user'] as Map<String, dynamic>;
+    final token = response['accessToken'] as String?;
+    if (token == null || token.isEmpty) {
+      throw Exception('Missing access token');
+    }
     authNotifier.login(
       userId: user['id'].toString(),
       role: _parseRole(user['role']?.toString()),
       email: email,
+      accessToken: token,
     );
   }
 

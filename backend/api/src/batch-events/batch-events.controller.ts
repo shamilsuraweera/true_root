@@ -1,7 +1,9 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { BatchEventsService } from './batch-events.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('batch-events')
+@UseGuards(JwtAuthGuard)
 export class BatchEventsController {
   constructor(private readonly service: BatchEventsService) {}
 

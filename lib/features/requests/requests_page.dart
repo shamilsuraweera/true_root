@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'models/ownership_request.dart';
 import 'state/ownership_requests_provider.dart';
+import '../batches/state/batch_provider.dart';
 
 class RequestsPage extends ConsumerStatefulWidget {
   const RequestsPage({super.key});
@@ -146,6 +147,9 @@ class _InboxCard extends ConsumerWidget {
       final api = ref.read(ownershipRequestsApiProvider);
       await api.approve(id);
       ref.invalidate(ownershipInboxProvider);
+      ref.invalidate(ownershipOutboxProvider);
+      ref.invalidate(ownedBatchListProvider);
+      ref.invalidate(batchListProvider);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Request approved')),
@@ -163,6 +167,7 @@ class _InboxCard extends ConsumerWidget {
       final api = ref.read(ownershipRequestsApiProvider);
       await api.reject(id);
       ref.invalidate(ownershipInboxProvider);
+      ref.invalidate(ownershipOutboxProvider);
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Request rejected')),

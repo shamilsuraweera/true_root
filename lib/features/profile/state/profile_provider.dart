@@ -9,7 +9,7 @@ final currentUserIdProvider = Provider<String>((ref) {
 });
 
 final profileProvider = FutureProvider<AppUser>((ref) async {
-  final api = ref.read(usersApiProvider);
+  final api = ref.watch(usersApiProvider);
   final userId = ref.read(currentUserIdProvider);
   return api.fetchUser(userId);
 });

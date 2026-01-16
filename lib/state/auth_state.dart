@@ -7,12 +7,14 @@ class AuthState {
   final UserRole? role;
   final String? userId;
   final String? email;
+  final String? accessToken;
 
   const AuthState({
     required this.isLoggedIn,
     this.role,
     this.userId,
     this.email,
+    this.accessToken,
   });
 
   AuthState copyWith({
@@ -20,12 +22,14 @@ class AuthState {
     UserRole? role,
     String? userId,
     String? email,
+    String? accessToken,
   }) {
     return AuthState(
       isLoggedIn: isLoggedIn ?? this.isLoggedIn,
       role: role ?? this.role,
       userId: userId ?? this.userId,
       email: email ?? this.email,
+      accessToken: accessToken ?? this.accessToken,
     );
   }
 }
@@ -37,8 +41,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String userId,
     required UserRole role,
     required String email,
+    required String accessToken,
   }) {
-    state = AuthState(isLoggedIn: true, role: role, userId: userId, email: email);
+    state = AuthState(
+      isLoggedIn: true,
+      role: role,
+      userId: userId,
+      email: email,
+      accessToken: accessToken,
+    );
   }
 
   void logout() {

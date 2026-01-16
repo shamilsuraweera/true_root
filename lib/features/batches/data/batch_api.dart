@@ -4,13 +4,41 @@ import '../models/batch.dart';
 import '../models/batch_event.dart';
 
 class BatchApi {
-  const BatchApi(this.baseUrl);
+  const BatchApi(this.baseUrl, {this.authToken});
 
   final String baseUrl;
+  final String? authToken;
+
+  Map<String, String> _headers({bool json = true}) {
+    final headers = <String, String>{};
+    if (json) {
+      headers['Content-Type'] = 'application/json';
+    }
+    if (authToken != null && authToken!.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $authToken';
+    }
+    return headers;
+  }
+
+  String _errorMessage(http.Response response, String fallback) {
+    try {
+      final data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) {
+        final message = data['message'];
+        if (message is String && message.isNotEmpty) {
+          return message;
+        }
+        if (message is List && message.isNotEmpty) {
+          return message.map((item) => item.toString()).join(', ');
+        }
+      }
+    } catch (_) {}
+    return fallback;
+  }
 
   Future<String> fetchQrPayload(String batchId) async {
     final uri = Uri.parse('$baseUrl/batches/$batchId/qr');
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
       throw Exception('Failed to load QR payload');
     }
@@ -24,7 +52,7 @@ class BatchApi {
 
   Future<Batch> fetchBatch(String batchId) async {
     final uri = Uri.parse('$baseUrl/batches/$batchId');
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
       throw Exception('Failed to load batch');
     }
@@ -34,7 +62,7 @@ class BatchApi {
 
   Future<List<BatchEvent>> fetchBatchHistory(String batchId) async {
     final uri = Uri.parse('$baseUrl/batches/$batchId/history');
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
       throw Exception('Failed to load batch history');
     }
@@ -48,7 +76,7 @@ class BatchApi {
       query.write('&ownerId=$ownerId');
     }
     final uri = Uri.parse('$baseUrl/batches?$query');
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
       throw Exception('Failed to load batches');
     }
@@ -60,11 +88,11 @@ class BatchApi {
     final uri = Uri.parse('$baseUrl/batches/$batchId/split');
     final response = await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode({'items': items}),
     );
     if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('Failed to split batch');
+      throw Exception(_errorMessage(response, 'Failed to split batch'));
     }
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
@@ -80,7 +108,7 @@ class BatchApi {
     final uri = Uri.parse('$baseUrl/batches/merge');
     final response = await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode({
         'batchIds': batchIds,
         'productId': productId,
@@ -91,7 +119,7 @@ class BatchApi {
       }),
     );
     if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('Failed to merge batches');
+      throw Exception(_errorMessage(response, 'Failed to merge batches'));
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return Batch.fromApi(data);
@@ -109,7 +137,7 @@ class BatchApi {
     final uri = Uri.parse('$baseUrl/batches/$batchId/transform');
     final response = await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode({
         'productId': productId,
         if (quantity != null) 'quantity': quantity,
@@ -120,7 +148,7 @@ class BatchApi {
       }),
     );
     if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('Failed to transform batch');
+      throw Exception(_errorMessage(response, 'Failed to transform batch'));
     }
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
@@ -133,7 +161,7 @@ class BatchApi {
     final uri = Uri.parse('$baseUrl/batches');
     final response = await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode({
         'productId': productId,
         'quantity': quantity,
@@ -151,7 +179,7 @@ class BatchApi {
     final uri = Uri.parse('$baseUrl/batches/$batchId/disqualify');
     final response = await http.patch(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode({'reason': reason}),
     );
     if (response.statusCode != 200) {
@@ -163,7 +191,7 @@ class BatchApi {
 
   Future<Batch> archiveBatch(String batchId) async {
     final uri = Uri.parse('$baseUrl/batches/$batchId/archive');
-    final response = await http.patch(uri);
+    final response = await http.patch(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
       throw Exception('Failed to archive batch');
     }
@@ -173,7 +201,7 @@ class BatchApi {
 
   Future<void> deleteBatch(String batchId) async {
     final uri = Uri.parse('$baseUrl/batches/$batchId');
-    final response = await http.delete(uri);
+    final response = await http.delete(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
       throw Exception('Failed to delete batch');
     }
