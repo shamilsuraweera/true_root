@@ -39,56 +39,50 @@ class HomePage extends ConsumerWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           children: [
-            _SectionHeader(
-              title: 'Purchase Requests',
-              action: TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RequestsPage()),
-                  );
-                },
-                child: const Text('View all'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            requestsAsync.when(
+          _SectionCard(
+            title: 'Purchase Requests',
+            actionLabel: 'View all',
+            onAction: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RequestsPage()),
+              );
+            },
+            child: requestsAsync.when(
               data: (items) {
-                if (items.isEmpty) {
+                final pending = items.where((item) => item.status == 'PENDING').toList();
+                if (pending.isEmpty) {
                   return const _EmptyState(message: 'No pending requests');
                 }
                 return Column(
-                  children: items
+                  children: pending
                       .map(
                         (item) => Padding(
                           padding: const EdgeInsets.only(bottom: 8),
                           child: _RequestCard(
-                          name: 'Requester ${item.requesterId}',
-                          batchId: 'Batch ${item.batchId}',
-                          quantity: '${item.quantity} kg',
-                          onReject: () => _rejectRequest(context, ref, item.id),
-                          onApprove: () => _approveRequest(context, ref, item.id),
+                            name: 'Requester ${item.requesterId}',
+                            batchId: 'Batch ${item.batchId}',
+                            quantity: '${item.quantity} kg',
+                            onReject: () => _rejectRequest(context, ref, item.id),
+                            onApprove: () => _approveRequest(context, ref, item.id),
+                          ),
                         ),
-                      ),
-                    )
-                    .toList(),
-              );
+                      )
+                      .toList(),
+                );
               },
               loading: () => const _LoadingState(),
               error: (_, _) => const _ErrorState(message: 'Failed to load requests'),
             ),
-            const SizedBox(height: 24),
-            _SectionHeader(
-              title: 'My Batches',
-              action: TextButton(
-                onPressed: () {
-                  ref.read(dashboardTabProvider.notifier).state = 1;
-                },
-                child: const Text('View all'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            batchesAsync.when(
+          ),
+          const SizedBox(height: 24),
+          _SectionCard(
+            title: 'My Batches',
+            actionLabel: 'View all',
+            onAction: () {
+              ref.read(dashboardTabProvider.notifier).state = 1;
+            },
+            child: batchesAsync.when(
               data: (items) {
                 if (items.isEmpty) {
                   return const _EmptyState(message: 'No batches yet');
@@ -108,21 +102,18 @@ class HomePage extends ConsumerWidget {
               loading: () => const _LoadingState(),
               error: (_, _) => const _ErrorState(message: 'Failed to load batches'),
             ),
-            const SizedBox(height: 24),
-            _SectionHeader(
-              title: 'Recent Activity',
-              action: TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ActivityPage()),
-                  );
-                },
-                child: const Text('View all'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            activityAsync.when(
+          ),
+          const SizedBox(height: 24),
+          _SectionCard(
+            title: 'Recent Activity',
+            actionLabel: 'View all',
+            onAction: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ActivityPage()),
+              );
+            },
+            child: activityAsync.when(
               data: (items) {
                 if (items.isEmpty) {
                   return const _EmptyState(message: 'No recent activity');
@@ -141,6 +132,7 @@ class HomePage extends ConsumerWidget {
               loading: () => const _LoadingState(),
               error: (_, _) => const _ErrorState(message: 'Failed to load activity'),
             ),
+          ),
           ],
         ),
       ),
@@ -162,6 +154,46 @@ class _SectionHeader extends StatelessWidget {
         Text(title, style: Theme.of(context).textTheme.titleMedium),
         action,
       ],
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final String actionLabel;
+  final VoidCallback onAction;
+  final Widget child;
+
+  const _SectionCard({
+    required this.title,
+    required this.actionLabel,
+    required this.onAction,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                TextButton(
+                  onPressed: onAction,
+                  child: Text(actionLabel),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            child,
+          ],
+        ),
+      ),
     );
   }
 }

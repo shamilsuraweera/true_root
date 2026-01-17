@@ -2,6 +2,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum UserRole { admin, farmer, exporter, trader }
 
+UserRole parseUserRole(String? role) {
+  switch (role) {
+    case 'admin':
+      return UserRole.admin;
+    case 'farmer':
+      return UserRole.farmer;
+    case 'exporter':
+      return UserRole.exporter;
+    case 'trader':
+      return UserRole.trader;
+    default:
+      return UserRole.farmer;
+  }
+}
+
 class AuthState {
   final bool isLoggedIn;
   final UserRole? role;

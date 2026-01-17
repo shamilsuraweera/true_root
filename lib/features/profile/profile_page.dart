@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_routes.dart';
 import '../../state/auth_state.dart';
+import '../auth/state/auth_provider.dart';
 import '../users/models/user.dart';
 import '../users/state/users_provider.dart';
 import 'state/profile_provider.dart';
@@ -217,6 +218,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   void _logout() {
     ref.read(authProvider.notifier).logout();
+    ref.read(authStorageProvider).clearActiveEmail();
     Navigator.of(context, rootNavigator: true)
         .pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
   }
