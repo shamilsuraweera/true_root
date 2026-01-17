@@ -50,7 +50,7 @@ export class BatchesService {
     if (!includeInactive) {
       qb.andWhere('batch.quantity > 0');
       qb.andWhere('batch.status NOT IN (:...hidden)', {
-        hidden: ['MERGED', 'TRANSFORMED', 'SPLIT'],
+        hidden: ['MERGED', 'TRANSFORMED', 'SPLIT', 'DELETED'],
       });
     }
 
@@ -126,7 +126,17 @@ export class BatchesService {
 
   async deleteBatch(id: number) {
     const batch = await this.getBatch(id);
-    await this.repo.remove(batch);
+    const previousStatus = batch.status;
+    const previousQuantity = batch.quantity;
+    batch.status = 'DELETED';
+    batch.quantity = 0;
+    const saved = await this.repo.save(batch);
+    await this.events.log(id, BatchEventType.DELETED, 'Batch deleted', {
+      statusBefore: previousStatus,
+      statusAfter: saved.status,
+      quantityBefore: previousQuantity,
+      quantityAfter: saved.quantity,
+    });
     return { deleted: true };
   }
 

@@ -20,7 +20,8 @@ final pendingRequestsProvider = FutureProvider<List<OwnershipRequest>>((ref) asy
 
 final recentActivityProvider = FutureProvider<List<RecentActivity>>((ref) async {
   final api = ref.watch(dashboardApiProvider);
-  return api.fetchRecentActivity(limit: 5);
+  final ownerId = ref.read(currentUserIdProvider);
+  return api.fetchRecentActivity(limit: 5, ownerId: ownerId);
 });
 
 final recentBatchesProvider = FutureProvider<List<Batch>>((ref) async {
