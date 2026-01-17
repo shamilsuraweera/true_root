@@ -39,13 +39,13 @@ class BatchDetailPage extends ConsumerWidget {
                 onSelected: (value) {
                   switch (value) {
                     case 'split':
-                      _showSplitDialog(context, ref, batch.id);
+                      _showSplitDialog(context, ref, batch.id, batch.quantity);
                       break;
                     case 'merge':
                       _showMergeDialog(context, ref, batch.id);
                       break;
                     case 'transform':
-                      _showTransformDialog(context, ref, batch.id);
+                      _showTransformDialog(context, ref, batch.id, batch.quantity);
                       break;
                     case 'archive':
                       _archiveBatch(context, ref, batch.id);
@@ -110,7 +110,12 @@ class BatchDetailPage extends ConsumerWidget {
   }
 }
 
-Future<void> _showSplitDialog(BuildContext context, WidgetRef ref, String batchId) async {
+Future<void> _showSplitDialog(
+  BuildContext context,
+  WidgetRef ref,
+  String batchId,
+  double availableQuantity,
+) async {
   var quantitiesText = '';
   var gradesText = '';
 
@@ -169,6 +174,23 @@ Future<void> _showSplitDialog(BuildContext context, WidgetRef ref, String batchI
     return;
   }
 
+  if (quantities.any((q) => q <= 0)) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('All quantities must be greater than zero')),
+    );
+    return;
+  }
+
+  final total = quantities.fold<double>(0, (sum, q) => sum + q);
+  if (total > availableQuantity) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Split total exceeds ${availableQuantity.toStringAsFixed(2)}')),
+    );
+    return;
+  }
+
   final items = <Map<String, dynamic>>[];
   for (var i = 0; i < quantities.length; i++) {
     final item = <String, dynamic>{'quantity': quantities[i]};
@@ -184,13 +206,15 @@ Future<void> _showSplitDialog(BuildContext context, WidgetRef ref, String batchI
     final children = response['children'] as List<dynamic>? ?? [];
     if (!context.mounted) return;
     ref.invalidate(batchByIdProvider(batchId));
+    ref.invalidate(batchHistoryProvider(batchId));
+    ref.invalidate(batchListProvider);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Split into ${children.length} batches')),
     );
-  } catch (_) {
+  } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to split batch')),
+      SnackBar(content: Text(_errorText(error, 'Failed to split batch'))),
     );
   }
 }
@@ -257,7 +281,8 @@ Future<void> _showMergeDialog(BuildContext context, WidgetRef ref, String batchI
   final productId = int.tryParse(productText.trim());
   final grade = gradeText.trim().isEmpty ? null : gradeText.trim();
 
-  if (ids.length < 2 || productId == null) {
+  final uniqueIds = ids.toSet().toList();
+  if (uniqueIds.length < 2 || productId == null) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Enter at least two batch IDs and a product ID')),
@@ -267,21 +292,29 @@ Future<void> _showMergeDialog(BuildContext context, WidgetRef ref, String batchI
 
   try {
     final api = ref.read(batchApiProvider);
-    final merged = await api.mergeBatches(batchIds: ids, productId: productId, grade: grade);
+    final merged = await api.mergeBatches(batchIds: uniqueIds, productId: productId, grade: grade);
     if (!context.mounted) return;
+    ref.invalidate(batchByIdProvider(batchId));
+    ref.invalidate(batchHistoryProvider(batchId));
+    ref.invalidate(batchListProvider);
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => BatchDetailPage(batchId: merged.id)),
     );
-  } catch (_) {
+  } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to merge batches')),
+      SnackBar(content: Text(_errorText(error, 'Failed to merge batches'))),
     );
   }
 }
 
-Future<void> _showTransformDialog(BuildContext context, WidgetRef ref, String batchId) async {
+Future<void> _showTransformDialog(
+  BuildContext context,
+  WidgetRef ref,
+  String batchId,
+  double availableQuantity,
+) async {
   var productText = '';
   var quantityText = '';
   var gradeText = '';
@@ -349,6 +382,22 @@ Future<void> _showTransformDialog(BuildContext context, WidgetRef ref, String ba
     return;
   }
 
+  if (quantity != null && quantity <= 0) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Quantity must be greater than zero')),
+    );
+    return;
+  }
+
+  if (quantity != null && quantity > availableQuantity) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Quantity exceeds ${availableQuantity.toStringAsFixed(2)}')),
+    );
+    return;
+  }
+
   try {
     final api = ref.read(batchApiProvider);
     final response = await api.transformBatch(
@@ -364,12 +413,16 @@ Future<void> _showTransformDialog(BuildContext context, WidgetRef ref, String ba
         const SnackBar(content: Text('Transform completed')),
       );
       ref.invalidate(batchByIdProvider(batchId));
+      ref.invalidate(batchHistoryProvider(batchId));
+      ref.invalidate(batchListProvider);
       return;
     }
 
     final newBatchId = transformed['id']?.toString();
     if (newBatchId == null) {
       ref.invalidate(batchByIdProvider(batchId));
+      ref.invalidate(batchHistoryProvider(batchId));
+      ref.invalidate(batchListProvider);
       return;
     }
 
@@ -377,12 +430,20 @@ Future<void> _showTransformDialog(BuildContext context, WidgetRef ref, String ba
       context,
       MaterialPageRoute(builder: (_) => BatchDetailPage(batchId: newBatchId)),
     );
-  } catch (_) {
+  } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to transform batch')),
+      SnackBar(content: Text(_errorText(error, 'Failed to transform batch'))),
     );
   }
+}
+
+String _errorText(Object error, String fallback) {
+  final text = error.toString();
+  if (text.isEmpty) {
+    return fallback;
+  }
+  return text.replaceFirst('Exception: ', '');
 }
 
 Future<void> _archiveBatch(BuildContext context, WidgetRef ref, String batchId) async {

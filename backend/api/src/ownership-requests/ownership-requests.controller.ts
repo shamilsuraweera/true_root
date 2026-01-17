@@ -1,9 +1,11 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { OwnershipRequestsService } from './ownership-requests.service';
 import { CreateOwnershipRequestDto } from './dto/create-ownership-request.dto';
 import { UpdateOwnershipRequestDto } from './dto/update-ownership-request.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('ownership-requests')
+@UseGuards(JwtAuthGuard)
 export class OwnershipRequestsController {
   constructor(private readonly service: OwnershipRequestsService) {}
 

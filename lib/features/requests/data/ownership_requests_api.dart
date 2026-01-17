@@ -4,9 +4,21 @@ import '../../../core/api/api_config.dart';
 import '../models/ownership_request.dart';
 
 class OwnershipRequestsApi {
-  OwnershipRequestsApi({String? baseUrl}) : baseUrl = baseUrl ?? ApiConfig.baseUrl;
+  OwnershipRequestsApi({String? baseUrl, this.authToken}) : baseUrl = baseUrl ?? ApiConfig.baseUrl;
 
   final String baseUrl;
+  final String? authToken;
+
+  Map<String, String> _headers({bool json = true}) {
+    final headers = <String, String>{};
+    if (json) {
+      headers['Content-Type'] = 'application/json';
+    }
+    if (authToken != null && authToken!.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $authToken';
+    }
+    return headers;
+  }
 
   Future<OwnershipRequest> createRequest({
     required String batchId,
@@ -18,7 +30,7 @@ class OwnershipRequestsApi {
     final uri = Uri.parse('$baseUrl/ownership-requests');
     final response = await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode({
         'batchId': int.parse(batchId),
         'requesterId': int.parse(requesterId),
@@ -36,7 +48,7 @@ class OwnershipRequestsApi {
 
   Future<List<OwnershipRequest>> fetchInbox(String ownerId) async {
     final uri = Uri.parse('$baseUrl/ownership-requests/inbox?ownerId=$ownerId');
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
       throw Exception('Failed to load inbox');
     }
@@ -46,7 +58,7 @@ class OwnershipRequestsApi {
 
   Future<List<OwnershipRequest>> fetchOutbox(String requesterId) async {
     final uri = Uri.parse('$baseUrl/ownership-requests/outbox?requesterId=$requesterId');
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
       throw Exception('Failed to load outbox');
     }
@@ -56,7 +68,7 @@ class OwnershipRequestsApi {
 
   Future<void> approve(String requestId) async {
     final uri = Uri.parse('$baseUrl/ownership-requests/$requestId/approve');
-    final response = await http.patch(uri);
+    final response = await http.patch(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
       throw Exception('Failed to approve request');
     }
@@ -66,7 +78,7 @@ class OwnershipRequestsApi {
     final uri = Uri.parse('$baseUrl/ownership-requests/$requestId/reject');
     final response = await http.patch(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode({
         if (note != null) 'note': note,
       }),

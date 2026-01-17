@@ -36,13 +36,25 @@ export class BatchesService {
     return saved;
   }
 
-  async listBatches(limit = 20, offset = 0, ownerId?: number) {
-    return this.repo.find({
-      where: ownerId ? { ownerId } : {},
-      order: { createdAt: 'DESC' },
-      take: limit,
-      skip: offset,
-    });
+  async listBatches(limit = 20, offset = 0, ownerId?: number, includeInactive = false) {
+    const qb = this.repo
+      .createQueryBuilder('batch')
+      .orderBy('batch.createdAt', 'DESC')
+      .take(limit)
+      .skip(offset);
+
+    if (ownerId) {
+      qb.andWhere('batch.owner_id = :ownerId', { ownerId });
+    }
+
+    if (!includeInactive) {
+      qb.andWhere('batch.quantity > 0');
+      qb.andWhere('batch.status NOT IN (:...hidden)', {
+        hidden: ['MERGED', 'TRANSFORMED', 'SPLIT'],
+      });
+    }
+
+    return qb.getMany();
   }
 
   async getBatch(id: number) {

@@ -5,78 +5,119 @@ import 'batch_detail_page.dart';
 import 'create_batch_page.dart';
 import 'qr_scan_page.dart';
 import '../products/state/product_provider.dart';
+import '../requests/state/ownership_requests_provider.dart';
 
-class BatchListPage extends ConsumerWidget {
+class BatchListPage extends ConsumerStatefulWidget {
   const BatchListPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final batchesAsync = ref.watch(batchListProvider);
-    final productsAsync = ref.watch(productListProvider);
+  ConsumerState<BatchListPage> createState() => _BatchListPageState();
+}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Batches'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.qr_code_scanner),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const QrScanPage()),
-              );
-            },
+class _BatchListPageState extends ConsumerState<BatchListPage> {
+  @override
+  Widget build(BuildContext context) {
+    final batchesAsync = ref.watch(ownedBatchListProvider);
+    final productsAsync = ref.watch(productListProvider);
+    final outboxAsync = ref.watch(ownershipOutboxProvider);
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Batches'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.qr_code_scanner),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const QrScanPage()),
+                );
+              },
+            ),
+          ],
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Owned'),
+              Tab(text: 'Pending'),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CreateBatchPage()),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
-      body: batchesAsync.when(
-        data: (batches) {
-          if (batches.isEmpty) {
-            return const Center(child: Text('No batches yet'));
-          }
-          return productsAsync.when(
-            data: (products) {
-              final productMap = {
-                for (final product in products) product.id: product.name,
-              };
-              return ListView.builder(
-                itemCount: batches.length,
-                itemBuilder: (context, index) {
-                  final batch = batches[index];
-                  final productName = batch.productId != null
-                      ? productMap[batch.productId]
-                      : null;
-                  return ListTile(
-                    title: Text(productName ?? batch.displayProduct),
-                    subtitle: Text('${batch.quantity} ${batch.unit} • ${batch.status}'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => BatchDetailPage(batchId: batch.id),
-                        ),
-                      );
-                    },
-                  );
-                },
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, _) => const Center(child: Text('Failed to load products')),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => const Center(child: Text('Failed to load batches')),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CreateBatchPage()),
+            );
+          },
+          child: const Icon(Icons.add),
+        ),
+        body: TabBarView(
+          children: [
+            batchesAsync.when(
+              data: (batches) {
+                if (batches.isEmpty) {
+                  return const Center(child: Text('No batches yet'));
+                }
+                return productsAsync.when(
+                  data: (products) {
+                    final productMap = {
+                      for (final product in products) product.id: product.name,
+                    };
+                    return ListView.builder(
+                      itemCount: batches.length,
+                      itemBuilder: (context, index) {
+                        final batch = batches[index];
+                        final productName = batch.productId != null
+                            ? productMap[batch.productId]
+                            : null;
+                        return ListTile(
+                          title: Text(productName ?? batch.displayProduct),
+                          subtitle: Text('${batch.quantity} ${batch.unit} • ${batch.status}'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => BatchDetailPage(batchId: batch.id),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (_, _) => const Center(child: Text('Failed to load products')),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (_, _) => const Center(child: Text('Failed to load batches')),
+            ),
+            outboxAsync.when(
+              data: (requests) {
+                final pending = requests.where((item) => item.status == 'PENDING').toList();
+                if (pending.isEmpty) {
+                  return const Center(child: Text('No pending requests'));
+                }
+                return ListView.builder(
+                  itemCount: pending.length,
+                  itemBuilder: (context, index) {
+                    final request = pending[index];
+                    return ListTile(
+                      title: Text('Batch ${request.batchId} • ${request.quantity} kg'),
+                      subtitle: Text('Waiting for owner ${request.ownerId}'),
+                      trailing: const Icon(Icons.hourglass_top),
+                    );
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (_, _) => const Center(child: Text('Failed to load requests')),
+            ),
+          ],
+        ),
       ),
     );
   }

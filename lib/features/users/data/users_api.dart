@@ -4,13 +4,25 @@ import '../../../core/api/api_config.dart';
 import '../models/user.dart';
 
 class UsersApi {
-  UsersApi({String? baseUrl}) : baseUrl = baseUrl ?? ApiConfig.baseUrl;
+  UsersApi({String? baseUrl, this.authToken}) : baseUrl = baseUrl ?? ApiConfig.baseUrl;
 
   final String baseUrl;
+  final String? authToken;
+
+  Map<String, String> _headers({bool json = true}) {
+    final headers = <String, String>{};
+    if (json) {
+      headers['Content-Type'] = 'application/json';
+    }
+    if (authToken != null && authToken!.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $authToken';
+    }
+    return headers;
+  }
 
   Future<List<AppUser>> fetchUsers() async {
     final uri = Uri.parse('$baseUrl/users');
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
       throw Exception('Failed to load users');
     }
@@ -20,7 +32,7 @@ class UsersApi {
 
   Future<AppUser> fetchUser(String id) async {
     final uri = Uri.parse('$baseUrl/users/$id');
-    final response = await http.get(uri);
+    final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
       throw Exception('Failed to load user');
     }
@@ -32,7 +44,7 @@ class UsersApi {
     final uri = Uri.parse('$baseUrl/users/$id');
     final response = await http.patch(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode(payload),
     );
     if (response.statusCode != 200) {

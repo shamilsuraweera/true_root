@@ -3,14 +3,22 @@ import '../../../core/api/api_config.dart';
 import '../data/batch_api.dart';
 import '../models/batch.dart';
 import '../models/batch_event.dart';
+import '../../../state/auth_state.dart';
+import '../../profile/state/profile_provider.dart';
 
 final batchListProvider = FutureProvider<List<Batch>>((ref) async {
-  final api = ref.read(batchApiProvider);
+  final api = ref.watch(batchApiProvider);
   return api.fetchBatches(limit: 50);
 });
 
+final ownedBatchListProvider = FutureProvider<List<Batch>>((ref) async {
+  final api = ref.watch(batchApiProvider);
+  final ownerId = ref.read(currentUserIdProvider);
+  return api.fetchBatches(limit: 50, ownerId: ownerId);
+});
+
 final batchByIdProvider = FutureProvider.family<Batch?, String>((ref, batchId) async {
-  final api = ref.read(batchApiProvider);
+  final api = ref.watch(batchApiProvider);
   final normalized = _normalizeBatchId(batchId);
   if (normalized == null) {
     throw Exception('Invalid batch id');
@@ -29,11 +37,12 @@ final batchByIdProvider = FutureProvider.family<Batch?, String>((ref, batchId) a
 });
 
 final batchApiProvider = Provider<BatchApi>((ref) {
-  return const BatchApi(ApiConfig.baseUrl);
+  final token = ref.watch(authProvider).accessToken;
+  return BatchApi(ApiConfig.baseUrl, authToken: token);
 });
 
 final batchQrPayloadProvider = FutureProvider.family<String, String>((ref, batchId) async {
-  final api = ref.read(batchApiProvider);
+  final api = ref.watch(batchApiProvider);
   final normalized = _normalizeBatchId(batchId);
   if (normalized == null) {
     throw Exception('Invalid batch id');
@@ -42,7 +51,7 @@ final batchQrPayloadProvider = FutureProvider.family<String, String>((ref, batch
 });
 
 final batchHistoryProvider = FutureProvider.family<List<BatchEvent>, String>((ref, batchId) async {
-  final api = ref.read(batchApiProvider);
+  final api = ref.watch(batchApiProvider);
   final normalized = _normalizeBatchId(batchId);
   if (normalized == null) {
     throw Exception('Invalid batch id');

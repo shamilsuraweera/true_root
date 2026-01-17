@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Param, Body, Query, Delete } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Param, Body, Query, Delete, UseGuards } from '@nestjs/common';
 import { BatchesService } from './batches.service';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { UpdateQuantityDto } from './dto/update-quantity.dto';
@@ -8,8 +8,10 @@ import { DisqualifyDto } from './dto/disqualify.dto';
 import { SplitBatchDto } from './dto/split-batch.dto';
 import { MergeBatchesDto } from './dto/merge-batches.dto';
 import { TransformBatchDto } from './dto/transform-batch.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('batches')
+@UseGuards(JwtAuthGuard)
 export class BatchesController {
   constructor(private readonly service: BatchesService) {}
 
@@ -23,14 +25,17 @@ export class BatchesController {
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
     @Query('ownerId') ownerId?: string,
+    @Query('includeInactive') includeInactive?: string,
   ) {
     const parsedLimit = limit ? Number(limit) : undefined;
     const parsedOffset = offset ? Number(offset) : undefined;
     const parsedOwnerId = ownerId ? Number(ownerId) : undefined;
+    const parsedIncludeInactive = includeInactive === 'true';
     return this.service.listBatches(
       Number.isFinite(parsedLimit) ? parsedLimit : undefined,
       Number.isFinite(parsedOffset) ? parsedOffset : undefined,
       Number.isFinite(parsedOwnerId) ? parsedOwnerId : undefined,
+      parsedIncludeInactive,
     );
   }
 
