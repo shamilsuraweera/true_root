@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'batch_history_timeline.dart';
 import 'state/batch_provider.dart';
+import 'models/batch.dart';
 import '../products/state/product_provider.dart';
 
 class BatchDetailPage extends ConsumerWidget {
@@ -38,6 +39,9 @@ class BatchDetailPage extends ConsumerWidget {
               PopupMenuButton<String>(
                 onSelected: (value) {
                   switch (value) {
+                    case 'update':
+                      _showUpdateDialog(context, ref, batch);
+                      break;
                     case 'split':
                       _showSplitDialog(context, ref, batch.id, batch.quantity);
                       break;
@@ -59,6 +63,7 @@ class BatchDetailPage extends ConsumerWidget {
                   }
                 },
                 itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'update', child: Text('Update batch')),
                   PopupMenuItem(value: 'split', child: Text('Split batch')),
                   PopupMenuItem(value: 'merge', child: Text('Merge batches')),
                   PopupMenuItem(value: 'transform', child: Text('Transform batch')),
@@ -106,6 +111,126 @@ class BatchDetailPage extends ConsumerWidget {
       error: (error, stackTrace) => const Scaffold(
         body: Center(child: Text('Failed to load batch')),
       ),
+    );
+  }
+}
+
+Future<void> _showUpdateDialog(BuildContext context, WidgetRef ref, Batch batch) async {
+  var quantityText = batch.quantity.toString();
+  var statusText = batch.status;
+  var gradeText = batch.grade ?? '';
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: const Text('Update batch'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              initialValue: quantityText,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Quantity',
+              ),
+              onChanged: (value) => quantityText = value,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              initialValue: statusText,
+              decoration: const InputDecoration(
+                labelText: 'Status',
+              ),
+              onChanged: (value) => statusText = value,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              initialValue: gradeText,
+              decoration: const InputDecoration(
+                labelText: 'Grade (optional)',
+              ),
+              onChanged: (value) => gradeText = value,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Update'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirmed != true) {
+    return;
+  }
+
+  final quantity = double.tryParse(quantityText.trim());
+  if (quantity == null || quantity <= 0) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Enter a valid quantity')),
+    );
+    return;
+  }
+
+  final status = statusText.trim();
+  if (status.isEmpty) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Status is required')),
+    );
+    return;
+  }
+
+  final grade = gradeText.trim();
+  final updateTasks = <Future<void>>[];
+  final api = ref.read(batchApiProvider);
+
+  if (quantity != batch.quantity) {
+    updateTasks.add(api.updateQuantity(batch.id, quantity).then((_) {}));
+  }
+
+  if (status != batch.status) {
+    updateTasks.add(api.updateStatus(batch.id, status).then((_) {}));
+  }
+
+  if (grade != (batch.grade ?? '')) {
+    if (grade.isEmpty) {
+      updateTasks.add(api.updateGrade(batch.id, '').then((_) {}));
+    } else {
+      updateTasks.add(api.updateGrade(batch.id, grade).then((_) {}));
+    }
+  }
+
+  if (updateTasks.isEmpty) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No changes to update')),
+    );
+    return;
+  }
+
+  try {
+    await Future.wait(updateTasks);
+    ref.invalidate(batchByIdProvider(batch.id));
+    ref.invalidate(batchHistoryProvider(batch.id));
+    ref.invalidate(batchListProvider);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Batch updated')),
+    );
+  } catch (error) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_errorText(error, 'Failed to update batch'))),
     );
   }
 }

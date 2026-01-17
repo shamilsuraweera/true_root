@@ -153,6 +153,48 @@ class BatchApi {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
+  Future<Batch> updateQuantity(String batchId, double quantity) async {
+    final uri = Uri.parse('$baseUrl/batches/$batchId/quantity');
+    final response = await http.patch(
+      uri,
+      headers: _headers(),
+      body: jsonEncode({'quantity': quantity}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to update quantity'));
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return Batch.fromApi(data);
+  }
+
+  Future<Batch> updateStatus(String batchId, String status) async {
+    final uri = Uri.parse('$baseUrl/batches/$batchId/status');
+    final response = await http.patch(
+      uri,
+      headers: _headers(),
+      body: jsonEncode({'status': status}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to update status'));
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return Batch.fromApi(data);
+  }
+
+  Future<Batch> updateGrade(String batchId, String grade) async {
+    final uri = Uri.parse('$baseUrl/batches/$batchId/grade');
+    final response = await http.patch(
+      uri,
+      headers: _headers(),
+      body: jsonEncode({'grade': grade}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to update grade'));
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return Batch.fromApi(data);
+  }
+
   Future<Batch> createBatch({
     required int productId,
     required int quantity,
