@@ -115,18 +115,19 @@ Future<void> _requestOwnership(
   Batch batch,
   String ownerId,
 ) async {
-  final qtyController = TextEditingController(text: batch.quantity.toString());
+  var quantityText = batch.quantity.toString();
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: const Text('Request batch'),
-      content: TextField(
-        controller: qtyController,
+      content: TextFormField(
+        initialValue: quantityText,
         keyboardType: TextInputType.number,
         decoration: const InputDecoration(
           labelText: 'Quantity',
           hintText: '10',
         ),
+        onChanged: (value) => quantityText = value,
       ),
       actions: [
         TextButton(
@@ -142,12 +143,10 @@ Future<void> _requestOwnership(
   );
 
   if (confirmed != true) {
-    qtyController.dispose();
     return;
   }
 
-  final quantity = double.tryParse(qtyController.text.trim());
-  qtyController.dispose();
+  final quantity = double.tryParse(quantityText.trim());
   if (quantity == null || quantity <= 0) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

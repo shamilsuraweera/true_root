@@ -22,110 +22,123 @@ class HomePage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dashboard')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _SectionHeader(
-            title: 'Purchase Requests',
-            action: TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const RequestsPage()),
-                );
-              },
-              child: const Text('View all'),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(pendingRequestsProvider);
+          ref.invalidate(recentBatchesProvider);
+          ref.invalidate(recentActivityProvider);
+          await Future.wait([
+            ref.read(pendingRequestsProvider.future),
+            ref.read(recentBatchesProvider.future),
+            ref.read(recentActivityProvider.future),
+          ]);
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          children: [
+            _SectionHeader(
+              title: 'Purchase Requests',
+              action: TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const RequestsPage()),
+                  );
+                },
+                child: const Text('View all'),
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          requestsAsync.when(
-            data: (items) {
-              if (items.isEmpty) {
-                return const _EmptyState(message: 'No pending requests');
-              }
-              return Column(
-                children: items
-                    .map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _RequestCard(
-                          name: 'Requester ${item.requesterId}',
-                          batchId: 'Batch ${item.batchId}',
-                          quantity: '${item.quantity} kg',
+            const SizedBox(height: 8),
+            requestsAsync.when(
+              data: (items) {
+                if (items.isEmpty) {
+                  return const _EmptyState(message: 'No pending requests');
+                }
+                return Column(
+                  children: items
+                      .map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _RequestCard(
+                            name: 'Requester ${item.requesterId}',
+                            batchId: 'Batch ${item.batchId}',
+                            quantity: '${item.quantity} kg',
+                          ),
                         ),
-                      ),
-                    )
-                    .toList(),
-              );
-            },
-            loading: () => const _LoadingState(),
-            error: (_, _) => const _ErrorState(message: 'Failed to load requests'),
-          ),
-          const SizedBox(height: 24),
-          _SectionHeader(
-            title: 'My Batches',
-            action: TextButton(
-              onPressed: () {
-                ref.read(dashboardTabProvider.notifier).state = 1;
-              },
-              child: const Text('View all'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          batchesAsync.when(
-            data: (items) {
-              if (items.isEmpty) {
-                return const _EmptyState(message: 'No batches yet');
-              }
-              return Column(
-                children: items
-                    .map(
-                      (item) => _InfoTile(
-                        title: productMap[item.productId] ?? item.displayProduct,
-                        subtitle: 'Batch ${item.id} • ${item.quantity} ${item.unit}',
-                        trailing: _StatusChip(label: item.status),
-                      ),
-                    )
-                    .toList(),
-              );
-            },
-            loading: () => const _LoadingState(),
-            error: (_, _) => const _ErrorState(message: 'Failed to load batches'),
-          ),
-          const SizedBox(height: 24),
-          _SectionHeader(
-            title: 'Recent Activity',
-            action: TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ActivityPage()),
+                      )
+                      .toList(),
                 );
               },
-              child: const Text('View all'),
+              loading: () => const _LoadingState(),
+              error: (_, _) => const _ErrorState(message: 'Failed to load requests'),
             ),
-          ),
-          const SizedBox(height: 8),
-          activityAsync.when(
-            data: (items) {
-              if (items.isEmpty) {
-                return const _EmptyState(message: 'No recent activity');
-              }
-              return Column(
-                children: items
-                    .map(
-                      (item) => _ActivityTile(
-                        title: item.title,
-                        subtitle: item.subtitle,
-                      ),
-                    )
-                    .toList(),
-              );
-            },
-            loading: () => const _LoadingState(),
-            error: (_, _) => const _ErrorState(message: 'Failed to load activity'),
-          ),
-        ],
+            const SizedBox(height: 24),
+            _SectionHeader(
+              title: 'My Batches',
+              action: TextButton(
+                onPressed: () {
+                  ref.read(dashboardTabProvider.notifier).state = 1;
+                },
+                child: const Text('View all'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            batchesAsync.when(
+              data: (items) {
+                if (items.isEmpty) {
+                  return const _EmptyState(message: 'No batches yet');
+                }
+                return Column(
+                  children: items
+                      .map(
+                        (item) => _InfoTile(
+                          title: productMap[item.productId] ?? item.displayProduct,
+                          subtitle: 'Batch ${item.id} • ${item.quantity} ${item.unit}',
+                          trailing: _StatusChip(label: item.status),
+                        ),
+                      )
+                      .toList(),
+                );
+              },
+              loading: () => const _LoadingState(),
+              error: (_, _) => const _ErrorState(message: 'Failed to load batches'),
+            ),
+            const SizedBox(height: 24),
+            _SectionHeader(
+              title: 'Recent Activity',
+              action: TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ActivityPage()),
+                  );
+                },
+                child: const Text('View all'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            activityAsync.when(
+              data: (items) {
+                if (items.isEmpty) {
+                  return const _EmptyState(message: 'No recent activity');
+                }
+                return Column(
+                  children: items
+                      .map(
+                        (item) => _ActivityTile(
+                          title: item.title,
+                          subtitle: item.subtitle,
+                        ),
+                      )
+                      .toList(),
+                );
+              },
+              loading: () => const _LoadingState(),
+              error: (_, _) => const _ErrorState(message: 'Failed to load activity'),
+            ),
+          ],
+        ),
       ),
     );
   }

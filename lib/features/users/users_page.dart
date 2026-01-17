@@ -25,55 +25,80 @@ class _UsersPageState extends ConsumerState<UsersPage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Users')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                labelText: 'Search users',
-                prefixIcon: Icon(Icons.search),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(usersListProvider);
+          await ref.read(usersListProvider.future);
+        },
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  labelText: 'Search users',
+                  prefixIcon: Icon(Icons.search),
+                ),
+                onChanged: (_) => setState(() {}),
               ),
-              onChanged: (_) => setState(() {}),
             ),
-          ),
-          Expanded(
-            child: usersAsync.when(
-              data: (users) {
-                final query = _searchController.text.trim().toLowerCase();
-                final filtered = query.isEmpty
-                    ? users
-                    : users.where((user) => user.matches(query)).toList();
-                if (filtered.isEmpty) {
-                  return const Center(child: Text('No users found'));
-                }
-                return ListView.separated(
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final user = filtered[index];
-                    return ListTile(
-                      title: Text(user.displayName),
-                      subtitle: Text('${user.organizationLabel} • ${user.roleLabel} • ${user.locationLabel}'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => UserDetailPage(user: user),
-                          ),
-                        );
-                      },
+            Expanded(
+              child: usersAsync.when(
+                data: (users) {
+                  final query = _searchController.text.trim().toLowerCase();
+                  final filtered = query.isEmpty
+                      ? users
+                      : users.where((user) => user.matches(query)).toList();
+                  if (filtered.isEmpty) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [
+                        SizedBox(height: 200),
+                        Center(child: Text('No users found')),
+                      ],
                     );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, _) => const Center(child: Text('Failed to load users')),
+                  }
+                  return ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final user = filtered[index];
+                      return ListTile(
+                        title: Text(user.displayName),
+                        subtitle: Text('${user.organizationLabel} • ${user.roleLabel} • ${user.locationLabel}'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => UserDetailPage(user: user),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+                loading: () => ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(height: 200),
+                    Center(child: CircularProgressIndicator()),
+                  ],
+                ),
+                error: (_, _) => ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(height: 200),
+                    Center(child: Text('Failed to load users')),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
