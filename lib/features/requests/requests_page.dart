@@ -59,13 +59,14 @@ class _InboxTab extends ConsumerWidget {
 
     return inboxAsync.when(
       data: (items) {
-        if (items.isEmpty) {
+        final pending = items.where((item) => item.status == 'PENDING').toList();
+        if (pending.isEmpty) {
           return const Center(child: Text('No incoming requests'));
         }
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: items.length,
-          itemBuilder: (context, index) => _InboxCard(request: items[index]),
+          itemCount: pending.length,
+          itemBuilder: (context, index) => _InboxCard(request: pending[index]),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -83,13 +84,14 @@ class _OutboxTab extends ConsumerWidget {
 
     return outboxAsync.when(
       data: (items) {
-        if (items.isEmpty) {
+        final pending = items.where((item) => item.status == 'PENDING').toList();
+        if (pending.isEmpty) {
           return const Center(child: Text('No outgoing requests'));
         }
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: items.length,
-          itemBuilder: (context, index) => _OutboxCard(request: items[index]),
+          itemCount: pending.length,
+          itemBuilder: (context, index) => _OutboxCard(request: pending[index]),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
