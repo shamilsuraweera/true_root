@@ -140,24 +140,6 @@ class HomePage extends ConsumerWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final Widget action;
-
-  const _SectionHeader({required this.title, required this.action});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.titleMedium),
-        action,
-      ],
-    );
-  }
-}
-
 class _SectionCard extends StatelessWidget {
   final String title;
   final String actionLabel;
@@ -343,6 +325,7 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -352,7 +335,7 @@ class _StatusChip extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.textDark,
+              color: onSurface.withValues(alpha: 0.75),
               fontWeight: FontWeight.w600,
             ),
       ),

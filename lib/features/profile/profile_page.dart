@@ -6,6 +6,7 @@ import '../auth/state/auth_provider.dart';
 import '../users/models/user.dart';
 import '../users/state/users_provider.dart';
 import 'state/profile_provider.dart';
+import '../../state/theme_state.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -42,6 +43,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       appBar: AppBar(
         title: const Text('Profile'),
         actions: [
+          IconButton(
+            icon: Icon(
+              ref.watch(themeModeProvider) == ThemeMode.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
+            onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,
