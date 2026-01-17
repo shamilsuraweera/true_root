@@ -15,7 +15,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  String _role = 'admin';
+  String _role = 'farmer';
   bool _isSubmitting = false;
 
   @override
@@ -67,7 +67,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 initialValue: _role,
                 decoration: const InputDecoration(labelText: 'Role'),
                 items: const [
-                  DropdownMenuItem(value: 'admin', child: Text('Admin')),
                   DropdownMenuItem(value: 'farmer', child: Text('Farmer')),
                   DropdownMenuItem(value: 'trader', child: Text('Trader')),
                   DropdownMenuItem(value: 'exporter', child: Text('Exporter')),
