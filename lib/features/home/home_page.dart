@@ -6,6 +6,8 @@ import '../products/state/product_provider.dart';
 import '../requests/requests_page.dart';
 import '../dashboard/state/dashboard_tab_provider.dart';
 import '../activity/activity_page.dart';
+import '../requests/state/ownership_requests_provider.dart';
+import '../batches/state/batch_provider.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -61,14 +63,16 @@ class HomePage extends ConsumerWidget {
                         (item) => Padding(
                           padding: const EdgeInsets.only(bottom: 8),
                           child: _RequestCard(
-                            name: 'Requester ${item.requesterId}',
-                            batchId: 'Batch ${item.batchId}',
-                            quantity: '${item.quantity} kg',
-                          ),
+                          name: 'Requester ${item.requesterId}',
+                          batchId: 'Batch ${item.batchId}',
+                          quantity: '${item.quantity} kg',
+                          onReject: () => _rejectRequest(context, ref, item.id),
+                          onApprove: () => _approveRequest(context, ref, item.id),
                         ),
-                      )
-                      .toList(),
-                );
+                      ),
+                    )
+                    .toList(),
+              );
               },
               loading: () => const _LoadingState(),
               error: (_, _) => const _ErrorState(message: 'Failed to load requests'),
@@ -166,11 +170,15 @@ class _RequestCard extends StatelessWidget {
   final String name;
   final String batchId;
   final String quantity;
+  final VoidCallback onReject;
+  final VoidCallback onApprove;
 
   const _RequestCard({
     required this.name,
     required this.batchId,
     required this.quantity,
+    required this.onReject,
+    required this.onApprove,
   });
 
   @override
@@ -194,14 +202,14 @@ class _RequestCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () {},
+                    onPressed: onReject,
                     child: const Text('Reject'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: onApprove,
                     child: const Text('Approve'),
                   ),
                 ),
@@ -318,4 +326,48 @@ class _StatusChip extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _approveRequest(BuildContext context, WidgetRef ref, String requestId) async {
+  try {
+    final api = ref.read(ownershipRequestsApiProvider);
+    await api.approve(requestId);
+    _invalidateRequests(ref);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Request approved')),
+    );
+  } catch (error) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+    );
+  }
+}
+
+Future<void> _rejectRequest(BuildContext context, WidgetRef ref, String requestId) async {
+  try {
+    final api = ref.read(ownershipRequestsApiProvider);
+    await api.reject(requestId);
+    _invalidateRequests(ref);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Request rejected')),
+    );
+  } catch (error) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+    );
+  }
+}
+
+void _invalidateRequests(WidgetRef ref) {
+  ref.invalidate(pendingRequestsProvider);
+  ref.invalidate(ownershipInboxProvider);
+  ref.invalidate(ownershipOutboxProvider);
+  ref.invalidate(ownedBatchListProvider);
+  ref.invalidate(batchListProvider);
+  ref.invalidate(recentBatchesProvider);
+  ref.invalidate(recentActivityProvider);
 }
