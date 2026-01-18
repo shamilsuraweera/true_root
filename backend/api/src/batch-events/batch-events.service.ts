@@ -49,4 +49,14 @@ export class BatchEventsService {
       take: limit,
     });
   }
+
+  async getRecentForOwner(ownerId: number, limit = 10) {
+    return this.repo
+      .createQueryBuilder('event')
+      .innerJoin('batches', 'batch', 'batch.id = event.batch_id')
+      .where('batch.owner_id = :ownerId', { ownerId })
+      .orderBy('event.createdAt', 'DESC')
+      .take(limit)
+      .getMany();
+  }
 }

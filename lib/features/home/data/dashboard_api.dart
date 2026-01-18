@@ -31,8 +31,12 @@ class DashboardApi {
     return data.map((item) => OwnershipRequest.fromApi(item as Map<String, dynamic>)).toList();
   }
 
-  Future<List<RecentActivity>> fetchRecentActivity({int limit = 5}) async {
-    final uri = Uri.parse('$baseUrl/batch-events/recent?limit=$limit');
+  Future<List<RecentActivity>> fetchRecentActivity({int limit = 5, String? ownerId}) async {
+    final query = StringBuffer('limit=$limit');
+    if (ownerId != null) {
+      query.write('&ownerId=$ownerId');
+    }
+    final uri = Uri.parse('$baseUrl/batch-events/recent?$query');
     final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
       throw Exception('Failed to load activity');

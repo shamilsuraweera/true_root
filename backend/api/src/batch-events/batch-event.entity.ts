@@ -16,6 +16,7 @@ export enum BatchEventType {
   TRANSFORMED = 'TRANSFORMED',
   ARCHIVED = 'ARCHIVED',
   TRANSFERRED = 'TRANSFERRED',
+  DELETED = 'DELETED',
 }
 
 @Entity({ name: 'batch_events' })
