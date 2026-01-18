@@ -42,4 +42,10 @@ export class UsersService {
     Object.assign(user, data);
     return this.repo.save(user);
   }
+
+  async remove(id: number) {
+    const user = await this.getById(id);
+    await this.repo.remove(user);
+    return { success: true };
+  }
 }

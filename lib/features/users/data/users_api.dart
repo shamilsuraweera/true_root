@@ -53,4 +53,26 @@ class UsersApi {
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return AppUser.fromApi(data);
   }
+
+  Future<AppUser> createUser(Map<String, dynamic> payload) async {
+    final uri = Uri.parse('$baseUrl/users');
+    final response = await http.post(
+      uri,
+      headers: _headers(),
+      body: jsonEncode(payload),
+    );
+    if (response.statusCode != 201 && response.statusCode != 200) {
+      throw Exception('Failed to create user');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return AppUser.fromApi(data);
+  }
+
+  Future<void> deleteUser(String id) async {
+    final uri = Uri.parse('$baseUrl/users/$id');
+    final response = await http.delete(uri, headers: _headers(json: false));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete user');
+    }
+  }
 }

@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'admin_dashboard_page.dart';
+import 'admin_batches_page.dart';
+import 'admin_products_page.dart';
+import 'admin_stages_page.dart';
+import 'admin_users_page.dart';
+
 class AdminShellPage extends StatefulWidget {
   const AdminShellPage({super.key});
 
@@ -93,19 +99,18 @@ class _AdminContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = switch (index) {
-      0 => 'Dashboard',
-      1 => 'Users',
-      2 => 'Products',
-      3 => 'Stages',
-      _ => 'Batches',
-    };
-
-    return Center(
-      child: Text(
-        '$label (coming soon)',
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
-    );
+    if (index == 0) {
+      return const AdminDashboardPage();
+    }
+    if (index == 1) {
+      return const AdminUsersPage();
+    }
+    if (index == 2) {
+      return const AdminProductsPage();
+    }
+    if (index == 3) {
+      return const AdminStagesPage();
+    }
+    return const AdminBatchesPage();
   }
 }
