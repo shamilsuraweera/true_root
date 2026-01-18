@@ -10,14 +10,12 @@ export class BatchEventsController {
   @Get('recent')
   recent(@Query('limit') limit?: string, @Query('ownerId') ownerId?: string) {
     const parsedLimit = limit ? Number(limit) : undefined;
-    const parsedOwnerId = ownerId ? Number(ownerId) : undefined;
-    if (Number.isFinite(parsedOwnerId)) {
-      return this.service.getRecentForOwner(
-        parsedOwnerId,
-        Number.isFinite(parsedLimit) ? parsedLimit : undefined,
-      );
+    const ownerIdNum = ownerId ? Number(ownerId) : NaN;
+    const safeLimit = Number.isFinite(parsedLimit) ? parsedLimit : undefined;
+    if (Number.isFinite(ownerIdNum)) {
+      return this.service.getRecentForOwner(ownerIdNum, safeLimit);
     }
-    return this.service.getRecent(Number.isFinite(parsedLimit) ? parsedLimit : undefined);
+    return this.service.getRecent(safeLimit);
   }
 
   @Get(':batchId')
