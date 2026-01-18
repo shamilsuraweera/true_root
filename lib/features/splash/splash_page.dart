@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_routes.dart';
@@ -23,6 +24,15 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   }
 
   Future<void> _bootstrap() async {
+    if (kIsWeb) {
+      final fragment = Uri.base.fragment;
+      if (fragment.startsWith('/admin')) {
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, AppRoutes.admin);
+        return;
+      }
+    }
+
     final authState = ref.read(authProvider);
     if (!authState.isLoggedIn) {
       final storage = ref.read(authStorageProvider);

@@ -1,5 +1,0 @@
-Admin routes + web shell + admin‑only guard. - done
-Dashboard overview (counts, recent activity).
-Full CRUD screens for Users, Products, Stages.
-Batch management + audit/trace view (search + history).
-Confirm dialogs + refresh/invalidation.

@@ -8,6 +8,7 @@ import { BatchEventsModule } from './batch-events/batch-events.module';
 import { StagesModule } from './stages/stages.module';
 import { UsersModule } from './users/users.module';
 import { OwnershipRequestsModule } from './ownership-requests/ownership-requests.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { OwnershipRequestsModule } from './ownership-requests/ownership-requests
     StagesModule,
     UsersModule,
     OwnershipRequestsModule,
+    AdminModule,
   ],
 })
 export class AppModule {}

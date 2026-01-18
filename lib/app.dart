@@ -11,12 +11,21 @@ class App extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
+    final defaultRoute = WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+    final fragment = Uri.base.fragment;
+    final fragmentRoute = fragment.startsWith('/') ? fragment : '/$fragment';
+    final hasFragmentRoute = fragment.isNotEmpty && fragmentRoute != '/';
+    final initialRoute = hasFragmentRoute
+        ? fragmentRoute
+        : (defaultRoute != '/' && defaultRoute.isNotEmpty
+            ? defaultRoute
+            : AppRoutes.splash);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
-      initialRoute: AppRoutes.splash,
+      initialRoute: initialRoute,
       routes: AppRoutes.routes,
     );
   }
