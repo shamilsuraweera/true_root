@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_routes.dart';
@@ -61,6 +62,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         onRefresh: _refresh,
         child: profileAsync.when(
           data: (profile) {
+            final auth = ref.watch(authProvider);
             if (!_initialized) {
               _nameController.text = profile.name ?? '';
               _orgController.text = profile.organization ?? '';
@@ -141,6 +143,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                   ],
                   const SizedBox(height: 24),
+                  if (kIsWeb && auth.role == UserRole.admin) ...[
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.pushNamed(context, AppRoutes.admin),
+                      icon: const Icon(Icons.admin_panel_settings_outlined),
+                      label: const Text('Open Admin Panel'),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   ElevatedButton(
                     onPressed: () => _save(profile.id),
                     child: const Text('Save'),
