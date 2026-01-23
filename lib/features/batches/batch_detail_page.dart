@@ -5,6 +5,7 @@ import 'batch_history_timeline.dart';
 import 'state/batch_provider.dart';
 import 'models/batch.dart';
 import '../products/state/product_provider.dart';
+import '../home/state/dashboard_provider.dart';
 
 class BatchDetailPage extends ConsumerWidget {
   final String batchId;
@@ -422,6 +423,8 @@ Future<void> _showMergeDialog(BuildContext context, WidgetRef ref, String batchI
     ref.invalidate(batchByIdProvider(batchId));
     ref.invalidate(batchHistoryProvider(batchId));
     ref.invalidate(batchListProvider);
+    ref.invalidate(ownedBatchListProvider);
+    ref.invalidate(recentBatchesProvider);
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (_) => BatchDetailPage(batchId: merged.id)),
@@ -540,6 +543,8 @@ Future<void> _showTransformDialog(
       ref.invalidate(batchByIdProvider(batchId));
       ref.invalidate(batchHistoryProvider(batchId));
       ref.invalidate(batchListProvider);
+      ref.invalidate(ownedBatchListProvider);
+      ref.invalidate(recentBatchesProvider);
       return;
     }
 
@@ -548,6 +553,8 @@ Future<void> _showTransformDialog(
       ref.invalidate(batchByIdProvider(batchId));
       ref.invalidate(batchHistoryProvider(batchId));
       ref.invalidate(batchListProvider);
+      ref.invalidate(ownedBatchListProvider);
+      ref.invalidate(recentBatchesProvider);
       return;
     }
 
