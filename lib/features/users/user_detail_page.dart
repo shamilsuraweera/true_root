@@ -115,6 +115,15 @@ Future<void> _requestOwnership(
   Batch batch,
   String ownerId,
 ) async {
+  final requesterId = ref.read(currentUserIdProvider);
+  if (requesterId == ownerId) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('You already own this batch')),
+    );
+    return;
+  }
+
   var quantityText = batch.quantity.toString();
   final confirmed = await showDialog<bool>(
     context: context,
@@ -156,7 +165,6 @@ Future<void> _requestOwnership(
   }
 
   try {
-    final requesterId = ref.read(currentUserIdProvider);
     final api = ref.read(ownershipRequestsApiProvider);
     await api.createRequest(
       batchId: batch.id,
