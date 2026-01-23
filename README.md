@@ -1,16 +1,35 @@
 # true_root
 
-A new Flutter project.
+True Root is a Flutter app with a NestJS backend for batch tracking and ownership workflows.
 
-## Getting Started
+## Quick Start
 
-This project is a starting point for a Flutter application.
+### Flutter (mobile/web)
+```bash
+flutter clean
+flutter pub get
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+### Flutter Web (admin panel)
+```bash
+flutter run -d chrome
+# or
+flutter run -d web-server --web-port 8080
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### Backend (NestJS API)
+```bash
+cd backend/api
+npm install
+npm run start:dev
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Database (Postgres)
+```bash
+# create DB/user
+psql -U postgres -f sql/database_create.sql
+
+# reset DB (dev)
+psql -U postgres -f sql/reset_database.sql
+```

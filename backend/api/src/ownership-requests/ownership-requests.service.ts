@@ -22,6 +22,9 @@ export class OwnershipRequestsService {
   async createRequest(batchId: number, requesterId: number, ownerId: number, quantity: number, note?: string) {
     const batch = await this.batches.findOne({ where: { id: batchId } });
     if (!batch) throw new NotFoundException('Batch not found');
+    if (requesterId === ownerId) {
+      throw new BadRequestException('Cannot request ownership of your own batch');
+    }
     if (batch.ownerId !== ownerId) {
       throw new BadRequestException('Owner mismatch');
     }
