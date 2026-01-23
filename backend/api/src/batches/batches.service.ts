@@ -18,6 +18,23 @@ export class BatchesService {
     private readonly events: BatchEventsService,
   ) {}
 
+  private isLocked(batch: Batch) {
+    return (
+      batch.isDisqualified ||
+      ['MERGED', 'TRANSFORMED', 'SPLIT', 'ARCHIVED', 'DELETED'].includes(batch.status)
+    );
+  }
+
+  private async ensureMutable(batch: Batch) {
+    if (this.isLocked(batch)) {
+      throw new BadRequestException('Batch is locked and cannot be modified');
+    }
+    const childrenCount = await this.relations.count({ where: { parentBatchId: batch.id } });
+    if (childrenCount > 0) {
+      throw new BadRequestException('Batch has derived batches and cannot be modified');
+    }
+  }
+
   async createBatch(productId: number, quantity: number, grade?: string, ownerId?: number) {
     const saved = await this.createBatchRecord({
       productId,
@@ -65,6 +82,7 @@ export class BatchesService {
 
   async changeQuantity(id: number, quantity: number) {
     const batch = await this.getBatch(id);
+    await this.ensureMutable(batch);
     const previous = batch.quantity;
     batch.quantity = quantity;
     const saved = await this.repo.save(batch);
@@ -77,6 +95,7 @@ export class BatchesService {
 
   async changeStatus(id: number, status: string) {
     const batch = await this.getBatch(id);
+    await this.ensureMutable(batch);
     const previous = batch.status;
     batch.status = status;
     const saved = await this.repo.save(batch);
@@ -89,6 +108,7 @@ export class BatchesService {
 
   async changeGrade(id: number, grade: string) {
     const batch = await this.getBatch(id);
+    await this.ensureMutable(batch);
     const previous = batch.grade ?? null;
     batch.grade = grade;
     const saved = await this.repo.save(batch);
@@ -101,6 +121,7 @@ export class BatchesService {
 
   async disqualify(id: number, reason: string) {
     const batch = await this.getBatch(id);
+    await this.ensureMutable(batch);
     const previous = batch.status;
     batch.status = 'DISQUALIFIED';
     batch.isDisqualified = true;
@@ -114,6 +135,7 @@ export class BatchesService {
 
   async archiveBatch(id: number) {
     const batch = await this.getBatch(id);
+    await this.ensureMutable(batch);
     const previous = batch.status;
     batch.status = 'ARCHIVED';
     const saved = await this.repo.save(batch);
@@ -126,6 +148,7 @@ export class BatchesService {
 
   async deleteBatch(id: number) {
     const batch = await this.getBatch(id);
+    await this.ensureMutable(batch);
     const previousStatus = batch.status;
     const previousQuantity = batch.quantity;
     batch.status = 'DELETED';
@@ -153,12 +176,42 @@ export class BatchesService {
     };
   }
 
+  async getLineage(id: number) {
+    await this.getBatch(id);
+
+    const parents = await this.relations.find({
+      where: { childBatchId: id },
+      order: { createdAt: 'DESC' },
+    });
+    const children = await this.relations.find({
+      where: { parentBatchId: id },
+      order: { createdAt: 'DESC' },
+    });
+
+    const parentIds = parents.map((item) => item.parentBatchId);
+    const childIds = children.map((item) => item.childBatchId);
+    const batches = await this.repo.findBy({ id: In([...parentIds, ...childIds]) });
+    const batchMap = new Map(batches.map((batch) => [batch.id, batch]));
+
+    return {
+      parents: parents.map((relation) => ({
+        ...relation,
+        batch: batchMap.get(relation.parentBatchId) ?? null,
+      })),
+      children: children.map((relation) => ({
+        ...relation,
+        batch: batchMap.get(relation.childBatchId) ?? null,
+      })),
+    };
+  }
+
   async splitBatch(id: number, items: { quantity: number; grade?: string }[]) {
     if (!items || items.length < 2) {
       throw new BadRequestException('At least two split items are required');
     }
 
     const parent = await this.getBatch(id);
+    await this.ensureMutable(parent);
     const total = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
     if (total <= 0) {
       throw new BadRequestException('Split quantity must be greater than zero');
@@ -211,6 +264,7 @@ export class BatchesService {
     if (batches.length !== uniqueIds.length) {
       throw new NotFoundException('One or more batches not found');
     }
+    await Promise.all(batches.map((batch) => this.ensureMutable(batch)));
 
     const totalQuantity = batches.reduce((sum, batch) => sum + Number(batch.quantity), 0);
     const newBatch = await this.createBatchRecord({
@@ -246,6 +300,7 @@ export class BatchesService {
 
   async transformBatch(id: number, body: TransformBatchDto) {
     const parent = await this.getBatch(id);
+    await this.ensureMutable(parent);
     const quantity = body.quantity ?? Number(parent.quantity);
     if (quantity <= 0) {
       throw new BadRequestException('Transform quantity must be greater than zero');

@@ -3,6 +3,7 @@ import '../../../core/api/api_config.dart';
 import '../data/batch_api.dart';
 import '../models/batch.dart';
 import '../models/batch_event.dart';
+import '../models/batch_lineage.dart';
 import '../../../state/auth_state.dart';
 import '../../profile/state/profile_provider.dart';
 
@@ -14,7 +15,7 @@ final batchListProvider = FutureProvider<List<Batch>>((ref) async {
 final ownedBatchListProvider = FutureProvider<List<Batch>>((ref) async {
   final api = ref.watch(batchApiProvider);
   final ownerId = ref.read(currentUserIdProvider);
-  return api.fetchBatches(limit: 50, ownerId: ownerId);
+  return api.fetchBatches(limit: 50, ownerId: ownerId, includeInactive: true);
 });
 
 final batchByIdProvider = FutureProvider.family<Batch?, String>((ref, batchId) async {
@@ -57,6 +58,15 @@ final batchHistoryProvider = FutureProvider.family<List<BatchEvent>, String>((re
     throw Exception('Invalid batch id');
   }
   return api.fetchBatchHistory(normalized);
+});
+
+final batchLineageProvider = FutureProvider.family<BatchLineage, String>((ref, batchId) async {
+  final api = ref.watch(batchApiProvider);
+  final normalized = _normalizeBatchId(batchId);
+  if (normalized == null) {
+    throw Exception('Invalid batch id');
+  }
+  return api.fetchBatchLineage(normalized);
 });
 
 String? _normalizeBatchId(String batchId) {

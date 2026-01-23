@@ -7,6 +7,7 @@ class Batch {
   final String unit;
   final String status;
   final String? grade;
+  final bool isDisqualified;
   final DateTime createdAt;
 
   Batch({
@@ -18,6 +19,7 @@ class Batch {
     this.unit = 'kg',
     required this.status,
     this.grade,
+    this.isDisqualified = false,
     required this.createdAt,
   });
 
@@ -40,6 +42,8 @@ class Batch {
       unit: json['unit']?.toString() ?? 'kg',
       status: json['status']?.toString() ?? 'UNKNOWN',
       grade: json['grade']?.toString(),
+      isDisqualified: json['isDisqualified'] == true ||
+          json['isDisqualified']?.toString() == 'true',
       createdAt: DateTime.parse(json['createdAt']?.toString() ?? DateTime.now().toIso8601String()),
     );
   }

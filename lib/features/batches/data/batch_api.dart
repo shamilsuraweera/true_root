@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/batch.dart';
 import '../models/batch_event.dart';
+import '../models/batch_lineage.dart';
 
 class BatchApi {
   const BatchApi(this.baseUrl, {this.authToken});
@@ -70,10 +71,28 @@ class BatchApi {
     return data.map((item) => BatchEvent.fromApi(item as Map<String, dynamic>)).toList();
   }
 
-  Future<List<Batch>> fetchBatches({int limit = 50, int offset = 0, String? ownerId}) async {
+  Future<BatchLineage> fetchBatchLineage(String batchId) async {
+    final uri = Uri.parse('$baseUrl/batches/$batchId/lineage');
+    final response = await http.get(uri, headers: _headers(json: false));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load batch lineage');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return BatchLineage.fromApi(data);
+  }
+
+  Future<List<Batch>> fetchBatches({
+    int limit = 50,
+    int offset = 0,
+    String? ownerId,
+    bool includeInactive = false,
+  }) async {
     final query = StringBuffer('limit=$limit&offset=$offset');
     if (ownerId != null) {
       query.write('&ownerId=$ownerId');
+    }
+    if (includeInactive) {
+      query.write('&includeInactive=true');
     }
     final uri = Uri.parse('$baseUrl/batches?$query');
     final response = await http.get(uri, headers: _headers(json: false));
