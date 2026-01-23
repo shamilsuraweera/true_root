@@ -6,6 +6,7 @@ import 'state/batch_provider.dart';
 import 'models/batch.dart';
 import '../products/state/product_provider.dart';
 import '../home/state/dashboard_provider.dart';
+import 'models/batch_lineage.dart';
 
 class BatchDetailPage extends ConsumerWidget {
   final String batchId;
@@ -21,6 +22,10 @@ class BatchDetailPage extends ConsumerWidget {
         if (batch == null) {
           return const Scaffold(body: Center(child: Text('Batch not found')));
         }
+
+        final lineageAsync = ref.watch(batchLineageProvider(batch.id));
+        final hasChildren = lineageAsync.valueOrNull?.children.isNotEmpty ?? false;
+        final isLocked = _isLockedBatch(batch) || hasChildren;
 
         final products = ref.watch(productListProvider).valueOrNull;
         String? productName;
@@ -39,6 +44,12 @@ class BatchDetailPage extends ConsumerWidget {
             actions: [
               PopupMenuButton<String>(
                 onSelected: (value) {
+                  if (isLocked) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('This batch is locked and cannot be modified')),
+                    );
+                    return;
+                  }
                   switch (value) {
                     case 'update':
                       _showUpdateDialog(context, ref, batch);
@@ -63,15 +74,43 @@ class BatchDetailPage extends ConsumerWidget {
                       break;
                   }
                 },
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'update', child: Text('Update batch')),
-                  PopupMenuItem(value: 'split', child: Text('Split batch')),
-                  PopupMenuItem(value: 'merge', child: Text('Merge batches')),
-                  PopupMenuItem(value: 'transform', child: Text('Transform batch')),
-                  PopupMenuDivider(),
-                  PopupMenuItem(value: 'archive', child: Text('Archive batch')),
-                  PopupMenuItem(value: 'disqualify', child: Text('Mark not suitable')),
-                  PopupMenuItem(value: 'delete', child: Text('Delete batch')),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'update',
+                    enabled: !isLocked,
+                    child: const Text('Update batch'),
+                  ),
+                  PopupMenuItem(
+                    value: 'split',
+                    enabled: !isLocked,
+                    child: const Text('Split batch'),
+                  ),
+                  PopupMenuItem(
+                    value: 'merge',
+                    enabled: !isLocked,
+                    child: const Text('Merge batches'),
+                  ),
+                  PopupMenuItem(
+                    value: 'transform',
+                    enabled: !isLocked,
+                    child: const Text('Transform batch'),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: 'archive',
+                    enabled: !isLocked,
+                    child: const Text('Archive batch'),
+                  ),
+                  PopupMenuItem(
+                    value: 'disqualify',
+                    enabled: !isLocked,
+                    child: const Text('Mark not suitable'),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    enabled: !isLocked,
+                    child: const Text('Delete batch'),
+                  ),
                 ],
               ),
             ],
@@ -89,11 +128,24 @@ class BatchDetailPage extends ConsumerWidget {
                 Text('Quantity: ${batch.quantity} ${batch.unit}'),
                 Text('Status: ${batch.status}'),
                 if (batch.grade != null && batch.grade!.isNotEmpty) Text('Grade: ${batch.grade}'),
+                if (isLocked)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      'This batch is locked because it is archived/disqualified or has derived batches.',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ),
                 Text('Created: ${batch.createdAt}'),
                 const SizedBox(height: 16),
                 Text('QR Code', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 _QrPayloadView(batchId: batch.id),
+                const SizedBox(height: 24),
+                _BatchLineageSection(batchId: batch.id),
                 const SizedBox(height: 24),
                 const Text(
                   'History',
@@ -111,6 +163,84 @@ class BatchDetailPage extends ConsumerWidget {
       ),
       error: (error, stackTrace) => const Scaffold(
         body: Center(child: Text('Failed to load batch')),
+      ),
+    );
+  }
+}
+
+class _BatchLineageSection extends ConsumerWidget {
+  final String batchId;
+
+  const _BatchLineageSection({required this.batchId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lineageAsync = ref.watch(batchLineageProvider(batchId));
+    return lineageAsync.when(
+      data: (lineage) {
+        if (lineage.parents.isEmpty && lineage.children.isEmpty) {
+          return const Text('Lineage: none');
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Lineage', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            if (lineage.parents.isNotEmpty) ...[
+              Text('Parents', style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 4),
+              ...lineage.parents.map((item) => _LineageItem(item: item, showParent: true)),
+              const SizedBox(height: 12),
+            ],
+            if (lineage.children.isNotEmpty) ...[
+              Text('Children', style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 4),
+              ...lineage.children.map((item) => _LineageItem(item: item, showParent: false)),
+            ],
+          ],
+        );
+      },
+      loading: () => const Text('Lineage: loading...'),
+      error: (_, _) => const Text('Lineage: unavailable'),
+    );
+  }
+}
+
+class _LineageItem extends StatelessWidget {
+  final BatchRelationItem item;
+  final bool showParent;
+
+  const _LineageItem({
+    required this.item,
+    required this.showParent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final batch = item.batch;
+    final relatedId = showParent ? item.parentBatchId : item.childBatchId;
+    final quantity = item.quantity;
+    final quantityText = quantity == null ? '' : ' • ${quantity.toStringAsFixed(2)}';
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => BatchDetailPage(batchId: relatedId)),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Batch $relatedId • ${item.relationType}$quantityText'
+                '${batch == null ? '' : ' • ${batch.status}'}',
+              ),
+            ),
+            const Icon(Icons.chevron_right, size: 18),
+          ],
+        ),
       ),
     );
   }
@@ -576,6 +706,18 @@ String _errorText(Object error, String fallback) {
     return fallback;
   }
   return text.replaceFirst('Exception: ', '');
+}
+
+bool _isLockedBatch(Batch batch) {
+  return batch.isDisqualified ||
+      const [
+        'MERGED',
+        'TRANSFORMED',
+        'SPLIT',
+        'ARCHIVED',
+        'DISQUALIFIED',
+        'DELETED',
+      ].contains(batch.status);
 }
 
 Future<void> _archiveBatch(BuildContext context, WidgetRef ref, String batchId) async {

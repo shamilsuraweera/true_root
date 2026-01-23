@@ -55,7 +55,7 @@ class UserDetailPage extends ConsumerWidget {
 
 final _userBatchesProvider = FutureProvider.family<List<Batch>, String>((ref, userId) async {
   final api = ref.watch(batchApiProvider);
-  return api.fetchBatches(ownerId: userId, limit: 50);
+  return api.fetchBatches(ownerId: userId, limit: 50, includeInactive: true);
 });
 
 class _InfoRow extends StatelessWidget {

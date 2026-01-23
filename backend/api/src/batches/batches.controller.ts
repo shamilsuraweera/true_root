@@ -98,4 +98,9 @@ export class BatchesController {
   qr(@Param('id') id: string) {
     return this.service.getQrPayload(Number(id));
   }
+
+  @Get(':id/lineage')
+  lineage(@Param('id') id: string) {
+    return this.service.getLineage(Number(id));
+  }
 }
