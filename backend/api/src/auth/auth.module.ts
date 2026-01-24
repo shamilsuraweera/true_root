@@ -12,7 +12,7 @@ import { JwtStrategy } from './jwt.strategy';
     UsersModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET ?? 'dev-secret',
+      secret: resolveJwtSecret(),
       signOptions: {
         expiresIn: resolveJwtExpiresIn(process.env.JWT_EXPIRES_IN),
       },
@@ -32,4 +32,15 @@ function resolveJwtExpiresIn(value?: string): number | StringValue {
     return numeric;
   }
   return value as StringValue;
+}
+
+function resolveJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.trim().length === 0) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET is required in production');
+    }
+    return 'dev-secret';
+  }
+  return secret;
 }

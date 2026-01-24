@@ -75,7 +75,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       onTap: () {
                         _emailController.text = account.email;
-                        _passwordController.text = account.password;
+                        _passwordController.clear();
                         setState(() {});
                       },
                     ),
@@ -179,23 +179,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _quickLogin(SavedAccount account) async {
-    setState(() => _isSubmitting = true);
-    try {
-      final controller = ref.read(authControllerProvider);
-      await controller.login(
-        account.email,
-        account.password,
-        remember: true,
-      );
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login failed')),
-      );
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
-    }
+    _emailController.text = account.email;
+    _passwordController.clear();
+    setState(() {});
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Enter your password to continue')),
+    );
   }
 }
