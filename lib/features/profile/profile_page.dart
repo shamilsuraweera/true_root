@@ -22,6 +22,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   final _orgController = TextEditingController();
   final _locationController = TextEditingController();
   String _accountType = 'Individual';
+  static const List<String> _accountTypeOptions = ['Individual', 'Company'];
   final List<String> _members = [];
   final _memberController = TextEditingController();
   bool _initialized = false;
@@ -67,7 +68,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               _nameController.text = profile.name ?? '';
               _orgController.text = profile.organization ?? '';
               _locationController.text = profile.location ?? '';
-              _accountType = profile.accountType ?? 'Individual';
+              final nextType = profile.accountType ?? 'Individual';
+              _accountType = _accountTypeOptions.contains(nextType) ? nextType : 'Individual';
               _members
                 ..clear()
                 ..addAll(profile.members);
@@ -145,7 +147,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   const SizedBox(height: 24),
                   if (kIsWeb && auth.role == UserRole.admin) ...[
                     OutlinedButton.icon(
-                      onPressed: () => Navigator.pushNamed(context, AppRoutes.admin),
+                      onPressed: () => Navigator.of(context, rootNavigator: true)
+                          .pushNamed(AppRoutes.admin),
                       icon: const Icon(Icons.admin_panel_settings_outlined),
                       label: const Text('Open Admin Panel'),
                     ),
