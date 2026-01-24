@@ -1,10 +1,17 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/auth/models/saved_account.dart';
 
 class AuthStorage {
   static const _accountsKey = 'saved_accounts';
   static const _activeEmailKey = 'active_account_email';
+  static const _tokenPrefix = 'auth_token_';
+
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+
+  String _tokenKey(String email) => '$_tokenPrefix$email';
 
   Future<List<SavedAccount>> loadAccounts() async {
     final prefs = await SharedPreferences.getInstance();
@@ -25,7 +32,7 @@ class AuthStorage {
     await prefs.setString(_accountsKey, raw);
   }
 
-  Future<void> upsertAccount(SavedAccount account) async {
+  Future<void> upsertAccount(SavedAccount account, {String? accessToken}) async {
     final accounts = await loadAccounts();
     final updated = [
       for (final existing in accounts)
@@ -34,12 +41,16 @@ class AuthStorage {
     ];
     await saveAccounts(updated);
     await setActiveEmail(account.email);
+    if (accessToken != null && accessToken.isNotEmpty) {
+      await _saveToken(account.email, accessToken);
+    }
   }
 
   Future<void> removeAccount(String email) async {
     final accounts = await loadAccounts();
     final updated = accounts.where((item) => item.email != email).toList();
     await saveAccounts(updated);
+    await _deleteToken(email);
     final active = await getActiveEmail();
     if (active == email) {
       await clearActiveEmail();
@@ -67,7 +78,38 @@ class AuthStorage {
       return null;
     }
     final accounts = await loadAccounts();
-    return accounts.where((item) => item.email == email).firstOrNull;
+    final account = accounts.where((item) => item.email == email).firstOrNull;
+    if (account == null) {
+      return null;
+    }
+    final token = await _loadToken(email);
+    return account.copyWith(accessToken: token);
+  }
+
+  Future<void> _saveToken(String email, String token) async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_tokenKey(email), token);
+      return;
+    }
+    await _secureStorage.write(key: _tokenKey(email), value: token);
+  }
+
+  Future<String?> _loadToken(String email) async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_tokenKey(email));
+    }
+    return _secureStorage.read(key: _tokenKey(email));
+  }
+
+  Future<void> _deleteToken(String email) async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_tokenKey(email));
+      return;
+    }
+    await _secureStorage.delete(key: _tokenKey(email));
   }
 }
 

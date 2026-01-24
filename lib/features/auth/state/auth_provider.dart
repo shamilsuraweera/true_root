@@ -48,11 +48,10 @@ class AuthController {
       await storage.upsertAccount(
         SavedAccount(
           email: email,
-          password: password,
           userId: user['id']?.toString(),
           role: user['role']?.toString(),
-          accessToken: token,
         ),
+        accessToken: token,
       );
     }
   }
@@ -86,11 +85,10 @@ class AuthController {
       await storage.upsertAccount(
         SavedAccount(
           email: email,
-          password: password,
           userId: user['id']?.toString(),
           role: user['role']?.toString(),
-          accessToken: token,
         ),
+        accessToken: token,
       );
     }
   }
