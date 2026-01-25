@@ -92,7 +92,7 @@ class _UserBatchCard extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        title: Text(batch.displayProduct),
+        title: Text('Batch ${batch.id} • ${batch.displayProduct}'),
         subtitle: Text('${batch.quantity} ${batch.unit} • ${batch.status}'),
         trailing: ElevatedButton(
           onPressed: () => _requestOwnership(context, ref, batch, ownerId),

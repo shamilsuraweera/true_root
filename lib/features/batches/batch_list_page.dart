@@ -98,7 +98,7 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                               ? productMap[batch.productId]
                               : null;
                           return ListTile(
-                            title: Text(productName ?? batch.displayProduct),
+                            title: Text('Batch ${batch.id} • ${productName ?? batch.displayProduct}'),
                             subtitle: Text('${batch.quantity} ${batch.unit} • ${batch.status}'),
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () {
@@ -164,10 +164,27 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                     itemCount: pending.length,
                     itemBuilder: (context, index) {
                       final request = pending[index];
-                      return ListTile(
-                        title: Text('Batch ${request.batchId} • ${request.quantity} kg'),
-                        subtitle: Text('Waiting for owner ${request.ownerId}'),
-                        trailing: const Icon(Icons.hourglass_top),
+                      return Consumer(
+                        builder: (context, ref, _) {
+                          final batchAsync = ref.watch(batchByIdProvider(request.batchId));
+                          final products = ref.watch(productListProvider).valueOrNull;
+                          final productMap = {
+                            for (final product in products ?? []) product.id: product.name,
+                          };
+                          final batch = batchAsync.valueOrNull;
+                          final productName = batch?.productId != null
+                              ? productMap[batch!.productId]
+                              : null;
+                          return ListTile(
+                            title: Text(
+                              'Batch ${request.batchId} • ${productName ?? batch?.displayProduct ?? 'Product'}',
+                            ),
+                            subtitle: Text(
+                              '${request.quantity} ${batch?.unit ?? 'kg'} • ${batch?.status ?? request.status}',
+                            ),
+                            trailing: const Icon(Icons.hourglass_top),
+                          );
+                        },
                       );
                     },
                   ),
