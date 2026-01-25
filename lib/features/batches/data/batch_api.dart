@@ -200,6 +200,20 @@ class BatchApi {
     return Batch.fromApi(data);
   }
 
+  Future<Batch> updateStage(String batchId, int? stageId) async {
+    final uri = Uri.parse('$baseUrl/batches/$batchId/stage');
+    final response = await http.patch(
+      uri,
+      headers: _headers(),
+      body: jsonEncode({'stageId': stageId}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception(_errorMessage(response, 'Failed to update stage'));
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return Batch.fromApi(data);
+  }
+
   Future<Batch> updateGrade(String batchId, String grade) async {
     final uri = Uri.parse('$baseUrl/batches/$batchId/grade');
     final response = await http.patch(

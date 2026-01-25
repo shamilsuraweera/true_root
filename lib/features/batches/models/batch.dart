@@ -7,6 +7,7 @@ class Batch {
   final String unit;
   final String status;
   final String? grade;
+  final int? stageId;
   final bool isDisqualified;
   final DateTime createdAt;
 
@@ -19,6 +20,7 @@ class Batch {
     this.unit = 'kg',
     required this.status,
     this.grade,
+    this.stageId,
     this.isDisqualified = false,
     required this.createdAt,
   });
@@ -42,6 +44,7 @@ class Batch {
       unit: json['unit']?.toString() ?? 'kg',
       status: json['status']?.toString() ?? 'UNKNOWN',
       grade: json['grade']?.toString(),
+      stageId: json['stageId'] is int ? json['stageId'] as int : int.tryParse(json['stageId']?.toString() ?? ''),
       isDisqualified: json['isDisqualified'] == true ||
           json['isDisqualified']?.toString() == 'true',
       createdAt: DateTime.parse(json['createdAt']?.toString() ?? DateTime.now().toIso8601String()),
