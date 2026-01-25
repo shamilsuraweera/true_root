@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../batches/batch_detail_page.dart';
 import '../batches/models/batch.dart';
 import '../batches/state/batch_provider.dart';
+import '../products/state/product_provider.dart';
 import '../profile/state/profile_provider.dart';
 import '../requests/state/ownership_requests_provider.dart';
 import 'models/user.dart';
@@ -15,6 +16,10 @@ class UserDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final batchesAsync = ref.watch(_userBatchesProvider(user.id));
+    final products = ref.watch(productListProvider).valueOrNull;
+    final productMap = {
+      for (final product in products ?? []) product.id: product.name,
+    };
 
     return Scaffold(
       appBar: AppBar(title: Text(user.displayName)),
@@ -39,6 +44,7 @@ class UserDetailPage extends ConsumerWidget {
                       (batch) => _UserBatchCard(
                         batch: batch,
                         ownerId: user.id,
+                        productName: productMap[batch.productId],
                       ),
                     )
                     .toList(),
@@ -81,10 +87,12 @@ class _InfoRow extends StatelessWidget {
 class _UserBatchCard extends ConsumerWidget {
   final Batch batch;
   final String ownerId;
+  final String? productName;
 
   const _UserBatchCard({
     required this.batch,
     required this.ownerId,
+    this.productName,
   });
 
   @override
@@ -92,7 +100,7 @@ class _UserBatchCard extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        title: Text('Batch ${batch.id} • ${batch.displayProduct}'),
+        title: Text('Batch ${batch.id} • ${productName ?? batch.displayProduct}'),
         subtitle: Text('${batch.quantity} ${batch.unit} • ${batch.status}'),
         trailing: ElevatedButton(
           onPressed: () => _requestOwnership(context, ref, batch, ownerId),
