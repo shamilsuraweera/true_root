@@ -232,6 +232,7 @@ class BatchApi {
     required int productId,
     required int quantity,
     String? grade,
+    int? ownerId,
   }) async {
     final uri = Uri.parse('$baseUrl/batches');
     final response = await http.post(
@@ -240,6 +241,7 @@ class BatchApi {
       body: jsonEncode({
         'productId': productId,
         'quantity': quantity,
+        if (ownerId != null) 'ownerId': ownerId,
         if (grade != null) 'grade': grade,
       }),
     );
