@@ -4,6 +4,7 @@ import 'batch_detail_page.dart';
 import 'state/batch_provider.dart';
 import '../products/state/product_provider.dart';
 import '../products/models/product.dart';
+import '../profile/state/profile_provider.dart';
 
 class CreateBatchPage extends ConsumerStatefulWidget {
   const CreateBatchPage({super.key});
@@ -139,11 +140,13 @@ class _CreateBatchPageState extends ConsumerState<CreateBatchPage> {
     final grade = _gradeController.text.trim().isEmpty ? null : _gradeController.text.trim();
 
     try {
+      final ownerId = ref.read(currentUserIdProvider);
       final api = ref.read(batchApiProvider);
       final batch = await api.createBatch(
         productId: productId,
         quantity: quantity,
         grade: grade,
+        ownerId: ownerId == null ? null : int.tryParse(ownerId),
       );
       if (!context.mounted) return;
       Navigator.pushReplacement(
