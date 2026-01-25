@@ -7,6 +7,8 @@ import 'models/batch.dart';
 import '../products/state/product_provider.dart';
 import '../home/state/dashboard_provider.dart';
 import 'models/batch_lineage.dart';
+import '../stages/state/stage_provider.dart';
+import '../stages/models/stage.dart';
 
 class BatchDetailPage extends ConsumerWidget {
   final String batchId;
@@ -250,51 +252,65 @@ Future<void> _showUpdateDialog(BuildContext context, WidgetRef ref, Batch batch)
   var quantityText = batch.quantity.toString();
   var statusText = batch.status;
   var gradeText = batch.grade ?? '';
+  int? stageId = batch.stageId;
 
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) {
-      return AlertDialog(
-        title: const Text('Update batch'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              initialValue: quantityText,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Quantity',
-              ),
-              onChanged: (value) => quantityText = value,
+      return Consumer(
+        builder: (context, ref, _) {
+          final stagesAsync = ref.watch(stageListProvider);
+          final stageItems = _buildStageItems(stagesAsync.valueOrNull);
+          return AlertDialog(
+            title: const Text('Update batch'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  initialValue: quantityText,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Quantity',
+                  ),
+                  onChanged: (value) => quantityText = value,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  initialValue: statusText,
+                  decoration: const InputDecoration(
+                    labelText: 'Status',
+                  ),
+                  onChanged: (value) => statusText = value,
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int?>(
+                  initialValue: stageItems.any((item) => item.value == stageId) ? stageId : null,
+                  items: stageItems,
+                  onChanged: (value) => stageId = value,
+                  decoration: const InputDecoration(labelText: 'Stage'),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  initialValue: gradeText,
+                  decoration: const InputDecoration(
+                    labelText: 'Grade (optional)',
+                  ),
+                  onChanged: (value) => gradeText = value,
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              initialValue: statusText,
-              decoration: const InputDecoration(
-                labelText: 'Status',
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Cancel'),
               ),
-              onChanged: (value) => statusText = value,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              initialValue: gradeText,
-              decoration: const InputDecoration(
-                labelText: 'Grade (optional)',
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Update'),
               ),
-              onChanged: (value) => gradeText = value,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Update'),
-          ),
-        ],
+            ],
+          );
+        },
       );
     },
   );
@@ -339,6 +355,10 @@ Future<void> _showUpdateDialog(BuildContext context, WidgetRef ref, Batch batch)
     } else {
       updateTasks.add(api.updateGrade(batch.id, grade).then((_) {}));
     }
+  }
+
+  if (stageId != batch.stageId) {
+    updateTasks.add(api.updateStage(batch.id, stageId).then((_) {}));
   }
 
   if (updateTasks.isEmpty) {
@@ -718,6 +738,26 @@ bool _isLockedBatch(Batch batch) {
         'DISQUALIFIED',
         'DELETED',
       ].contains(batch.status);
+}
+
+List<DropdownMenuItem<int?>> _buildStageItems(List<Stage>? stages) {
+  final items = <DropdownMenuItem<int?>>[
+    const DropdownMenuItem(value: null, child: Text('No stage')),
+  ];
+  if (stages == null) {
+    return items;
+  }
+  final activeStages = stages.where((stage) => stage.active).toList()
+    ..sort((a, b) => a.sequence.compareTo(b.sequence));
+  items.addAll(
+    activeStages.map(
+      (stage) => DropdownMenuItem(
+        value: stage.id,
+        child: Text(stage.name),
+      ),
+    ),
+  );
+  return items;
 }
 
 Future<void> _archiveBatch(BuildContext context, WidgetRef ref, String batchId) async {

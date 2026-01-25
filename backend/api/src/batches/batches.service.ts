@@ -106,6 +106,22 @@ export class BatchesService {
     return saved;
   }
 
+  async changeStage(id: number, stageId?: number | null) {
+    if (stageId === undefined) {
+      throw new BadRequestException('stageId is required');
+    }
+    const batch = await this.getBatch(id);
+    await this.ensureMutable(batch);
+    const previous = batch.stageId ?? null;
+    batch.stageId = stageId ?? null;
+    const saved = await this.repo.save(batch);
+    await this.events.log(id, BatchEventType.STAGE_CHANGED, 'Stage updated', {
+      stageId: batch.stageId,
+      metadata: { stageBefore: previous, stageAfter: batch.stageId },
+    });
+    return saved;
+  }
+
   async changeGrade(id: number, grade: string) {
     const batch = await this.getBatch(id);
     await this.ensureMutable(batch);

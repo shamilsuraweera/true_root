@@ -2,6 +2,7 @@ import { Controller, Post, Get, Patch, Param, Body, Query, Delete, UseGuards } f
 import { BatchesService } from './batches.service';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { UpdateQuantityDto } from './dto/update-quantity.dto';
+import { UpdateStageDto } from './dto/update-stage.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { UpdateGradeDto } from './dto/update-grade.dto';
 import { DisqualifyDto } from './dto/disqualify.dto';
@@ -52,6 +53,11 @@ export class BatchesController {
   @Patch(':id/status')
   changeStatus(@Param('id') id: string, @Body() body: UpdateStatusDto) {
     return this.service.changeStatus(Number(id), body.status);
+  }
+
+  @Patch(':id/stage')
+  changeStage(@Param('id') id: string, @Body() body: UpdateStageDto) {
+    return this.service.changeStage(Number(id), body.stageId);
   }
 
   @Patch(':id/grade')

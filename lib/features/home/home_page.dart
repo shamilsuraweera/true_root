@@ -91,8 +91,8 @@ class HomePage extends ConsumerWidget {
                   children: items
                       .map(
                         (item) => _InfoTile(
-                          title: productMap[item.productId] ?? item.displayProduct,
-                          subtitle: 'Batch ${item.id} • ${item.quantity} ${item.unit}',
+                          title: 'Batch ${item.id} • ${productMap[item.productId] ?? item.displayProduct}',
+                          subtitle: '${item.quantity} ${item.unit}',
                           trailing: _StatusChip(label: item.status),
                         ),
                       )
