@@ -34,6 +34,10 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
     final accountTypeController = TextEditingController(text: user?.accountType ?? '');
     final passwordController = TextEditingController();
     String roleValue = user?.role ?? 'farmer';
+    const accountTypeOptions = ['Individual', 'Company'];
+    String? accountTypeValue = accountTypeOptions.contains(user?.accountType)
+        ? user?.accountType
+        : 'Individual';
 
     final result = await showDialog<bool>(
       context: context,
@@ -102,9 +106,17 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
                         decoration: const InputDecoration(labelText: 'Location'),
                       ),
                       const SizedBox(height: 12),
-                      TextFormField(
-                        controller: accountTypeController,
+                      DropdownButtonFormField<String>(
+                        value: accountTypeValue,
                         decoration: const InputDecoration(labelText: 'Account Type'),
+                        items: const [
+                          DropdownMenuItem(value: 'Individual', child: Text('Individual')),
+                          DropdownMenuItem(value: 'Company', child: Text('Company')),
+                        ],
+                        onChanged: (value) => setState(() {
+                          accountTypeValue = value ?? accountTypeValue;
+                          accountTypeController.text = accountTypeValue ?? '';
+                        }),
                       ),
                     ],
                   ),
