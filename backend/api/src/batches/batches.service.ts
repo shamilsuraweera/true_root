@@ -7,6 +7,7 @@ import { BatchEventsService } from '../batch-events/batch-events.service';
 import { BatchEventType } from '../batch-events/batch-event.entity';
 import { MergeBatchesDto } from './dto/merge-batches.dto';
 import { TransformBatchDto } from './dto/transform-batch.dto';
+import { Stage } from '../stages/stage.entity';
 
 @Injectable()
 export class BatchesService {
@@ -15,6 +16,8 @@ export class BatchesService {
     private readonly repo: Repository<Batch>,
     @InjectRepository(BatchRelation)
     private readonly relations: Repository<BatchRelation>,
+    @InjectRepository(Stage)
+    private readonly stages: Repository<Stage>,
     private readonly events: BatchEventsService,
   ) {}
 
@@ -113,6 +116,18 @@ export class BatchesService {
     const batch = await this.getBatch(id);
     await this.ensureMutable(batch);
     const previous = batch.stageId ?? null;
+    if (stageId !== null) {
+      const nextStage = await this.stages.findOne({ where: { id: stageId } });
+      if (!nextStage) {
+        throw new BadRequestException('Stage not found');
+      }
+      if (previous != null) {
+        const previousStage = await this.stages.findOne({ where: { id: previous } });
+        if (previousStage && nextStage.sequence < previousStage.sequence) {
+          throw new BadRequestException('Stage cannot move backwards');
+        }
+      }
+    }
     batch.stageId = stageId ?? null;
     const saved = await this.repo.save(batch);
     await this.events.log(id, BatchEventType.STAGE_CHANGED, 'Stage updated', {
@@ -228,6 +243,9 @@ export class BatchesService {
 
     const parent = await this.getBatch(id);
     await this.ensureMutable(parent);
+    if (parent.ownerId == null) {
+      throw new BadRequestException('Batch owner is required');
+    }
     const total = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
     if (total <= 0) {
       throw new BadRequestException('Split quantity must be greater than zero');
@@ -281,6 +299,14 @@ export class BatchesService {
       throw new NotFoundException('One or more batches not found');
     }
     await Promise.all(batches.map((batch) => this.ensureMutable(batch)));
+    const ownerId = batches[0].ownerId ?? null;
+    const productId = batches[0].productId;
+    if (batches.some((batch) => batch.ownerId != ownerId)) {
+      throw new BadRequestException('All batches must have the same owner');
+    }
+    if (batches.some((batch) => batch.productId !== productId)) {
+      throw new BadRequestException('All batches must have the same product');
+    }
 
     const totalQuantity = batches.reduce((sum, batch) => sum + Number(batch.quantity), 0);
     const newBatch = await this.createBatchRecord({
@@ -317,6 +343,9 @@ export class BatchesService {
   async transformBatch(id: number, body: TransformBatchDto) {
     const parent = await this.getBatch(id);
     await this.ensureMutable(parent);
+    if (parent.ownerId == null) {
+      throw new BadRequestException('Batch owner is required');
+    }
     const quantity = body.quantity ?? Number(parent.quantity);
     if (quantity <= 0) {
       throw new BadRequestException('Transform quantity must be greater than zero');

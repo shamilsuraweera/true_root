@@ -25,6 +25,12 @@ export class OwnershipRequestsService {
     if (requesterId === ownerId) {
       throw new BadRequestException('Cannot request ownership of your own batch');
     }
+    if (
+      batch.isDisqualified ||
+      ['MERGED', 'TRANSFORMED', 'SPLIT', 'ARCHIVED', 'DELETED'].includes(batch.status)
+    ) {
+      throw new BadRequestException('Batch is not eligible for ownership requests');
+    }
     if (batch.ownerId !== ownerId) {
       throw new BadRequestException('Owner mismatch');
     }
