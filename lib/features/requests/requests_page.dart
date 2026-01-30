@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'models/ownership_request.dart';
 import 'state/ownership_requests_provider.dart';
 import '../batches/state/batch_provider.dart';
+import '../products/state/product_provider.dart';
 
 class RequestsPage extends ConsumerStatefulWidget {
   const RequestsPage({super.key});
@@ -107,6 +108,15 @@ class _InboxCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final batchAsync = ref.watch(batchByIdProvider(request.batchId));
+    final products = ref.watch(productListProvider).valueOrNull;
+    final productMap = {
+      for (final product in products ?? []) product.id: product.name,
+    };
+    final batch = batchAsync.valueOrNull;
+    final productName = batch?.productId != null
+        ? productMap[batch!.productId]
+        : null;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -114,7 +124,11 @@ class _InboxCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Batch ${request.batchId} • ${request.quantity} kg'),
+            Text(
+              'Batch ${request.batchId} • ${productName ?? batch?.displayProduct ?? 'Product'}',
+            ),
+            const SizedBox(height: 4),
+            Text('${request.quantity} ${batch?.unit ?? 'kg'}'),
             const SizedBox(height: 4),
             Text('Requester: ${request.requesterId}'),
             const SizedBox(height: 12),
@@ -193,10 +207,33 @@ class _OutboxCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        title: Text('Batch ${request.batchId} • ${request.quantity} kg'),
+        title: _OutboxTitle(request: request),
         subtitle: Text('Owner: ${request.ownerId}'),
         trailing: Text(request.status),
       ),
+    );
+  }
+}
+
+class _OutboxTitle extends ConsumerWidget {
+  final OwnershipRequest request;
+
+  const _OutboxTitle({required this.request});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final batchAsync = ref.watch(batchByIdProvider(request.batchId));
+    final products = ref.watch(productListProvider).valueOrNull;
+    final productMap = {
+      for (final product in products ?? []) product.id: product.name,
+    };
+    final batch = batchAsync.valueOrNull;
+    final productName = batch?.productId != null
+        ? productMap[batch!.productId]
+        : null;
+    return Text(
+      'Batch ${request.batchId} • ${productName ?? batch?.displayProduct ?? 'Product'}'
+      ' • ${request.quantity} ${batch?.unit ?? 'kg'}',
     );
   }
 }

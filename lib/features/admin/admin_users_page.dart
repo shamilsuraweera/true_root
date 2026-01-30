@@ -107,7 +107,7 @@ class _AdminUsersPageState extends ConsumerState<AdminUsersPage> {
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
-                        value: accountTypeValue,
+                        initialValue: accountTypeValue,
                         decoration: const InputDecoration(labelText: 'Account Type'),
                         items: const [
                           DropdownMenuItem(value: 'Individual', child: Text('Individual')),

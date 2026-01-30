@@ -146,7 +146,7 @@ class _CreateBatchPageState extends ConsumerState<CreateBatchPage> {
         productId: productId,
         quantity: quantity,
         grade: grade,
-        ownerId: ownerId == null ? null : int.tryParse(ownerId),
+        ownerId: int.tryParse(ownerId),
       );
       if (!context.mounted) return;
       Navigator.pushReplacement(
