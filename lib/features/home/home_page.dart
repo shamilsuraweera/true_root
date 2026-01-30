@@ -8,6 +8,7 @@ import '../dashboard/state/dashboard_tab_provider.dart';
 import '../activity/activity_page.dart';
 import '../requests/state/ownership_requests_provider.dart';
 import '../batches/state/batch_provider.dart';
+import '../requests/models/ownership_request.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -62,7 +63,7 @@ class HomePage extends ConsumerWidget {
                           child: _RequestCard(
                             name: 'Requester ${item.requesterId}',
                             batchId: 'Batch ${item.batchId}',
-                            quantity: '${item.quantity} kg',
+                            quantity: _requestQuantityText(ref, item),
                             onReject: () => _rejectRequest(context, ref, item.id),
                             onApprove: () => _approveRequest(context, ref, item.id),
                           ),
@@ -234,6 +235,21 @@ class _RequestCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _requestQuantityText(WidgetRef ref, OwnershipRequest request) {
+  final batchAsync = ref.watch(batchByIdProvider(request.batchId));
+  final products = ref.watch(productListProvider).valueOrNull;
+  final productMap = {
+    for (final product in products ?? []) product.id: product.name,
+  };
+  final batch = batchAsync.valueOrNull;
+  final productName = batch?.productId != null ? productMap[batch!.productId] : null;
+  final unit = batch?.unit ?? 'kg';
+  if (productName != null) {
+    return '${request.quantity} $unit • $productName';
+  }
+  return '${request.quantity} $unit';
 }
 
 class _InfoTile extends StatelessWidget {
