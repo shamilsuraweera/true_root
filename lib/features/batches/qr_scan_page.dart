@@ -63,7 +63,7 @@ class _QrScanPageState extends State<QrScanPage> {
       }
     }
 
-    final matches = RegExp(r'(\\d+)').allMatches(rawValue).toList();
+    final matches = RegExp(r'(\d+)').allMatches(rawValue).toList();
     if (matches.isNotEmpty) {
       return matches.last.group(1);
     }
