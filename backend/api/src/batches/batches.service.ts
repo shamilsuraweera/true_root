@@ -8,6 +8,7 @@ import { BatchEventType } from '../batch-events/batch-event.entity';
 import { MergeBatchesDto } from './dto/merge-batches.dto';
 import { TransformBatchDto } from './dto/transform-batch.dto';
 import { Stage } from '../stages/stage.entity';
+import { User } from '../users/user.entity';
 
 @Injectable()
 export class BatchesService {
@@ -18,6 +19,8 @@ export class BatchesService {
     private readonly relations: Repository<BatchRelation>,
     @InjectRepository(Stage)
     private readonly stages: Repository<Stage>,
+    @InjectRepository(User)
+    private readonly users: Repository<User>,
     private readonly events: BatchEventsService,
   ) {}
 
@@ -223,16 +226,37 @@ export class BatchesService {
     const childIds = children.map((item) => item.childBatchId);
     const batches = await this.repo.findBy({ id: In([...parentIds, ...childIds]) });
     const batchMap = new Map(batches.map((batch) => [batch.id, batch]));
+    const ownerIds = batches.map((batch) => batch.ownerId).filter((id): id is number => id != null);
+    const owners = ownerIds.length > 0 ? await this.users.findBy({ id: In(ownerIds) }) : [];
+    const ownerMap = new Map(owners.map((owner) => [owner.id, owner]));
 
     return {
       parents: parents.map((relation) => ({
         ...relation,
-        batch: batchMap.get(relation.parentBatchId) ?? null,
+        batch: this.attachOwner(batchMap.get(relation.parentBatchId) ?? null, ownerMap),
       })),
       children: children.map((relation) => ({
         ...relation,
-        batch: batchMap.get(relation.childBatchId) ?? null,
+        batch: this.attachOwner(batchMap.get(relation.childBatchId) ?? null, ownerMap),
       })),
+    };
+  }
+
+  private attachOwner(batch: Batch | null, ownerMap: Map<number, User>) {
+    if (!batch || batch.ownerId == null) {
+      return batch;
+    }
+    const owner = ownerMap.get(batch.ownerId);
+    if (!owner) {
+      return batch;
+    }
+    return {
+      ...batch,
+      owner: {
+        id: owner.id,
+        name: owner.name,
+        email: owner.email,
+      },
     };
   }
 
