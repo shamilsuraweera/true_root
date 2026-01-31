@@ -29,7 +29,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
+      appBar: AppBar(
+        title: const Text('Register'),
+        centerTitle: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
