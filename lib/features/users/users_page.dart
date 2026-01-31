@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'state/users_provider.dart';
 import 'user_detail_page.dart';
+import 'models/user.dart';
 
 class UsersPage extends ConsumerStatefulWidget {
   const UsersPage({super.key});
@@ -66,14 +67,13 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                   }
                   return ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                     itemCount: filtered.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1),
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final user = filtered[index];
-                      return ListTile(
-                        title: Text(user.displayName),
-                        subtitle: Text('${user.organizationLabel} • ${user.roleLabel} • ${user.locationLabel}'),
-                        trailing: const Icon(Icons.chevron_right),
+                      return _UserCard(
+                        user: user,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -142,6 +142,64 @@ class _AppSearchField extends StatelessWidget {
           ),
         ),
         onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+class _UserCard extends StatelessWidget {
+  final AppUser user;
+  final VoidCallback onTap;
+
+  const _UserCard({
+    required this.user,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final initial = user.displayName.isNotEmpty ? user.displayName[0].toUpperCase() : '?';
+    return Material(
+      color: colorScheme.surface,
+      elevation: 0.6,
+      borderRadius: BorderRadius.circular(16),
+      shadowColor: colorScheme.shadow.withOpacity(0.12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: colorScheme.primaryContainer,
+                foregroundColor: colorScheme.onPrimaryContainer,
+                child: Text(initial),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user.displayName,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${user.organizationLabel} • ${user.roleLabel} • ${user.locationLabel}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
       ),
     );
   }
