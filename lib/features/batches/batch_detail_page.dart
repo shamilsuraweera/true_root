@@ -814,7 +814,7 @@ Future<void> _requestOwnershipForBatch(
   }
 
   final requesterId = ref.read(currentUserIdProvider);
-  if (requesterId == null || requesterId.isEmpty) {
+  if (requesterId.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('You must be logged in')),
     );
