@@ -43,6 +43,26 @@ export class UsersService {
   async update(id: number, data: UpdateUserDto) {
     const user = await this.getById(id);
     Object.assign(user, data);
+    const members = data.members ?? user.members ?? [];
+    if (members.length > 0) {
+      user.accountType = 'Company';
+      const targetOrg = (data.organization ?? user.organization ?? '').trim();
+      if (targetOrg) {
+        const memberUsers = await this.repo
+          .createQueryBuilder('user')
+          .where('LOWER(user.email) IN (:...emails)', {
+            emails: members.map((email) => email.toLowerCase()),
+          })
+          .getMany();
+        if (memberUsers.length) {
+          for (final memberUser of memberUsers) {
+            memberUser.organization = targetOrg;
+            memberUser.accountType = 'Company';
+          }
+          await this.repo.save(memberUsers);
+        }
+      }
+    }
     return this.repo.save(user);
   }
 
