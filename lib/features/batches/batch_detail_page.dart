@@ -9,6 +9,8 @@ import '../home/state/dashboard_provider.dart';
 import 'models/batch_lineage.dart';
 import '../stages/state/stage_provider.dart';
 import '../stages/models/stage.dart';
+import '../requests/state/ownership_requests_provider.dart';
+import '../profile/state/profile_provider.dart';
 
 class BatchDetailPage extends ConsumerWidget {
   final String batchId;
@@ -141,6 +143,16 @@ class BatchDetailPage extends ConsumerWidget {
                           ?.copyWith(color: Theme.of(context).colorScheme.error),
                     ),
                   ),
+                if (batch.ownerId != null &&
+                    batch.ownerId != ref.watch(currentUserIdProvider))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: OutlinedButton.icon(
+                      onPressed: () => _requestOwnershipForBatch(context, ref, batch),
+                      icon: const Icon(Icons.shopping_cart_outlined),
+                      label: const Text('Request purchase'),
+                    ),
+                  ),
                 Text('Created: ${batch.createdAt}'),
                 const SizedBox(height: 16),
                 Text('QR Code', style: Theme.of(context).textTheme.titleMedium),
@@ -178,6 +190,10 @@ class _BatchLineageSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lineageAsync = ref.watch(batchLineageProvider(batchId));
+    final products = ref.watch(productListProvider).valueOrNull;
+    final Map<int, String> productMap = {
+      for (final product in products ?? []) product.id: product.name,
+    };
     return lineageAsync.when(
       data: (lineage) {
         if (lineage.parents.isEmpty && lineage.children.isEmpty) {
@@ -191,13 +207,25 @@ class _BatchLineageSection extends ConsumerWidget {
             if (lineage.parents.isNotEmpty) ...[
               Text('Parents', style: Theme.of(context).textTheme.labelLarge),
               const SizedBox(height: 4),
-              ...lineage.parents.map((item) => _LineageItem(item: item, showParent: true)),
+              ...lineage.parents.map(
+                (item) => _LineageItem(
+                  item: item,
+                  showParent: true,
+                  productMap: productMap,
+                ),
+              ),
               const SizedBox(height: 12),
             ],
             if (lineage.children.isNotEmpty) ...[
               Text('Children', style: Theme.of(context).textTheme.labelLarge),
               const SizedBox(height: 4),
-              ...lineage.children.map((item) => _LineageItem(item: item, showParent: false)),
+              ...lineage.children.map(
+                (item) => _LineageItem(
+                  item: item,
+                  showParent: false,
+                  productMap: productMap,
+                ),
+              ),
             ],
           ],
         );
@@ -211,10 +239,12 @@ class _BatchLineageSection extends ConsumerWidget {
 class _LineageItem extends StatelessWidget {
   final BatchRelationItem item;
   final bool showParent;
+  final Map<int, String> productMap;
 
   const _LineageItem({
     required this.item,
     required this.showParent,
+    required this.productMap,
   });
 
   @override
@@ -223,6 +253,9 @@ class _LineageItem extends StatelessWidget {
     final relatedId = showParent ? item.parentBatchId : item.childBatchId;
     final quantity = item.quantity;
     final quantityText = quantity == null ? '' : ' • ${quantity.toStringAsFixed(2)}';
+    final productName = batch?.productId != null ? productMap[batch!.productId] : null;
+    final ownerLabel = batch?.ownerName ?? batch?.ownerEmail;
+    final ownerText = ownerLabel == null ? '' : ' • Owner: $ownerLabel';
     return InkWell(
       onTap: () {
         Navigator.push(
@@ -236,8 +269,9 @@ class _LineageItem extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'Batch $relatedId • ${item.relationType}$quantityText'
-                '${batch == null ? '' : ' • ${batch.status}'}',
+                'Batch $relatedId • ${productName ?? batch?.displayProduct ?? 'Product'}'
+                ' • ${item.relationType}$quantityText'
+                '${batch == null ? '' : ' • ${batch.status}'}$ownerText',
               ),
             ),
             const Icon(Icons.chevron_right, size: 18),
@@ -758,6 +792,98 @@ List<DropdownMenuItem<int?>> _buildStageItems(List<Stage>? stages) {
     ),
   );
   return items;
+}
+
+void _invalidateRequestLists(WidgetRef ref) {
+  ref.invalidate(pendingRequestsProvider);
+  ref.invalidate(ownershipInboxProvider);
+  ref.invalidate(ownershipOutboxProvider);
+}
+
+Future<void> _requestOwnershipForBatch(
+  BuildContext context,
+  WidgetRef ref,
+  Batch batch,
+) async {
+  final ownerId = batch.ownerId;
+  if (ownerId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Batch has no owner')),
+    );
+    return;
+  }
+
+  final requesterId = ref.read(currentUserIdProvider);
+  if (requesterId == null || requesterId.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('You must be logged in')),
+    );
+    return;
+  }
+  if (requesterId == ownerId) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('You already own this batch')),
+    );
+    return;
+  }
+
+  var quantityText = batch.quantity.toString();
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Request purchase'),
+      content: TextFormField(
+        initialValue: quantityText,
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(
+          labelText: 'Quantity',
+          hintText: '10',
+        ),
+        onChanged: (value) => quantityText = value,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: const Text('Send'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed != true) return;
+
+  final quantity = double.tryParse(quantityText.trim());
+  if (quantity == null || quantity <= 0) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Enter a valid quantity')),
+    );
+    return;
+  }
+
+  try {
+    final api = ref.read(ownershipRequestsApiProvider);
+    await api.createRequest(
+      batchId: batch.id,
+      requesterId: requesterId,
+      ownerId: ownerId,
+      quantity: quantity,
+    );
+    _invalidateRequestLists(ref);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Request sent')),
+    );
+  } catch (error) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_errorText(error, 'Failed to send request'))),
+    );
+  }
 }
 
 Future<void> _archiveBatch(BuildContext context, WidgetRef ref, String batchId) async {

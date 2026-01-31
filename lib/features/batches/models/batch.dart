@@ -3,6 +3,8 @@ class Batch {
   final String? productName;
   final int? productId;
   final String? ownerId;
+  final String? ownerName;
+  final String? ownerEmail;
   final double quantity;
   final String unit;
   final String status;
@@ -16,6 +18,8 @@ class Batch {
     this.productName,
     this.productId,
     this.ownerId,
+    this.ownerName,
+    this.ownerEmail,
     required this.quantity,
     this.unit = 'kg',
     required this.status,
@@ -39,7 +43,10 @@ class Batch {
     return Batch(
       id: json['id'].toString(),
       productId: json['productId'] is int ? json['productId'] as int : int.tryParse(json['productId']?.toString() ?? ''),
+      productName: json['productName']?.toString(),
       ownerId: json['ownerId']?.toString(),
+      ownerName: json['owner']?['name']?.toString(),
+      ownerEmail: json['owner']?['email']?.toString(),
       quantity: _toDouble(json['quantity']) ?? 0,
       unit: json['unit']?.toString() ?? 'kg',
       status: json['status']?.toString() ?? 'UNKNOWN',
