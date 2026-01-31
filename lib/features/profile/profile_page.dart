@@ -43,8 +43,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const _AppSearchField(hintText: 'Search'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('No notifications')),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(
               ref.watch(themeModeProvider) == ThemeMode.dark
@@ -199,6 +207,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     }
     setState(() {
       _members.add(value);
+      _accountType = 'Company';
       _memberController.clear();
     });
   }
@@ -211,14 +220,29 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     if (_formKey.currentState?.validate() != true) return;
     final api = ref.read(usersApiProvider);
     try {
+      final hasMembers = _members.isNotEmpty;
+      if (hasMembers && _orgController.text.trim().isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Organization is required for Company profiles')),
+        );
+        return;
+      }
+      final accountTypeToSave = hasMembers ? 'Company' : _accountType;
+      if (hasMembers && _accountType != 'Company') {
+        setState(() => _accountType = 'Company');
+      }
       await api.updateUser(userId, {
         'name': _nameController.text.trim(),
         'organization': _orgController.text.trim(),
         'location': _locationController.text.trim(),
-        'accountType': _accountType,
-        'members': _accountType == 'Company' ? _members : [],
+        'accountType': accountTypeToSave,
+        'members': hasMembers ? _members : [],
       });
+      setState(() => _initialized = false);
       ref.invalidate(profileProvider);
+      await ref.read(profileProvider.future);
+      ref.invalidate(usersListProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile updated')),
@@ -243,5 +267,35 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     ref.read(authStorageProvider).clearActiveEmail();
     Navigator.of(context, rootNavigator: true)
         .pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
+  }
+}
+
+class _AppSearchField extends StatelessWidget {
+  final String hintText;
+
+  const _AppSearchField({required this.hintText});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: hintText,
+          prefixIcon: const Icon(Icons.search),
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(999),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(999),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
+        ),
+      ),
+    );
   }
 }

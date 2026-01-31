@@ -25,7 +25,7 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Batches'),
+          title: const _AppSearchField(hintText: 'Search batches'),
           actions: [
             IconButton(
               icon: const Icon(Icons.qr_code_scanner),
@@ -33,6 +33,14 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const QrScanPage()),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.notifications_none),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No notifications')),
                 );
               },
             ),
@@ -90,16 +98,18 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                           ref.read(productListProvider.future),
                         ]);
                       },
-                      child: ListView.builder(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                         itemCount: batches.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final batch = batches[index];
                           final productName = batch.productId != null
                               ? productMap[batch.productId]
                               : null;
-                          return ListTile(
-                            title: Text('Batch ${batch.id} • ${productName ?? batch.displayProduct}'),
-                            subtitle: Text('${batch.quantity} ${batch.unit} • ${batch.status}'),
+                          return _BatchCard(
+                            title: 'Batch ${batch.id} • ${productName ?? batch.displayProduct}',
+                            subtitle: '${batch.quantity} ${batch.unit} • ${batch.status}',
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () {
                               Navigator.push(
@@ -160,8 +170,10 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                     ref.invalidate(ownershipOutboxProvider);
                     await ref.read(ownershipOutboxProvider.future);
                   },
-                  child: ListView.builder(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                     itemCount: pending.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final request = pending[index];
                       return Consumer(
@@ -175,14 +187,12 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                           final productName = batch?.productId != null
                               ? productMap[batch!.productId]
                               : null;
-                          return ListTile(
-                            title: Text(
-                              'Batch ${request.batchId} • ${productName ?? batch?.displayProduct ?? 'Product'}',
-                            ),
-                            subtitle: Text(
-                              '${request.quantity} ${batch?.unit ?? 'kg'} • ${batch?.status ?? request.status}',
-                            ),
-                            trailing: const Icon(Icons.hourglass_top),
+                          return _BatchCard(
+                            title:
+                                'Batch ${request.batchId} • ${productName ?? batch?.displayProduct ?? 'Product'}',
+                            subtitle:
+                                '${request.quantity} ${batch?.unit ?? 'kg'} • ${batch?.status ?? request.status}',
+                            trailing: _StatusPill(label: request.status),
                           );
                         },
                       );
@@ -207,6 +217,119 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AppSearchField extends StatelessWidget {
+  final String hintText;
+
+  const _AppSearchField({required this.hintText});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: hintText,
+          prefixIcon: const Icon(Icons.search),
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(999),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(999),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BatchCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+  final Widget? trailing;
+
+  const _BatchCard({
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Material(
+      color: colorScheme.surface,
+      elevation: 0.6,
+      borderRadius: BorderRadius.circular(16),
+      shadowColor: colorScheme.shadow.withOpacity(0.12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              if (trailing != null) ...[
+                const SizedBox(width: 12),
+                trailing!,
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  final String label;
+
+  const _StatusPill({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: colorScheme.primary.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }
