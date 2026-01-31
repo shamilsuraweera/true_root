@@ -24,7 +24,19 @@ class HomePage extends ConsumerWidget {
     };
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard')),
+      appBar: AppBar(
+        title: const _AppSearchField(hintText: 'Search'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('No notifications')),
+              );
+            },
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(pendingRequestsProvider);
@@ -175,6 +187,36 @@ class _SectionCard extends StatelessWidget {
             const SizedBox(height: 8),
             child,
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AppSearchField extends StatelessWidget {
+  final String hintText;
+
+  const _AppSearchField({required this.hintText});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: hintText,
+          prefixIcon: const Icon(Icons.search),
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(999),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(999),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
         ),
       ),
     );

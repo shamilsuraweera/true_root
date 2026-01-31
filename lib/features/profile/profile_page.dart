@@ -43,8 +43,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: const _AppSearchField(hintText: 'Search'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('No notifications')),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(
               ref.watch(themeModeProvider) == ThemeMode.dark
@@ -243,5 +251,35 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     ref.read(authStorageProvider).clearActiveEmail();
     Navigator.of(context, rootNavigator: true)
         .pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
+  }
+}
+
+class _AppSearchField extends StatelessWidget {
+  final String hintText;
+
+  const _AppSearchField({required this.hintText});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: hintText,
+          prefixIcon: const Icon(Icons.search),
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(999),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(999),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
+        ),
+      ),
+    );
   }
 }

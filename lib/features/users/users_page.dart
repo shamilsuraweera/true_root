@@ -24,7 +24,23 @@ class _UsersPageState extends ConsumerState<UsersPage> {
     final usersAsync = ref.watch(usersListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Users')),
+      appBar: AppBar(
+        title: _AppSearchField(
+          controller: _searchController,
+          hintText: 'Search users',
+          onChanged: (_) => setState(() {}),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('No notifications')),
+              );
+            },
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(usersListProvider);
@@ -32,17 +48,6 @@ class _UsersPageState extends ConsumerState<UsersPage> {
         },
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: TextField(
-                controller: _searchController,
-                decoration: const InputDecoration(
-                  labelText: 'Search users',
-                  prefixIcon: Icon(Icons.search),
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
-            ),
             Expanded(
               child: usersAsync.when(
                 data: (users) {
@@ -99,6 +104,44 @@ class _UsersPageState extends ConsumerState<UsersPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AppSearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hintText;
+  final ValueChanged<String> onChanged;
+
+  const _AppSearchField({
+    required this.controller,
+    required this.hintText,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          hintText: hintText,
+          prefixIcon: const Icon(Icons.search),
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(999),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(999),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
+        ),
+        onChanged: onChanged,
       ),
     );
   }

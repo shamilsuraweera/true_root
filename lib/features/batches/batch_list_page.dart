@@ -25,7 +25,7 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Batches'),
+          title: const _AppSearchField(hintText: 'Search batches'),
           actions: [
             IconButton(
               icon: const Icon(Icons.qr_code_scanner),
@@ -33,6 +33,14 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const QrScanPage()),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.notifications_none),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No notifications')),
                 );
               },
             ),
@@ -206,6 +214,36 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AppSearchField extends StatelessWidget {
+  final String hintText;
+
+  const _AppSearchField({required this.hintText});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: hintText,
+          prefixIcon: const Icon(Icons.search),
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(999),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(999),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+          ),
         ),
       ),
     );
