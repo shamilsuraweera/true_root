@@ -101,21 +101,24 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                       child: ListView.separated(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                         itemCount: batches.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final batch = batches[index];
                           final productName = batch.productId != null
                               ? productMap[batch.productId]
                               : null;
                           return _BatchCard(
-                            title: 'Batch ${batch.id} • ${productName ?? batch.displayProduct}',
-                            subtitle: '${batch.quantity} ${batch.unit} • ${batch.status}',
+                            title:
+                                'Batch ${batch.id} • ${productName ?? batch.displayProduct}',
+                            subtitle:
+                                '${batch.quantity} ${batch.unit} • ${batch.status}',
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => BatchDetailPage(batchId: batch.id),
+                                  builder: (_) =>
+                                      BatchDetailPage(batchId: batch.id),
                                 ),
                               );
                             },
@@ -124,8 +127,10 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                       ),
                     );
                   },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (_, _) => const Center(child: Text('Failed to load products')),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (_, _) =>
+                      const Center(child: Text('Failed to load products')),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -149,7 +154,9 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
             ),
             outboxAsync.when(
               data: (requests) {
-                final pending = requests.where((item) => item.status == 'PENDING').toList();
+                final pending = requests
+                    .where((item) => item.status == 'PENDING')
+                    .toList();
                 if (pending.isEmpty) {
                   return RefreshIndicator(
                     onRefresh: () async {
@@ -173,15 +180,20 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                     itemCount: pending.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final request = pending[index];
                       return Consumer(
                         builder: (context, ref, _) {
-                          final batchAsync = ref.watch(batchByIdProvider(request.batchId));
-                          final products = ref.watch(productListProvider).valueOrNull;
+                          final batchAsync = ref.watch(
+                            batchByIdProvider(request.batchId),
+                          );
+                          final products = ref
+                              .watch(productListProvider)
+                              .valueOrNull;
                           final productMap = {
-                            for (final product in products ?? []) product.id: product.name,
+                            for (final product in products ?? [])
+                              product.id: product.name,
                           };
                           final batch = batchAsync.valueOrNull;
                           final productName = batch?.productId != null
@@ -237,14 +249,21 @@ class _AppSearchField extends StatelessWidget {
           prefixIcon: const Icon(Icons.search),
           filled: true,
           fillColor: Theme.of(context).colorScheme.surface,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.outline,
+            ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.outline,
+            ),
           ),
         ),
       ),
@@ -272,7 +291,7 @@ class _BatchCard extends StatelessWidget {
       color: colorScheme.surface,
       elevation: 0.6,
       borderRadius: BorderRadius.circular(16),
-      shadowColor: colorScheme.shadow.withOpacity(0.12),
+      shadowColor: colorScheme.shadow.withValues(alpha: 0.12),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
@@ -284,24 +303,18 @@ class _BatchCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
+                    Text(title, style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 6),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
               ),
-              if (trailing != null) ...[
-                const SizedBox(width: 12),
-                trailing!,
-              ],
+              if (trailing != null) ...[const SizedBox(width: 12), trailing!],
             ],
           ),
         ),
@@ -321,15 +334,15 @@ class _StatusPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withOpacity(0.12),
+        color: colorScheme.primary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.w600,
-            ),
+          color: colorScheme.primary,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
