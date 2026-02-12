@@ -35,9 +35,9 @@ class _UsersPageState extends ConsumerState<UsersPage> {
           IconButton(
             icon: const Icon(Icons.notifications_none),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('No notifications')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('No notifications')));
             },
           ),
         ],
@@ -131,14 +131,21 @@ class _AppSearchField extends StatelessWidget {
           prefixIcon: const Icon(Icons.search),
           filled: true,
           fillColor: Theme.of(context).colorScheme.surface,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.outline,
+            ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.outline,
+            ),
           ),
         ),
         onChanged: onChanged,
@@ -151,20 +158,19 @@ class _UserCard extends StatelessWidget {
   final AppUser user;
   final VoidCallback onTap;
 
-  const _UserCard({
-    required this.user,
-    required this.onTap,
-  });
+  const _UserCard({required this.user, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final initial = user.displayName.isNotEmpty ? user.displayName[0].toUpperCase() : '?';
+    final initial = user.displayName.isNotEmpty
+        ? user.displayName[0].toUpperCase()
+        : '?';
     return Material(
       color: colorScheme.surface,
       elevation: 0.6,
       borderRadius: BorderRadius.circular(16),
-      shadowColor: colorScheme.shadow.withOpacity(0.12),
+      shadowColor: colorScheme.shadow.withValues(alpha: 0.12),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
@@ -190,8 +196,8 @@ class _UserCard extends StatelessWidget {
                     Text(
                       '${user.organizationLabel} • ${user.roleLabel} • ${user.locationLabel}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),

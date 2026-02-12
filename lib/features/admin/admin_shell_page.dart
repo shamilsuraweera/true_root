@@ -37,7 +37,8 @@ class _AdminShellPageState extends State<AdminShellPage> {
                   'assets/icon/app_icon.png',
                   width: 28,
                   height: 28,
-                  errorBuilder: (context, _, __) => const Icon(Icons.eco, size: 24),
+                  errorBuilder: (context, _, _) =>
+                      const Icon(Icons.eco, size: 24),
                 ),
                 const SizedBox(width: 8),
                 const Text('Admin'),
@@ -49,7 +50,8 @@ class _AdminShellPageState extends State<AdminShellPage> {
               if (isWide)
                 NavigationRail(
                   selectedIndex: _index,
-                  onDestinationSelected: (value) => setState(() => _index = value),
+                  onDestinationSelected: (value) =>
+                      setState(() => _index = value),
                   labelType: NavigationRailLabelType.all,
                   destinations: [
                     for (final destination in _destinations)
@@ -59,9 +61,7 @@ class _AdminShellPageState extends State<AdminShellPage> {
                       ),
                   ],
                 ),
-              Expanded(
-                child: _AdminContent(index: _index),
-              ),
+              Expanded(child: _AdminContent(index: _index)),
             ],
           ),
           bottomNavigationBar: isWide
@@ -87,10 +87,7 @@ class _AdminDestination {
   final String label;
   final IconData icon;
 
-  const _AdminDestination({
-    required this.label,
-    required this.icon,
-  });
+  const _AdminDestination({required this.label, required this.icon});
 }
 
 class _AdminContent extends StatelessWidget {
