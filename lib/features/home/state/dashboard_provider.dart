@@ -29,3 +29,5 @@ final recentBatchesProvider = FutureProvider<List<Batch>>((ref) async {
   final ownerId = ref.read(currentUserIdProvider);
   return api.fetchBatches(limit: 5, ownerId: ownerId);
 });
+
+final dashboardSearchProvider = StateProvider<String>((ref) => '');

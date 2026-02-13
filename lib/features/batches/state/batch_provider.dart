@@ -18,6 +18,8 @@ final ownedBatchListProvider = FutureProvider<List<Batch>>((ref) async {
   return api.fetchBatches(limit: 50, ownerId: ownerId, includeInactive: true);
 });
 
+final batchSearchProvider = StateProvider<String>((ref) => '');
+
 final batchByIdProvider = FutureProvider.family<Batch?, String>((ref, batchId) async {
   final api = ref.watch(batchApiProvider);
   final normalized = _normalizeBatchId(batchId);
