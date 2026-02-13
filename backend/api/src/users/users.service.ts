@@ -55,7 +55,7 @@ export class UsersService {
           })
           .getMany();
         if (memberUsers.length) {
-          for (final memberUser of memberUsers) {
+        for (const memberUser of memberUsers) {
             memberUser.organization = targetOrg;
             memberUser.accountType = 'Company';
           }
