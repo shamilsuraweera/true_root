@@ -5,7 +5,9 @@ import 'batch_detail_page.dart';
 import 'create_batch_page.dart';
 import 'qr_scan_page.dart';
 import '../products/state/product_provider.dart';
+import '../requests/models/ownership_request.dart';
 import '../requests/state/ownership_requests_provider.dart';
+import 'models/batch.dart';
 
 class BatchListPage extends ConsumerStatefulWidget {
   const BatchListPage({super.key});
@@ -15,17 +17,84 @@ class BatchListPage extends ConsumerStatefulWidget {
 }
 
 class _BatchListPageState extends ConsumerState<BatchListPage> {
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController =
+        TextEditingController(text: ref.read(batchSearchProvider));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _handleSearchChanged(String value) {
+    ref.read(batchSearchProvider.notifier).state = value;
+  }
+
+  List<Batch> _filterBatches(
+    List<Batch> items,
+    Map<int, String> productMap,
+    String query,
+  ) {
+    if (query.trim().isEmpty) return items;
+    final normalized = query.toLowerCase();
+    final digits = query.replaceAll(RegExp(r'\D'), '');
+    final queryId = int.tryParse(digits);
+    return items.where((batch) {
+      if (queryId != null && batch.id == queryId.toString()) {
+        return true;
+      }
+      final displayProduct = productMap[batch.productId ?? -1] ?? batch.displayProduct;
+      final text = 'batch ${batch.id} $displayProduct ${batch.status} ${batch.ownerName ?? ''}'
+          .toLowerCase();
+      return text.contains(normalized);
+    }).toList();
+  }
+
+  List<OwnershipRequest> _filterRequests(
+    List<OwnershipRequest> items,
+    String query,
+  ) {
+    if (query.trim().isEmpty) return items;
+    final normalized = query.toLowerCase();
+    final digits = query.replaceAll(RegExp(r'\D'), '');
+    final queryBatchId = int.tryParse(digits)?.toString();
+    return items.where((request) {
+      if (queryBatchId != null && request.batchId == queryBatchId) {
+        return true;
+      }
+      final text = '${request.batchId} ${request.requesterId} ${request.status} ${request.quantity}'
+          .toLowerCase();
+      return text.contains(normalized);
+    }).toList();
+  }
   @override
   Widget build(BuildContext context) {
     final batchesAsync = ref.watch(ownedBatchListProvider);
     final productsAsync = ref.watch(productListProvider);
+    final searchQuery = ref.watch(batchSearchProvider);
+    if (_searchController.text != searchQuery) {
+      _searchController.value = TextEditingValue(
+        text: searchQuery,
+        selection: TextSelection.collapsed(offset: searchQuery.length),
+      );
+    }
     final outboxAsync = ref.watch(ownershipOutboxProvider);
 
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          title: const _AppSearchField(hintText: 'Search batches'),
+          appBar: AppBar(
+            title: _AppSearchField(
+              hintText: 'Search batches',
+              controller: _searchController,
+              onChanged: _handleSearchChanged,
+            ),
           actions: [
             IconButton(
               icon: const Icon(Icons.qr_code_scanner),
@@ -86,9 +155,33 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                 }
                 return productsAsync.when(
                   data: (products) {
-                    final productMap = {
+                    final Map<int, String> productMap = {
                       for (final product in products) product.id: product.name,
                     };
+                    final filteredBatches =
+                        _filterBatches(batches, productMap, searchQuery);
+                    final emptyBatchMessage = searchQuery.isEmpty
+                        ? 'No batches yet'
+                        : 'No matching batches';
+                    if (filteredBatches.isEmpty) {
+                      return RefreshIndicator(
+                        onRefresh: () async {
+                          ref.invalidate(ownedBatchListProvider);
+                          ref.invalidate(productListProvider);
+                          await Future.wait([
+                            ref.read(ownedBatchListProvider.future),
+                            ref.read(productListProvider.future),
+                          ]);
+                        },
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              const SizedBox(height: 200),
+                              Center(child: Text(emptyBatchMessage)),
+                            ],
+                        ),
+                      );
+                    }
                     return RefreshIndicator(
                       onRefresh: () async {
                         ref.invalidate(ownedBatchListProvider);
@@ -100,10 +193,10 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                       },
                       child: ListView.separated(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                        itemCount: batches.length,
+                        itemCount: filteredBatches.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
-                          final batch = batches[index];
+                          final batch = filteredBatches[index];
                           final productName = batch.productId != null
                               ? productMap[batch.productId]
                               : null;
@@ -157,7 +250,11 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                 final pending = requests
                     .where((item) => item.status == 'PENDING')
                     .toList();
-                if (pending.isEmpty) {
+                final filteredPending = _filterRequests(pending, searchQuery);
+                final emptyPendingMessage = searchQuery.isEmpty
+                    ? 'No pending requests'
+                    : 'No matching requests';
+                if (filteredPending.isEmpty) {
                   return RefreshIndicator(
                     onRefresh: () async {
                       ref.invalidate(ownershipOutboxProvider);
@@ -165,9 +262,9 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                     },
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      children: const [
-                        SizedBox(height: 200),
-                        Center(child: Text('No pending requests')),
+                      children: [
+                        const SizedBox(height: 200),
+                        Center(child: Text(emptyPendingMessage)),
                       ],
                     ),
                   );
@@ -179,10 +276,10 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                   },
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                    itemCount: pending.length,
+                    itemCount: filteredPending.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
-                      final request = pending[index];
+                      final request = filteredPending[index];
                       return Consumer(
                         builder: (context, ref, _) {
                           final batchAsync = ref.watch(
@@ -236,14 +333,21 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
 
 class _AppSearchField extends StatelessWidget {
   final String hintText;
+  final TextEditingController? controller;
+  final ValueChanged<String>? onChanged;
 
-  const _AppSearchField({required this.hintText});
+  const _AppSearchField({
+    required this.hintText,
+    this.controller,
+    this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 40,
       child: TextField(
+        controller: controller,
         decoration: InputDecoration(
           hintText: hintText,
           prefixIcon: const Icon(Icons.search),
@@ -266,6 +370,7 @@ class _AppSearchField extends StatelessWidget {
             ),
           ),
         ),
+        onChanged: onChanged,
       ),
     );
   }

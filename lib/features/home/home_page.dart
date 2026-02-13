@@ -8,24 +8,94 @@ import '../dashboard/state/dashboard_tab_provider.dart';
 import '../activity/activity_page.dart';
 import '../requests/state/ownership_requests_provider.dart';
 import '../batches/state/batch_provider.dart';
+import '../batches/models/batch.dart';
 import '../requests/models/ownership_request.dart';
+import 'models/recent_activity.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(text: ref.read(dashboardSearchProvider));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _handleSearchChanged(String value) {
+    ref.read(dashboardSearchProvider.notifier).state = value;
+  }
+
+  List<OwnershipRequest> _filterRequests(List<OwnershipRequest> items, String query) {
+    if (query.isEmpty) return items;
+    final normalized = query.toLowerCase();
+    return items.where((request) {
+      final text = [
+        request.batchId,
+        request.requesterId,
+        request.status,
+        request.note ?? '',
+        request.quantity.toString(),
+      ].join(' ').toLowerCase();
+      return text.contains(normalized);
+    }).toList();
+  }
+
+  List<Batch> _filterBatches(List<Batch> items, String query, Map<int, String> productMap) {
+    if (query.isEmpty) return items;
+    final normalized = query.toLowerCase();
+    return items.where((batch) {
+      final productName = productMap[batch.productId ?? -1] ?? batch.displayProduct;
+      final text = 'Batch ${batch.id} $productName ${batch.status} ${batch.ownerName ?? ''}'.toLowerCase();
+      return text.contains(normalized);
+    }).toList();
+  }
+
+  List<RecentActivity> _filterActivity(List<RecentActivity> items, String query) {
+    if (query.isEmpty) return items;
+    final normalized = query.toLowerCase();
+    return items.where((activity) {
+      final text = '${activity.title} ${activity.subtitle}'.toLowerCase();
+      return text.contains(normalized);
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final searchQuery = ref.watch(dashboardSearchProvider);
+    if (_searchController.text != searchQuery) {
+      _searchController.value = TextEditingValue(
+        text: searchQuery,
+        selection: TextSelection.collapsed(offset: searchQuery.length),
+      );
+    }
     final requestsAsync = ref.watch(pendingRequestsProvider);
     final batchesAsync = ref.watch(recentBatchesProvider);
     final activityAsync = ref.watch(recentActivityProvider);
     final products = ref.watch(productListProvider).valueOrNull;
-    final productMap = {
+    final Map<int, String> productMap = {
       for (final product in products ?? []) product.id: product.name,
     };
 
     return Scaffold(
       appBar: AppBar(
-        title: const _AppSearchField(hintText: 'Search'),
+        title: _AppSearchField(
+          hintText: 'Search',
+          controller: _searchController,
+          onChanged: _handleSearchChanged,
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none),
@@ -52,100 +122,106 @@ class HomePage extends ConsumerWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           children: [
-          _SectionCard(
-            title: 'Purchase Requests',
-            actionLabel: 'View all',
-            onAction: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const RequestsPage()),
-              );
-            },
-            child: requestsAsync.when(
-              data: (items) {
-                final pending = items.where((item) => item.status == 'PENDING').toList();
-                if (pending.isEmpty) {
-                  return const _EmptyState(message: 'No pending requests');
-                }
-                return Column(
-                  children: pending
-                      .map(
-                        (item) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: _RequestCard(
-                            name: 'Requester ${item.requesterId}',
-                            batchId: 'Batch ${item.batchId}',
-                            quantity: _requestQuantityText(ref, item),
-                            onReject: () => _rejectRequest(context, ref, item.id),
-                            onApprove: () => _approveRequest(context, ref, item.id),
+            _SectionCard(
+              title: 'Purchase Requests',
+              actionLabel: 'View all',
+              onAction: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RequestsPage()),
+                );
+              },
+              child: requestsAsync.when(
+                data: (items) {
+                  final pending = items.where((item) => item.status == 'PENDING').toList();
+                  final filtered = _filterRequests(pending, searchQuery);
+                  final emptyMessage = searchQuery.isEmpty ? 'No pending requests' : 'No matching requests';
+                  if (filtered.isEmpty) {
+                    return _EmptyState(message: emptyMessage);
+                  }
+                  return Column(
+                    children: filtered
+                        .map(
+                          (item) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _RequestCard(
+                              name: 'Requester ${item.requesterId}',
+                              batchId: 'Batch ${item.batchId}',
+                              quantity: _requestQuantityText(ref, item),
+                              onReject: () => _rejectRequest(context, ref, item.id),
+                              onApprove: () => _approveRequest(context, ref, item.id),
+                            ),
                           ),
-                        ),
-                      )
-                      .toList(),
+                        )
+                        .toList(),
+                  );
+                },
+                loading: () => const _LoadingState(),
+                error: (_, _) => const _ErrorState(message: 'Failed to load requests'),
+              ),
+            ),
+            const SizedBox(height: 24),
+            _SectionCard(
+              title: 'My Batches',
+              actionLabel: 'View all',
+              onAction: () {
+                ref.read(dashboardTabProvider.notifier).state = 1;
+              },
+              child: batchesAsync.when(
+                data: (items) {
+                  final filtered = _filterBatches(items, searchQuery, productMap);
+                  final emptyMessage = searchQuery.isEmpty ? 'No batches yet' : 'No matching batches';
+                  if (filtered.isEmpty) {
+                    return _EmptyState(message: emptyMessage);
+                  }
+                  return Column(
+                    children: filtered
+                        .map(
+                          (item) => _InfoTile(
+                            title: 'Batch ${item.id} • ${productMap[item.productId] ?? item.displayProduct}',
+                            subtitle: '${item.quantity} ${item.unit}',
+                            trailing: _StatusChip(label: item.status),
+                          ),
+                        )
+                        .toList(),
+                  );
+                },
+                loading: () => const _LoadingState(),
+                error: (_, _) => const _ErrorState(message: 'Failed to load batches'),
+              ),
+            ),
+            const SizedBox(height: 24),
+            _SectionCard(
+              title: 'Recent Activity',
+              actionLabel: 'View all',
+              onAction: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ActivityPage()),
                 );
               },
-              loading: () => const _LoadingState(),
-              error: (_, _) => const _ErrorState(message: 'Failed to load requests'),
+              child: activityAsync.when(
+                data: (items) {
+                  final filtered = _filterActivity(items, searchQuery);
+                  final emptyMessage = searchQuery.isEmpty ? 'No recent activity' : 'No matching activity';
+                  if (filtered.isEmpty) {
+                    return _EmptyState(message: emptyMessage);
+                  }
+                  return Column(
+                    children: filtered
+                        .map(
+                          (item) => _ActivityTile(
+                            title: item.title,
+                            subtitle: item.subtitle,
+                          ),
+                        )
+                        .toList(),
+                  );
+                },
+                loading: () => const _LoadingState(),
+                error: (_, _) => const _ErrorState(message: 'Failed to load activity'),
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          _SectionCard(
-            title: 'My Batches',
-            actionLabel: 'View all',
-            onAction: () {
-              ref.read(dashboardTabProvider.notifier).state = 1;
-            },
-            child: batchesAsync.when(
-              data: (items) {
-                if (items.isEmpty) {
-                  return const _EmptyState(message: 'No batches yet');
-                }
-                return Column(
-                  children: items
-                      .map(
-                        (item) => _InfoTile(
-                          title: 'Batch ${item.id} • ${productMap[item.productId] ?? item.displayProduct}',
-                          subtitle: '${item.quantity} ${item.unit}',
-                          trailing: _StatusChip(label: item.status),
-                        ),
-                      )
-                      .toList(),
-                );
-              },
-              loading: () => const _LoadingState(),
-              error: (_, _) => const _ErrorState(message: 'Failed to load batches'),
-            ),
-          ),
-          const SizedBox(height: 24),
-          _SectionCard(
-            title: 'Recent Activity',
-            actionLabel: 'View all',
-            onAction: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ActivityPage()),
-              );
-            },
-            child: activityAsync.when(
-              data: (items) {
-                if (items.isEmpty) {
-                  return const _EmptyState(message: 'No recent activity');
-                }
-                return Column(
-                  children: items
-                      .map(
-                        (item) => _ActivityTile(
-                          title: item.title,
-                          subtitle: item.subtitle,
-                        ),
-                      )
-                      .toList(),
-                );
-              },
-              loading: () => const _LoadingState(),
-              error: (_, _) => const _ErrorState(message: 'Failed to load activity'),
-            ),
-          ),
           ],
         ),
       ),
@@ -195,14 +271,21 @@ class _SectionCard extends StatelessWidget {
 
 class _AppSearchField extends StatelessWidget {
   final String hintText;
+  final TextEditingController? controller;
+  final ValueChanged<String>? onChanged;
 
-  const _AppSearchField({required this.hintText});
+  const _AppSearchField({
+    required this.hintText,
+    this.controller,
+    this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 40,
       child: TextField(
+        controller: controller,
         decoration: InputDecoration(
           hintText: hintText,
           prefixIcon: const Icon(Icons.search),
@@ -218,6 +301,7 @@ class _AppSearchField extends StatelessWidget {
             borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
           ),
         ),
+        onChanged: onChanged,
       ),
     );
   }
