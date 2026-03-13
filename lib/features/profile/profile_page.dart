@@ -8,6 +8,7 @@ import '../users/models/user.dart';
 import '../users/state/users_provider.dart';
 import 'state/profile_provider.dart';
 import '../../state/theme_state.dart';
+import '../notifications/notifications_sheet.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -25,6 +26,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   static const List<String> _accountTypeOptions = ['Individual', 'Company'];
   final List<String> _members = [];
   final _memberController = TextEditingController();
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
   bool _initialized = false;
 
   @override
@@ -33,24 +36,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     _orgController.dispose();
     _locationController.dispose();
     _memberController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
+    final cachedProfile = ref.watch(cachedProfileProvider);
     final usersAsync = ref.watch(usersListProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const _AppSearchField(hintText: 'Search'),
+        title: _AppSearchField(
+          hintText: 'Search',
+          controller: _searchController,
+          onChanged: (value) {
+            setState(() => _searchQuery = value.trim().toLowerCase());
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('No notifications')),
-              );
+              showNotificationsSheet(context, ref);
             },
           ),
           IconButton(
@@ -83,6 +92,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ..addAll(profile.members);
               _initialized = true;
             }
+
+            final visibleMembers = _searchQuery.isEmpty
+                ? _members
+                : _members
+                    .where((member) => member.toLowerCase().contains(_searchQuery))
+                    .toList();
 
             return Form(
               key: _formKey,
@@ -142,15 +157,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ],
                     ),
                     const SizedBox(height: 8),
-                    ..._members.map(
-                      (member) => ListTile(
-                        title: Text(member),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => _removeMember(member),
+                    if (visibleMembers.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Text('No matching members'),
+                      )
+                    else
+                      ...visibleMembers.map(
+                        (member) => ListTile(
+                          title: Text(member),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => _removeMember(member),
+                          ),
                         ),
                       ),
-                    ),
                   ],
                   const SizedBox(height: 24),
                   if (kIsWeb && auth.role == UserRole.admin) ...[
@@ -177,13 +198,42 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               Center(child: CircularProgressIndicator()),
             ],
           ),
-          error: (_, _) => ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: const [
-              SizedBox(height: 200),
-              Center(child: Text('Failed to load profile')),
-            ],
-          ),
+          error: (_, _) {
+            if (cachedProfile != null) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                children: [
+                  const Text('Offline: showing cached profile'),
+                  const SizedBox(height: 16),
+                  _ProfileInfoRow(label: 'Name', value: cachedProfile.displayName),
+                  _ProfileInfoRow(label: 'Email', value: cachedProfile.email),
+                  _ProfileInfoRow(label: 'Organization', value: cachedProfile.organizationLabel),
+                  _ProfileInfoRow(label: 'Location', value: cachedProfile.locationLabel),
+                  _ProfileInfoRow(
+                    label: 'Account Type',
+                    value: cachedProfile.accountType ?? 'Individual',
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () => ref.invalidate(profileProvider),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              );
+            }
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                const SizedBox(height: 200),
+                const Center(child: Text('Failed to load profile')),
+                TextButton(
+                  onPressed: () => ref.invalidate(profileProvider),
+                  child: const Text('Retry'),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -272,14 +322,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
 class _AppSearchField extends StatelessWidget {
   final String hintText;
+  final TextEditingController? controller;
+  final ValueChanged<String>? onChanged;
 
-  const _AppSearchField({required this.hintText});
+  const _AppSearchField({
+    required this.hintText,
+    this.controller,
+    this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 40,
       child: TextField(
+        controller: controller,
         decoration: InputDecoration(
           hintText: hintText,
           prefixIcon: const Icon(Icons.search),
@@ -295,6 +352,30 @@ class _AppSearchField extends StatelessWidget {
             borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
           ),
         ),
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+class _ProfileInfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _ProfileInfoRow({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(width: 120, child: Text(label)),
+          Expanded(child: Text(value)),
+        ],
       ),
     );
   }

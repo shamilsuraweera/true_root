@@ -6,6 +6,7 @@ import '../batches/state/batch_provider.dart';
 import '../products/state/product_provider.dart';
 import '../profile/state/profile_provider.dart';
 import '../requests/state/ownership_requests_provider.dart';
+import '../notifications/notifications_provider.dart';
 import 'models/user.dart';
 
 class UserDetailPage extends ConsumerWidget {
@@ -51,7 +52,16 @@ class UserDetailPage extends ConsumerWidget {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, _) => const Text('Failed to load batches'),
+            error: (_, _) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Failed to load batches'),
+                TextButton(
+                  onPressed: () => ref.invalidate(_userBatchesProvider(user.id)),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -180,6 +190,10 @@ Future<void> _requestOwnership(
       ownerId: ownerId,
       quantity: quantity,
     );
+    ref.read(notificationsProvider.notifier).add(
+          title: 'Request sent',
+          message: 'Batch ${batch.id} request sent to owner $ownerId.',
+        );
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Request sent')),

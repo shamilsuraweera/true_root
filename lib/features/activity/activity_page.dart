@@ -8,6 +8,7 @@ class ActivityPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activityAsync = ref.watch(recentActivityProvider);
+    final cachedActivity = ref.watch(cachedRecentActivityProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Activity')),
@@ -19,7 +20,7 @@ class ActivityPage extends ConsumerWidget {
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: items.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
+            separatorBuilder: (context, _) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final item = items[index];
               return ListTile(
@@ -31,7 +32,35 @@ class ActivityPage extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => const Center(child: Text('Failed to load activity')),
+        error: (_, _) {
+          if (cachedActivity.isNotEmpty) {
+            return ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: cachedActivity.length,
+              separatorBuilder: (context, _) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final item = cachedActivity[index];
+                return ListTile(
+                  leading: const Icon(Icons.check_circle_outline),
+                  title: Text(item.title),
+                  subtitle: Text(item.subtitle),
+                );
+              },
+            );
+          }
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Failed to load activity'),
+                TextButton(
+                  onPressed: () => ref.invalidate(recentActivityProvider),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

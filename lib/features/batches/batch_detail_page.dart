@@ -10,6 +10,7 @@ import 'models/batch_lineage.dart';
 import '../stages/state/stage_provider.dart';
 import '../stages/models/stage.dart';
 import '../requests/state/ownership_requests_provider.dart';
+import '../notifications/notifications_provider.dart';
 import '../profile/state/profile_provider.dart';
 
 class BatchDetailPage extends ConsumerWidget {
@@ -874,6 +875,10 @@ Future<void> _requestOwnershipForBatch(
       quantity: quantity,
     );
     _invalidateRequestLists(ref);
+    ref.read(notificationsProvider.notifier).add(
+          title: 'Request sent',
+          message: 'Batch ${batch.id} request sent to owner $ownerId.',
+        );
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Request sent')),

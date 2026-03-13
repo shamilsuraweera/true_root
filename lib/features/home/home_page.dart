@@ -11,6 +11,8 @@ import '../batches/state/batch_provider.dart';
 import '../batches/models/batch.dart';
 import '../requests/models/ownership_request.dart';
 import 'models/recent_activity.dart';
+import '../notifications/notifications_sheet.dart';
+import '../notifications/notifications_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -84,6 +86,9 @@ class _HomePageState extends ConsumerState<HomePage> {
     final requestsAsync = ref.watch(pendingRequestsProvider);
     final batchesAsync = ref.watch(recentBatchesProvider);
     final activityAsync = ref.watch(recentActivityProvider);
+    final cachedRequests = ref.watch(cachedPendingRequestsProvider);
+    final cachedBatches = ref.watch(cachedRecentBatchesProvider);
+    final cachedActivity = ref.watch(cachedRecentActivityProvider);
     final products = ref.watch(productListProvider).valueOrNull;
     final Map<int, String> productMap = {
       for (final product in products ?? []) product.id: product.name,
@@ -100,9 +105,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           IconButton(
             icon: const Icon(Icons.notifications_none),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('No notifications')),
-              );
+              showNotificationsSheet(context, ref);
             },
           ),
         ],
@@ -157,7 +160,35 @@ class _HomePageState extends ConsumerState<HomePage> {
                   );
                 },
                 loading: () => const _LoadingState(),
-                error: (_, _) => const _ErrorState(message: 'Failed to load requests'),
+                error: (_, _) {
+                  final fallback = _filterRequests(
+                    cachedRequests.where((item) => item.status == 'PENDING').toList(),
+                    searchQuery,
+                  );
+                  if (fallback.isNotEmpty) {
+                    return Column(
+                      children: [
+                        const _OfflineNote(),
+                        ...fallback.map(
+                          (item) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _RequestCard(
+                              name: 'Requester ${item.requesterId}',
+                              batchId: 'Batch ${item.batchId}',
+                              quantity: _requestQuantityText(ref, item),
+                              onReject: () => _rejectRequest(context, ref, item.id),
+                              onApprove: () => _approveRequest(context, ref, item.id),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return _ErrorState(
+                    message: 'Failed to load requests',
+                    onRetry: () => ref.invalidate(pendingRequestsProvider),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 24),
@@ -187,7 +218,27 @@ class _HomePageState extends ConsumerState<HomePage> {
                   );
                 },
                 loading: () => const _LoadingState(),
-                error: (_, _) => const _ErrorState(message: 'Failed to load batches'),
+                error: (_, _) {
+                  final fallback = _filterBatches(cachedBatches, searchQuery, productMap);
+                  if (fallback.isNotEmpty) {
+                    return Column(
+                      children: [
+                        const _OfflineNote(),
+                        ...fallback.map(
+                          (item) => _InfoTile(
+                            title: 'Batch ${item.id} • ${productMap[item.productId] ?? item.displayProduct}',
+                            subtitle: '${item.quantity} ${item.unit}',
+                            trailing: _StatusChip(label: item.status),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return _ErrorState(
+                    message: 'Failed to load batches',
+                    onRetry: () => ref.invalidate(recentBatchesProvider),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 24),
@@ -219,7 +270,26 @@ class _HomePageState extends ConsumerState<HomePage> {
                   );
                 },
                 loading: () => const _LoadingState(),
-                error: (_, _) => const _ErrorState(message: 'Failed to load activity'),
+                error: (_, _) {
+                  final fallback = _filterActivity(cachedActivity, searchQuery);
+                  if (fallback.isNotEmpty) {
+                    return Column(
+                      children: [
+                        const _OfflineNote(),
+                        ...fallback.map(
+                          (item) => _ActivityTile(
+                            title: item.title,
+                            subtitle: item.subtitle,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return _ErrorState(
+                    message: 'Failed to load activity',
+                    onRetry: () => ref.invalidate(recentActivityProvider),
+                  );
+                },
               ),
             ),
           ],
@@ -434,14 +504,25 @@ class _LoadingState extends StatelessWidget {
 
 class _ErrorState extends StatelessWidget {
   final String message;
+  final VoidCallback? onRetry;
 
-  const _ErrorState({required this.message});
+  const _ErrorState({required this.message, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(message, style: Theme.of(context).textTheme.bodyMedium),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(message, style: Theme.of(context).textTheme.bodyMedium),
+          if (onRetry != null)
+            TextButton(
+              onPressed: onRetry,
+              child: const Text('Retry'),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -456,6 +537,21 @@ class _EmptyState extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Text(message, style: Theme.of(context).textTheme.bodyMedium),
+    );
+  }
+}
+
+class _OfflineNote extends StatelessWidget {
+  const _OfflineNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        'Offline: showing cached data',
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
     );
   }
 }
@@ -490,6 +586,10 @@ Future<void> _approveRequest(BuildContext context, WidgetRef ref, String request
     final api = ref.read(ownershipRequestsApiProvider);
     await api.approve(requestId);
     _invalidateRequests(ref);
+    ref.read(notificationsProvider.notifier).add(
+          title: 'Request approved',
+          message: 'Purchase request $requestId approved.',
+        );
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Request approved')),
@@ -507,6 +607,10 @@ Future<void> _rejectRequest(BuildContext context, WidgetRef ref, String requestI
     final api = ref.read(ownershipRequestsApiProvider);
     await api.reject(requestId);
     _invalidateRequests(ref);
+    ref.read(notificationsProvider.notifier).add(
+          title: 'Request rejected',
+          message: 'Purchase request $requestId rejected.',
+        );
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Request rejected')),

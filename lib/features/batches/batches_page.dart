@@ -9,6 +9,7 @@ class BatchesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final batchesAsync = ref.watch(batchListProvider);
+    final cachedBatches = ref.watch(cachedBatchListProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Batches')),
@@ -30,7 +31,33 @@ class BatchesPage extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => const Center(child: Text('Failed to load batches')),
+        error: (_, _) {
+          if (cachedBatches.isNotEmpty) {
+            return ListView.builder(
+              itemCount: cachedBatches.length,
+              itemBuilder: (context, index) {
+                final Batch batch = cachedBatches[index];
+                return ListTile(
+                  title: Text('Batch ${batch.id} • ${batch.displayProduct}'),
+                  subtitle: Text('${batch.quantity} ${batch.unit}'),
+                  trailing: Text(batch.status),
+                );
+              },
+            );
+          }
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Failed to load batches'),
+                TextButton(
+                  onPressed: () => ref.invalidate(batchListProvider),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

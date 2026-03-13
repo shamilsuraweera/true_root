@@ -8,8 +8,11 @@ final currentUserIdProvider = Provider<String>((ref) {
   return auth.userId ?? '1';
 });
 
+final cachedProfileProvider = StateProvider<AppUser?>((ref) => null);
 final profileProvider = FutureProvider<AppUser>((ref) async {
   final api = ref.watch(usersApiProvider);
   final userId = ref.read(currentUserIdProvider);
-  return api.fetchUser(userId);
+  final user = await api.fetchUser(userId);
+  ref.read(cachedProfileProvider.notifier).state = user;
+  return user;
 });

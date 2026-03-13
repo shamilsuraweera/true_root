@@ -9,14 +9,22 @@ final ownershipRequestsApiProvider = Provider<OwnershipRequestsApi>((ref) {
   return OwnershipRequestsApi(authToken: token);
 });
 
+final cachedOwnershipInboxProvider =
+    StateProvider<List<OwnershipRequest>>((ref) => const []);
 final ownershipInboxProvider = FutureProvider<List<OwnershipRequest>>((ref) async {
   final api = ref.watch(ownershipRequestsApiProvider);
   final ownerId = ref.read(currentUserIdProvider);
-  return api.fetchInbox(ownerId);
+  final items = await api.fetchInbox(ownerId);
+  ref.read(cachedOwnershipInboxProvider.notifier).state = items;
+  return items;
 });
 
+final cachedOwnershipOutboxProvider =
+    StateProvider<List<OwnershipRequest>>((ref) => const []);
 final ownershipOutboxProvider = FutureProvider<List<OwnershipRequest>>((ref) async {
   final api = ref.watch(ownershipRequestsApiProvider);
   final requesterId = ref.read(currentUserIdProvider);
-  return api.fetchOutbox(requesterId);
+  final items = await api.fetchOutbox(requesterId);
+  ref.read(cachedOwnershipOutboxProvider.notifier).state = items;
+  return items;
 });
