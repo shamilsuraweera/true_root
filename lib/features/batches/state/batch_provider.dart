@@ -7,15 +7,21 @@ import '../models/batch_lineage.dart';
 import '../../../state/auth_state.dart';
 import '../../profile/state/profile_provider.dart';
 
+final cachedBatchListProvider = StateProvider<List<Batch>>((ref) => const []);
 final batchListProvider = FutureProvider<List<Batch>>((ref) async {
   final api = ref.watch(batchApiProvider);
-  return api.fetchBatches(limit: 50);
+  final items = await api.fetchBatches(limit: 50);
+  ref.read(cachedBatchListProvider.notifier).state = items;
+  return items;
 });
 
+final cachedOwnedBatchListProvider = StateProvider<List<Batch>>((ref) => const []);
 final ownedBatchListProvider = FutureProvider<List<Batch>>((ref) async {
   final api = ref.watch(batchApiProvider);
   final ownerId = ref.read(currentUserIdProvider);
-  return api.fetchBatches(limit: 50, ownerId: ownerId, includeInactive: true);
+  final items = await api.fetchBatches(limit: 50, ownerId: ownerId, includeInactive: true);
+  ref.read(cachedOwnedBatchListProvider.notifier).state = items;
+  return items;
 });
 
 final batchSearchProvider = StateProvider<String>((ref) => '');

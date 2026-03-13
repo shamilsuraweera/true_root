@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'state/users_provider.dart';
 import 'user_detail_page.dart';
 import 'models/user.dart';
+import '../notifications/notifications_sheet.dart';
 
 class UsersPage extends ConsumerStatefulWidget {
   const UsersPage({super.key});
@@ -23,6 +24,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
   @override
   Widget build(BuildContext context) {
     final usersAsync = ref.watch(usersListProvider);
+    final cachedUsers = ref.watch(cachedUsersListProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -35,9 +37,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
           IconButton(
             icon: const Icon(Icons.notifications_none),
             onPressed: () {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('No notifications')));
+              showNotificationsSheet(context, ref);
             },
           ),
         ],
@@ -69,7 +69,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                     itemCount: filtered.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    separatorBuilder: (context, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final user = filtered[index];
                       return _UserCard(
@@ -93,13 +93,45 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                     Center(child: CircularProgressIndicator()),
                   ],
                 ),
-                error: (_, _) => ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [
-                    SizedBox(height: 200),
-                    Center(child: Text('Failed to load users')),
-                  ],
-                ),
+                error: (_, _) {
+                  if (cachedUsers.isNotEmpty) {
+                    final query = _searchController.text.trim().toLowerCase();
+                    final filtered = query.isEmpty
+                        ? cachedUsers
+                        : cachedUsers.where((user) => user.matches(query)).toList();
+                    return ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      itemCount: filtered.length,
+                      separatorBuilder: (context, _) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final user = filtered[index];
+                        return _UserCard(
+                          user: user,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => UserDetailPage(user: user),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  }
+                  return ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      const SizedBox(height: 200),
+                      Center(child: Text('Failed to load users')),
+                      TextButton(
+                        onPressed: () => ref.invalidate(usersListProvider),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ],

@@ -8,6 +8,7 @@ import '../products/state/product_provider.dart';
 import '../requests/models/ownership_request.dart';
 import '../requests/state/ownership_requests_provider.dart';
 import 'models/batch.dart';
+import '../notifications/notifications_sheet.dart';
 
 class BatchListPage extends ConsumerStatefulWidget {
   const BatchListPage({super.key});
@@ -78,6 +79,11 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
     final batchesAsync = ref.watch(ownedBatchListProvider);
     final productsAsync = ref.watch(productListProvider);
     final searchQuery = ref.watch(batchSearchProvider);
+    final cachedOwnedBatches = ref.watch(cachedOwnedBatchListProvider);
+    final cachedOutbox = ref.watch(cachedOwnershipOutboxProvider);
+    final Map<int, String> cachedProductMap = {
+      for (final product in productsAsync.valueOrNull ?? []) product.id: product.name,
+    };
     if (_searchController.text != searchQuery) {
       _searchController.value = TextEditingValue(
         text: searchQuery,
@@ -105,14 +111,12 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                 );
               },
             ),
-            IconButton(
-              icon: const Icon(Icons.notifications_none),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('No notifications')),
-                );
-              },
-            ),
+          IconButton(
+            icon: const Icon(Icons.notifications_none),
+            onPressed: () {
+              showNotificationsSheet(context, ref);
+            },
+          ),
           ],
           bottom: const TabBar(
             tabs: [
@@ -194,7 +198,7 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                       child: ListView.separated(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                         itemCount: filteredBatches.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        separatorBuilder: (context, _) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final batch = filteredBatches[index];
                           final productName = batch.productId != null
@@ -227,23 +231,62 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, _) => RefreshIndicator(
-                onRefresh: () async {
-                  ref.invalidate(ownedBatchListProvider);
-                  ref.invalidate(productListProvider);
-                  await Future.wait([
-                    ref.read(ownedBatchListProvider.future),
-                    ref.read(productListProvider.future),
-                  ]);
-                },
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [
-                    SizedBox(height: 200),
-                    Center(child: Text('Failed to load batches')),
-                  ],
-                ),
-              ),
+              error: (_, _) {
+                if (cachedOwnedBatches.isNotEmpty) {
+                  final filtered = _filterBatches(
+                    cachedOwnedBatches,
+                    cachedProductMap,
+                    searchQuery,
+                  );
+                  return ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    itemCount: filtered.length,
+                    separatorBuilder: (context, _) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final batch = filtered[index];
+                      final productName = batch.productId != null
+                          ? cachedProductMap[batch.productId]
+                          : null;
+                      return _BatchCard(
+                        title:
+                            'Batch ${batch.id} • ${productName ?? batch.displayProduct}',
+                        subtitle:
+                            '${batch.quantity} ${batch.unit} • ${batch.status}',
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BatchDetailPage(batchId: batch.id),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(ownedBatchListProvider);
+                    ref.invalidate(productListProvider);
+                    await Future.wait([
+                      ref.read(ownedBatchListProvider.future),
+                      ref.read(productListProvider.future),
+                    ]);
+                  },
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      const SizedBox(height: 200),
+                      const Center(child: Text('Failed to load batches')),
+                      TextButton(
+                        onPressed: () => ref.invalidate(ownedBatchListProvider),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
             outboxAsync.when(
               data: (requests) {
@@ -277,7 +320,7 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                     itemCount: filteredPending.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    separatorBuilder: (context, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final request = filteredPending[index];
                       return Consumer(
@@ -310,19 +353,63 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, _) => RefreshIndicator(
-                onRefresh: () async {
-                  ref.invalidate(ownershipOutboxProvider);
-                  await ref.read(ownershipOutboxProvider.future);
-                },
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [
-                    SizedBox(height: 200),
-                    Center(child: Text('Failed to load requests')),
-                  ],
-                ),
-              ),
+              error: (_, _) {
+                if (cachedOutbox.isNotEmpty) {
+                  final pending = cachedOutbox
+                      .where((item) => item.status == 'PENDING')
+                      .toList();
+                  final filteredPending = _filterRequests(pending, searchQuery);
+                  return ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    itemCount: filteredPending.length,
+                    separatorBuilder: (context, _) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final request = filteredPending[index];
+                      return Consumer(
+                        builder: (context, ref, _) {
+                          final batchAsync = ref.watch(
+                            batchByIdProvider(request.batchId),
+                          );
+                          final products =
+                              ref.watch(productListProvider).valueOrNull;
+                          final productMap = {
+                            for (final product in products ?? [])
+                              product.id: product.name,
+                          };
+                          final batch = batchAsync.valueOrNull;
+                          final productName = batch?.productId != null
+                              ? productMap[batch!.productId]
+                              : null;
+                          return _BatchCard(
+                            title:
+                                'Batch ${request.batchId} • ${productName ?? batch?.displayProduct ?? 'Product'}',
+                            subtitle:
+                                '${request.quantity} ${batch?.unit ?? 'kg'} • ${batch?.status ?? request.status}',
+                            trailing: _StatusPill(label: request.status),
+                          );
+                        },
+                      );
+                    },
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(ownershipOutboxProvider);
+                    await ref.read(ownershipOutboxProvider.future);
+                  },
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      const SizedBox(height: 200),
+                      const Center(child: Text('Failed to load requests')),
+                      TextButton(
+                        onPressed: () => ref.invalidate(ownershipOutboxProvider),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ],
         ),

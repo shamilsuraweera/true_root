@@ -37,7 +37,7 @@ class _AdminShellPageState extends State<AdminShellPage> {
                   'assets/icon/app_icon.png',
                   width: 28,
                   height: 28,
-                  errorBuilder: (context, _, _) =>
+                  errorBuilder: (context, error, stackTrace) =>
                       const Icon(Icons.eco, size: 24),
                 ),
                 const SizedBox(width: 8),
