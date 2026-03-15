@@ -11,6 +11,8 @@ export class AdminController {
   @Get('overview')
   overview(@Query('limit') limit?: string) {
     const parsedLimit = limit ? Number(limit) : undefined;
-    return this.service.getOverview(Number.isFinite(parsedLimit) ? parsedLimit : undefined);
+    return this.service.getOverview(
+      Number.isFinite(parsedLimit) ? parsedLimit : undefined,
+    );
   }
 }

@@ -11,8 +11,14 @@ export class Batch {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'product_id' })
-  productId: number;
+  @Column({ name: 'product_id', type: 'int', nullable: true })
+  productId: number | null;
+
+  @Column({ name: 'is_item', default: false })
+  isItem: boolean;
+
+  @Column({ name: 'item_name', type: 'text', nullable: true })
+  itemName: string | null;
 
   @Column({ name: 'owner_id', type: 'int', nullable: true })
   ownerId: number | null;

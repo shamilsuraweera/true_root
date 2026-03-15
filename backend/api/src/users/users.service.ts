@@ -31,7 +31,9 @@ export class UsersService {
   }
 
   async getByEmail(email: string, includePassword = false) {
-    const query = this.repo.createQueryBuilder('user').where('user.email = :email', { email });
+    const query = this.repo
+      .createQueryBuilder('user')
+      .where('user.email = :email', { email });
     if (includePassword) {
       query.addSelect('user.password');
     }
@@ -55,7 +57,7 @@ export class UsersService {
           })
           .getMany();
         if (memberUsers.length) {
-        for (const memberUser of memberUsers) {
+          for (const memberUser of memberUsers) {
             memberUser.organization = targetOrg;
             memberUser.accountType = 'Company';
           }

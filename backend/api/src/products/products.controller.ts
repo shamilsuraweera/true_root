@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../admin/admin.guard';
@@ -13,6 +22,11 @@ export class ProductsController {
   @Get()
   list() {
     return this.service.list();
+  }
+
+  @Get('owners/:ownerId')
+  listByOwner(@Param('ownerId') ownerId: string) {
+    return this.service.listByOwner(Number(ownerId));
   }
 
   @Post()

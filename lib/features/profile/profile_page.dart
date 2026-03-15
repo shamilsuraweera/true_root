@@ -70,10 +70,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
             onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
-          ),
+          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
         ],
       ),
       body: RefreshIndicator(
@@ -86,7 +83,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               _orgController.text = profile.organization ?? '';
               _locationController.text = profile.location ?? '';
               final nextType = profile.accountType ?? 'Individual';
-              _accountType = _accountTypeOptions.contains(nextType) ? nextType : 'Individual';
+              _accountType = _accountTypeOptions.contains(nextType)
+                  ? nextType
+                  : 'Individual';
               _members
                 ..clear()
                 ..addAll(profile.members);
@@ -96,8 +95,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             final visibleMembers = _searchQuery.isEmpty
                 ? _members
                 : _members
-                    .where((member) => member.toLowerCase().contains(_searchQuery))
-                    .toList();
+                      .where(
+                        (member) => member.toLowerCase().contains(_searchQuery),
+                      )
+                      .toList();
 
             return Form(
               key: _formKey,
@@ -105,17 +106,24 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 children: [
-                  const CircleAvatar(radius: 36, child: Icon(Icons.person, size: 36)),
+                  const CircleAvatar(
+                    radius: 36,
+                    child: Icon(Icons.person, size: 36),
+                  ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _nameController,
                     decoration: const InputDecoration(labelText: 'Name'),
-                    validator: (value) => value == null || value.trim().isEmpty ? 'Required' : null,
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Required'
+                        : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _orgController,
-                    decoration: const InputDecoration(labelText: 'Organization'),
+                    decoration: const InputDecoration(
+                      labelText: 'Organization',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -126,18 +134,29 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   DropdownButtonFormField<String>(
                     initialValue: _accountType,
                     items: const [
-                      DropdownMenuItem(value: 'Individual', child: Text('Individual')),
-                      DropdownMenuItem(value: 'Company', child: Text('Company')),
+                      DropdownMenuItem(
+                        value: 'Individual',
+                        child: Text('Individual'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Company',
+                        child: Text('Company'),
+                      ),
                     ],
                     onChanged: (value) {
                       if (value == null) return;
                       setState(() => _accountType = value);
                     },
-                    decoration: const InputDecoration(labelText: 'Account Type'),
+                    decoration: const InputDecoration(
+                      labelText: 'Account Type',
+                    ),
                   ),
                   if (_accountType == 'Company') ...[
                     const SizedBox(height: 16),
-                    Text('Members', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Members',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -176,8 +195,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   const SizedBox(height: 24),
                   if (kIsWeb && auth.role == UserRole.admin) ...[
                     OutlinedButton.icon(
-                      onPressed: () => Navigator.of(context, rootNavigator: true)
-                          .pushNamed(AppRoutes.admin),
+                      onPressed: () => Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).pushNamed(AppRoutes.admin),
                       icon: const Icon(Icons.admin_panel_settings_outlined),
                       label: const Text('Open Admin Panel'),
                     ),
@@ -206,10 +227,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 children: [
                   const Text('Offline: showing cached profile'),
                   const SizedBox(height: 16),
-                  _ProfileInfoRow(label: 'Name', value: cachedProfile.displayName),
+                  _ProfileInfoRow(
+                    label: 'Name',
+                    value: cachedProfile.displayName,
+                  ),
                   _ProfileInfoRow(label: 'Email', value: cachedProfile.email),
-                  _ProfileInfoRow(label: 'Organization', value: cachedProfile.organizationLabel),
-                  _ProfileInfoRow(label: 'Location', value: cachedProfile.locationLabel),
+                  _ProfileInfoRow(
+                    label: 'Organization',
+                    value: cachedProfile.organizationLabel,
+                  ),
+                  _ProfileInfoRow(
+                    label: 'Location',
+                    value: cachedProfile.locationLabel,
+                  ),
                   _ProfileInfoRow(
                     label: 'Account Type',
                     value: cachedProfile.accountType ?? 'Individual',
@@ -243,12 +273,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final value = _memberController.text.trim();
     if (value.isEmpty) return;
     final users = usersAsync.valueOrNull ?? [];
-    final exists = users.any((user) => user.email.toLowerCase() == value.toLowerCase());
+    final exists = users.any(
+      (user) => user.email.toLowerCase() == value.toLowerCase(),
+    );
     if (!exists) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User not found')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('User not found')));
       return;
     }
     if (_members.contains(value)) {
@@ -274,7 +306,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       if (hasMembers && _orgController.text.trim().isEmpty) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Organization is required for Company profiles')),
+          const SnackBar(
+            content: Text('Organization is required for Company profiles'),
+          ),
         );
         return;
       }
@@ -294,14 +328,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       await ref.read(profileProvider.future);
       ref.invalidate(usersListProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile updated')));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to save profile')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to save profile')));
     }
   }
 
@@ -315,8 +349,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   void _logout() {
     ref.read(authProvider.notifier).logout();
     ref.read(authStorageProvider).clearActiveEmail();
-    Navigator.of(context, rootNavigator: true)
-        .pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
   }
 }
 
@@ -342,14 +378,21 @@ class _AppSearchField extends StatelessWidget {
           prefixIcon: const Icon(Icons.search),
           filled: true,
           fillColor: Theme.of(context).colorScheme.surface,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.outline,
+            ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.outline,
+            ),
           ),
         ),
         onChanged: onChanged,
@@ -362,10 +405,7 @@ class _ProfileInfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _ProfileInfoRow({
-    required this.label,
-    required this.value,
-  });
+  const _ProfileInfoRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {

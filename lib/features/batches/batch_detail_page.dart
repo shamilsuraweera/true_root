@@ -29,7 +29,8 @@ class BatchDetailPage extends ConsumerWidget {
         }
 
         final lineageAsync = ref.watch(batchLineageProvider(batch.id));
-        final hasChildren = lineageAsync.valueOrNull?.children.isNotEmpty ?? false;
+        final hasChildren =
+            lineageAsync.valueOrNull?.children.isNotEmpty ?? false;
         final isLocked = _isLockedBatch(batch) || hasChildren;
 
         final products = ref.watch(productListProvider).valueOrNull;
@@ -45,13 +46,17 @@ class BatchDetailPage extends ConsumerWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text('Batch ${batch.id}'),
+            title: Text('${batch.isItem ? 'Item' : 'Batch'} ${batch.id}'),
             actions: [
               PopupMenuButton<String>(
                 onSelected: (value) {
                   if (isLocked) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('This batch is locked and cannot be modified')),
+                      const SnackBar(
+                        content: Text(
+                          'This batch is locked and cannot be modified',
+                        ),
+                      ),
                     );
                     return;
                   }
@@ -66,7 +71,12 @@ class BatchDetailPage extends ConsumerWidget {
                       _showMergeDialog(context, ref, batch.id);
                       break;
                     case 'transform':
-                      _showTransformDialog(context, ref, batch.id, batch.quantity);
+                      _showTransformDialog(
+                        context,
+                        ref,
+                        batch.id,
+                        batch.quantity,
+                      );
                       break;
                     case 'archive':
                       _archiveBatch(context, ref, batch.id);
@@ -120,65 +130,65 @@ class BatchDetailPage extends ConsumerWidget {
               ),
             ],
           ),
-          body: Padding(
+          body: ListView(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  productName ?? batch.displayProduct,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text('Quantity: ${batch.quantity} ${batch.unit}'),
-                Text('Status: ${batch.status}'),
-                if (batch.grade != null && batch.grade!.isNotEmpty) Text('Grade: ${batch.grade}'),
-                if (isLocked)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      'This batch is locked because it is archived/disqualified or has derived batches.',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: Theme.of(context).colorScheme.error),
+            children: [
+              Text(
+                productName ?? batch.displayProduct,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text('Quantity: ${batch.quantity} ${batch.unit}'),
+              Text('Status: ${batch.status}'),
+              if (batch.grade != null && batch.grade!.isNotEmpty)
+                Text('Grade: ${batch.grade}'),
+              if (isLocked)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'This batch is locked because it is archived/disqualified or has derived batches.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.error,
                     ),
                   ),
-                if (batch.ownerId != null &&
-                    batch.ownerId != ref.watch(currentUserIdProvider))
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: OutlinedButton.icon(
-                      onPressed: () => _requestOwnershipForBatch(context, ref, batch),
-                      icon: const Icon(Icons.shopping_cart_outlined),
-                      label: const Text('Request purchase'),
-                    ),
-                  ),
-                Text('Created: ${batch.createdAt}'),
-                const SizedBox(height: 16),
-                Text('QR Code', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                _QrPayloadView(batchId: batch.id),
-                const SizedBox(height: 24),
-                _BatchLineageSection(batchId: batch.id),
-                const SizedBox(height: 24),
-                const Text(
-                  'History',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
-                Expanded(child: BatchHistoryTimeline(batchId: batch.id)),
-              ],
-            ),
+              if (!batch.isItem &&
+                  batch.ownerId != null &&
+                  batch.ownerId != ref.watch(currentUserIdProvider))
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        _requestOwnershipForBatch(context, ref, batch),
+                    icon: const Icon(Icons.shopping_cart_outlined),
+                    label: const Text('Request purchase'),
+                  ),
+                ),
+              Text('Created: ${batch.createdAt}'),
+              const SizedBox(height: 16),
+              Text('QR Code', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              _QrPayloadView(batchId: batch.id),
+              const SizedBox(height: 24),
+              _BatchLineageSection(batchId: batch.id),
+              const SizedBox(height: 24),
+              const Text(
+                'History',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 320,
+                child: BatchHistoryTimeline(batchId: batch.id),
+              ),
+            ],
           ),
         );
       },
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (error, stackTrace) => const Scaffold(
-        body: Center(child: Text('Failed to load batch')),
-      ),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, stackTrace) =>
+          const Scaffold(body: Center(child: Text('Failed to load batch'))),
     );
   }
 }
@@ -253,15 +263,21 @@ class _LineageItem extends StatelessWidget {
     final batch = item.batch;
     final relatedId = showParent ? item.parentBatchId : item.childBatchId;
     final quantity = item.quantity;
-    final quantityText = quantity == null ? '' : ' • ${quantity.toStringAsFixed(2)}';
-    final productName = batch?.productId != null ? productMap[batch!.productId] : null;
+    final quantityText = quantity == null
+        ? ''
+        : ' • ${quantity.toStringAsFixed(2)}';
+    final productName = batch?.productId != null
+        ? productMap[batch!.productId]
+        : null;
     final ownerLabel = batch?.ownerName ?? batch?.ownerEmail;
     final ownerText = ownerLabel == null ? '' : ' • Owner: $ownerLabel';
     return InkWell(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => BatchDetailPage(batchId: relatedId)),
+          MaterialPageRoute(
+            builder: (_) => BatchDetailPage(batchId: relatedId),
+          ),
         );
       },
       child: Padding(
@@ -283,7 +299,11 @@ class _LineageItem extends StatelessWidget {
   }
 }
 
-Future<void> _showUpdateDialog(BuildContext context, WidgetRef ref, Batch batch) async {
+Future<void> _showUpdateDialog(
+  BuildContext context,
+  WidgetRef ref,
+  Batch batch,
+) async {
   var quantityText = batch.quantity.toString();
   var statusText = batch.status;
   var gradeText = batch.grade ?? '';
@@ -304,22 +324,20 @@ Future<void> _showUpdateDialog(BuildContext context, WidgetRef ref, Batch batch)
                 TextFormField(
                   initialValue: quantityText,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Quantity',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Quantity'),
                   onChanged: (value) => quantityText = value,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   initialValue: statusText,
-                  decoration: const InputDecoration(
-                    labelText: 'Status',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Status'),
                   onChanged: (value) => statusText = value,
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int?>(
-                  initialValue: stageItems.any((item) => item.value == stageId) ? stageId : null,
+                  initialValue: stageItems.any((item) => item.value == stageId)
+                      ? stageId
+                      : null,
                   items: stageItems,
                   onChanged: (value) => stageId = value,
                   decoration: const InputDecoration(labelText: 'Stage'),
@@ -357,18 +375,18 @@ Future<void> _showUpdateDialog(BuildContext context, WidgetRef ref, Batch batch)
   final quantity = double.tryParse(quantityText.trim());
   if (quantity == null || quantity <= 0) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Enter a valid quantity')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Enter a valid quantity')));
     return;
   }
 
   final status = statusText.trim();
   if (status.isEmpty) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Status is required')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Status is required')));
     return;
   }
 
@@ -398,9 +416,9 @@ Future<void> _showUpdateDialog(BuildContext context, WidgetRef ref, Batch batch)
 
   if (updateTasks.isEmpty) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No changes to update')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('No changes to update')));
     return;
   }
 
@@ -410,9 +428,9 @@ Future<void> _showUpdateDialog(BuildContext context, WidgetRef ref, Batch batch)
     ref.invalidate(batchHistoryProvider(batch.id));
     ref.invalidate(batchListProvider);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Batch updated')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Batch updated')));
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -497,7 +515,11 @@ Future<void> _showSplitDialog(
   if (total > availableQuantity) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Split total exceeds ${availableQuantity.toStringAsFixed(2)}')),
+      SnackBar(
+        content: Text(
+          'Split total exceeds ${availableQuantity.toStringAsFixed(2)}',
+        ),
+      ),
     );
     return;
   }
@@ -530,9 +552,14 @@ Future<void> _showSplitDialog(
   }
 }
 
-Future<void> _showMergeDialog(BuildContext context, WidgetRef ref, String batchId) async {
+Future<void> _showMergeDialog(
+  BuildContext context,
+  WidgetRef ref,
+  String batchId,
+) async {
   var idsText = batchId;
   var productText = '';
+  var mergedItemNameText = '';
   var gradeText = '';
 
   final result = await showDialog<bool>(
@@ -556,7 +583,7 @@ Future<void> _showMergeDialog(BuildContext context, WidgetRef ref, String batchI
             TextFormField(
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'New product ID',
+                labelText: 'Result batch product ID (optional)',
                 hintText: '1',
               ),
               onChanged: (value) => productText = value,
@@ -564,8 +591,14 @@ Future<void> _showMergeDialog(BuildContext context, WidgetRef ref, String batchI
             const SizedBox(height: 12),
             TextFormField(
               decoration: const InputDecoration(
-                labelText: 'Grade (optional)',
+                labelText: 'Merged item name (for cross-product merge)',
+                hintText: 'Cinnamon Powder',
               ),
+              onChanged: (value) => mergedItemNameText = value,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              decoration: const InputDecoration(labelText: 'Grade (optional)'),
               onChanged: (value) => gradeText = value,
             ),
           ],
@@ -590,29 +623,50 @@ Future<void> _showMergeDialog(BuildContext context, WidgetRef ref, String batchI
 
   final ids = _parseInts(idsText);
   final productId = int.tryParse(productText.trim());
+  final newProductName = mergedItemNameText.trim().isEmpty
+      ? null
+      : mergedItemNameText.trim();
   final grade = gradeText.trim().isEmpty ? null : gradeText.trim();
 
   final uniqueIds = ids.toSet().toList();
-  if (uniqueIds.length < 2 || productId == null) {
+  if (uniqueIds.length < 2 || (productId == null && newProductName == null)) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Enter at least two batch IDs and a product ID')),
+      const SnackBar(
+        content: Text(
+          'Enter at least two batch IDs and either a product ID or merged product name',
+        ),
+      ),
     );
     return;
   }
 
   try {
     final api = ref.read(batchApiProvider);
-    final merged = await api.mergeBatches(batchIds: uniqueIds, productId: productId, grade: grade);
+    final merged = await api.mergeBatches(
+      batchIds: uniqueIds,
+      productId: productId,
+      newProductName: newProductName,
+      grade: grade,
+    );
     if (!context.mounted) return;
     ref.invalidate(batchByIdProvider(batchId));
     ref.invalidate(batchHistoryProvider(batchId));
     ref.invalidate(batchListProvider);
     ref.invalidate(ownedBatchListProvider);
     ref.invalidate(recentBatchesProvider);
+    final mergedBatchId = merged['id']?.toString();
+    if (mergedBatchId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Merge completed')));
+      return;
+    }
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => BatchDetailPage(batchId: merged.id)),
+      MaterialPageRoute(
+        builder: (_) => BatchDetailPage(batchId: mergedBatchId),
+      ),
     );
   } catch (error) {
     if (!context.mounted) return;
@@ -658,9 +712,7 @@ Future<void> _showTransformDialog(
             ),
             const SizedBox(height: 12),
             TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Grade (optional)',
-              ),
+              decoration: const InputDecoration(labelText: 'Grade (optional)'),
               onChanged: (value) => gradeText = value,
             ),
           ],
@@ -689,9 +741,9 @@ Future<void> _showTransformDialog(
 
   if (productId == null) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Enter a valid product ID')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Enter a valid product ID')));
     return;
   }
 
@@ -706,7 +758,11 @@ Future<void> _showTransformDialog(
   if (quantity != null && quantity > availableQuantity) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Quantity exceeds ${availableQuantity.toStringAsFixed(2)}')),
+      SnackBar(
+        content: Text(
+          'Quantity exceeds ${availableQuantity.toStringAsFixed(2)}',
+        ),
+      ),
     );
     return;
   }
@@ -722,9 +778,9 @@ Future<void> _showTransformDialog(
     final transformed = response['transformed'] as Map<String, dynamic>?;
     if (!context.mounted) return;
     if (transformed == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Transform completed')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Transform completed')));
       ref.invalidate(batchByIdProvider(batchId));
       ref.invalidate(batchHistoryProvider(batchId));
       ref.invalidate(batchListProvider);
@@ -786,10 +842,7 @@ List<DropdownMenuItem<int?>> _buildStageItems(List<Stage>? stages) {
     ..sort((a, b) => a.sequence.compareTo(b.sequence));
   items.addAll(
     activeStages.map(
-      (stage) => DropdownMenuItem(
-        value: stage.id,
-        child: Text(stage.name),
-      ),
+      (stage) => DropdownMenuItem(value: stage.id, child: Text(stage.name)),
     ),
   );
   return items;
@@ -808,23 +861,23 @@ Future<void> _requestOwnershipForBatch(
 ) async {
   final ownerId = batch.ownerId;
   if (ownerId == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Batch has no owner')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Batch has no owner')));
     return;
   }
 
   final requesterId = ref.read(currentUserIdProvider);
   if (requesterId.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('You must be logged in')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('You must be logged in')));
     return;
   }
   if (requesterId == ownerId) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('You already own this batch')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('You already own this batch')));
     return;
   }
 
@@ -860,9 +913,9 @@ Future<void> _requestOwnershipForBatch(
   final quantity = double.tryParse(quantityText.trim());
   if (quantity == null || quantity <= 0) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Enter a valid quantity')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Enter a valid quantity')));
     return;
   }
 
@@ -875,14 +928,16 @@ Future<void> _requestOwnershipForBatch(
       quantity: quantity,
     );
     _invalidateRequestLists(ref);
-    ref.read(notificationsProvider.notifier).add(
+    ref
+        .read(notificationsProvider.notifier)
+        .add(
           title: 'Request sent',
           message: 'Batch ${batch.id} request sent to owner $ownerId.',
         );
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Request sent')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Request sent')));
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -891,7 +946,11 @@ Future<void> _requestOwnershipForBatch(
   }
 }
 
-Future<void> _archiveBatch(BuildContext context, WidgetRef ref, String batchId) async {
+Future<void> _archiveBatch(
+  BuildContext context,
+  WidgetRef ref,
+  String batchId,
+) async {
   final confirmed = await _confirmAction(
     context,
     title: 'Archive batch?',
@@ -906,18 +965,22 @@ Future<void> _archiveBatch(BuildContext context, WidgetRef ref, String batchId) 
     if (!context.mounted) return;
     ref.invalidate(batchByIdProvider(batchId));
     ref.invalidate(batchListProvider);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Batch archived')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Batch archived')));
   } catch (_) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to archive batch')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Failed to archive batch')));
   }
 }
 
-Future<void> _disqualifyBatch(BuildContext context, WidgetRef ref, String batchId) async {
+Future<void> _disqualifyBatch(
+  BuildContext context,
+  WidgetRef ref,
+  String batchId,
+) async {
   final reasonController = TextEditingController();
   final confirmed = await showDialog<bool>(
     context: context,
@@ -961,18 +1024,22 @@ Future<void> _disqualifyBatch(BuildContext context, WidgetRef ref, String batchI
     if (!context.mounted) return;
     ref.invalidate(batchByIdProvider(batchId));
     ref.invalidate(batchListProvider);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Batch marked not suitable')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Batch marked not suitable')));
   } catch (_) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to update batch')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Failed to update batch')));
   }
 }
 
-Future<void> _deleteBatch(BuildContext context, WidgetRef ref, String batchId) async {
+Future<void> _deleteBatch(
+  BuildContext context,
+  WidgetRef ref,
+  String batchId,
+) async {
   final confirmed = await _confirmAction(
     context,
     title: 'Delete batch?',
@@ -987,14 +1054,14 @@ Future<void> _deleteBatch(BuildContext context, WidgetRef ref, String batchId) a
     if (!context.mounted) return;
     ref.invalidate(batchListProvider);
     Navigator.of(context).maybePop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Batch deleted')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Batch deleted')));
   } catch (_) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to delete batch')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Failed to delete batch')));
   }
 }
 
@@ -1043,7 +1110,11 @@ List<int> _parseInts(String input) {
 
 List<String> _parseStrings(String input) {
   if (input.trim().isEmpty) return [];
-  return input.split(',').map((value) => value.trim()).where((value) => value.isNotEmpty).toList();
+  return input
+      .split(',')
+      .map((value) => value.trim())
+      .where((value) => value.isNotEmpty)
+      .toList();
 }
 
 class _QrPayloadView extends ConsumerWidget {

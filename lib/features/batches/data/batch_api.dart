@@ -68,7 +68,9 @@ class BatchApi {
       throw Exception('Failed to load batch history');
     }
     final data = jsonDecode(response.body) as List<dynamic>;
-    return data.map((item) => BatchEvent.fromApi(item as Map<String, dynamic>)).toList();
+    return data
+        .map((item) => BatchEvent.fromApi(item as Map<String, dynamic>))
+        .toList();
   }
 
   Future<BatchLineage> fetchBatchLineage(String batchId) async {
@@ -100,10 +102,15 @@ class BatchApi {
       throw Exception('Failed to load batches');
     }
     final data = jsonDecode(response.body) as List<dynamic>;
-    return data.map((item) => Batch.fromApi(item as Map<String, dynamic>)).toList();
+    return data
+        .map((item) => Batch.fromApi(item as Map<String, dynamic>))
+        .toList();
   }
 
-  Future<Map<String, dynamic>> splitBatch(String batchId, List<Map<String, dynamic>> items) async {
+  Future<Map<String, dynamic>> splitBatch(
+    String batchId,
+    List<Map<String, dynamic>> items,
+  ) async {
     final uri = Uri.parse('$baseUrl/batches/$batchId/split');
     final response = await http.post(
       uri,
@@ -116,9 +123,10 @@ class BatchApi {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
-  Future<Batch> mergeBatches({
+  Future<Map<String, dynamic>> mergeBatches({
     required List<int> batchIds,
-    required int productId,
+    int? productId,
+    String? newProductName,
     String? grade,
     String? status,
     int? stageId,
@@ -130,7 +138,9 @@ class BatchApi {
       headers: _headers(),
       body: jsonEncode({
         'batchIds': batchIds,
-        'productId': productId,
+        if (productId != null) 'productId': productId,
+        if (newProductName != null && newProductName.trim().isNotEmpty)
+          'newProductName': newProductName.trim(),
         if (grade != null) 'grade': grade,
         if (status != null) 'status': status,
         if (stageId != null) 'stageId': stageId,
@@ -140,8 +150,7 @@ class BatchApi {
     if (response.statusCode != 201 && response.statusCode != 200) {
       throw Exception(_errorMessage(response, 'Failed to merge batches'));
     }
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    return Batch.fromApi(data);
+    return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
   Future<Map<String, dynamic>> transformBatch({

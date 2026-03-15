@@ -26,7 +26,12 @@ export class BatchEventsService {
     private readonly repo: Repository<BatchEvent>,
   ) {}
 
-  async log(batchId: number, type: BatchEventType, description?: string, details?: BatchEventDetails) {
+  async log(
+    batchId: number,
+    type: BatchEventType,
+    description?: string,
+    details?: BatchEventDetails,
+  ) {
     const event = this.repo.create({
       batchId,
       type,

@@ -28,14 +28,19 @@ export class AuthService {
     if (!matches) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    return this.login(user.id, user.role as UserRole);
+    return this.login(user.id, user.role);
   }
 
-  async register(email: string, password: string, role: UserRole, name?: string) {
+  async register(
+    email: string,
+    password: string,
+    role: UserRole,
+    name?: string,
+  ) {
     const user = await this.users.create(email, role, password);
     if (name) {
       await this.users.update(user.id, { name });
     }
-    return this.login(user.id, user.role as UserRole);
+    return this.login(user.id, user.role);
   }
 }
