@@ -1,7 +1,22 @@
-# true_root
+# True Root
 
-True Root is a Flutter + NestJS supply-chain tracker for batches, ownership requests,
-QR scanning, and admin management.
+True Root is a Flutter + NestJS supply-chain batch tracking system. It covers the full
+batch lifecycle (create, update, split/merge/transform, archive/disqualify), QR-based
+discovery, ownership transfer workflows, and an admin panel for managing users, products,
+and stages.
+
+## Architecture
+
+```mermaid
+graph TD
+    Mobile[Flutter Mobile App] -->|HTTP + JWT| API[NestJS REST API]
+    Web[Flutter Web Admin] -->|HTTP + JWT| API
+    API -->|TypeORM synchronize| DB[(PostgreSQL)]
+    Mobile -->|mobile_scanner| QR[QR Code]
+    QR --> Mobile
+```
+
+**Tech stack:** Flutter · Riverpod · NestJS · TypeORM · PostgreSQL · mobile_scanner
 
 ## Quick Start
 
@@ -47,7 +62,7 @@ npm run start:dev
 
 ```bash
 # create DB/user
-psql -U postgres -f sql/database_create.sql
+psql -U postgres -f sql/create_database.sql
 
 # reset DB (dev)
 psql -U postgres -f sql/reset_database.sql
@@ -55,19 +70,20 @@ psql -U postgres -f sql/reset_database.sql
 
 ## Project Structure
 
-- `lib/` Flutter mobile app (dashboard, batches, requests, users, profile).
-- `backend/api/` NestJS API (auth, batches, ownership requests, admin).
-- `sql/` Database helper scripts (create/reset).
+- `lib/` Flutter mobile + web app (splash, auth, dashboard, batches, requests, users, profile, admin, notifications).
+- `backend/api/` NestJS API (auth, batches, batch-events, ownership-requests, users, products, stages, admin).
+- `sql/` Database scripts (`create_database.sql`, `reset_database.sql`).
+- `assets/` App icon and images.
 
 ## Demo Flow
 
 1. Register or log in.
 2. Create a batch (product, quantity, stage).
 3. View batch details and QR code.
-4. Scan a QR to find a batch.
-5. Request ownership from another user.
-6. Approve or reject requests from the Requests tab.
-7. Use the Admin panel (web) to manage users, products, stages, and audit batches.
+4. Scan a QR code to look up a batch.
+5. Request ownership from a batch found via QR or the Users tab.
+6. Approve or reject incoming requests from the Batches tab → Requests inbox.
+7. Use the Admin panel (web, admin role only) to manage users, products, stages, and audit batch history.
 
 ## API Reference (Summary)
 
@@ -78,6 +94,7 @@ Auth
 - `POST /auth/register`
 
 Batches
+- `POST /batches`
 - `GET /batches` (limit, offset, ownerId, includeInactive)
 - `GET /batches/:id`
 - `PATCH /batches/:id/quantity`
