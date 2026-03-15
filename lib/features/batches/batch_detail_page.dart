@@ -130,58 +130,58 @@ class BatchDetailPage extends ConsumerWidget {
               ),
             ],
           ),
-          body: Padding(
+          body: ListView(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  productName ?? batch.displayProduct,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text('Quantity: ${batch.quantity} ${batch.unit}'),
-                Text('Status: ${batch.status}'),
-                if (batch.grade != null && batch.grade!.isNotEmpty)
-                  Text('Grade: ${batch.grade}'),
-                if (isLocked)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      'This batch is locked because it is archived/disqualified or has derived batches.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
+            children: [
+              Text(
+                productName ?? batch.displayProduct,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text('Quantity: ${batch.quantity} ${batch.unit}'),
+              Text('Status: ${batch.status}'),
+              if (batch.grade != null && batch.grade!.isNotEmpty)
+                Text('Grade: ${batch.grade}'),
+              if (isLocked)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'This batch is locked because it is archived/disqualified or has derived batches.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.error,
                     ),
                   ),
-                if (!batch.isItem &&
-                    batch.ownerId != null &&
-                    batch.ownerId != ref.watch(currentUserIdProvider))
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: OutlinedButton.icon(
-                      onPressed: () =>
-                          _requestOwnershipForBatch(context, ref, batch),
-                      icon: const Icon(Icons.shopping_cart_outlined),
-                      label: const Text('Request purchase'),
-                    ),
-                  ),
-                Text('Created: ${batch.createdAt}'),
-                const SizedBox(height: 16),
-                Text('QR Code', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                _QrPayloadView(batchId: batch.id),
-                const SizedBox(height: 24),
-                _BatchLineageSection(batchId: batch.id),
-                const SizedBox(height: 24),
-                const Text(
-                  'History',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
-                Expanded(child: BatchHistoryTimeline(batchId: batch.id)),
-              ],
-            ),
+              if (!batch.isItem &&
+                  batch.ownerId != null &&
+                  batch.ownerId != ref.watch(currentUserIdProvider))
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        _requestOwnershipForBatch(context, ref, batch),
+                    icon: const Icon(Icons.shopping_cart_outlined),
+                    label: const Text('Request purchase'),
+                  ),
+                ),
+              Text('Created: ${batch.createdAt}'),
+              const SizedBox(height: 16),
+              Text('QR Code', style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              _QrPayloadView(batchId: batch.id),
+              const SizedBox(height: 24),
+              _BatchLineageSection(batchId: batch.id),
+              const SizedBox(height: 24),
+              const Text(
+                'History',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 320,
+                child: BatchHistoryTimeline(batchId: batch.id),
+              ),
+            ],
           ),
         );
       },

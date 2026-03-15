@@ -101,13 +101,15 @@ export class BatchesService {
       });
     }
 
-    return qb.getMany();
+    const batches = await qb.getMany();
+    return this.attachProductNames(batches);
   }
 
   async getBatch(id: number) {
     const batch = await this.repo.findOne({ where: { id } });
     if (!batch) throw new NotFoundException('Batch not found');
-    return batch;
+    const enriched = await this.attachProductNames([batch]);
+    return enriched[0] ?? batch;
   }
 
   async changeQuantity(id: number, quantity: number) {
@@ -269,6 +271,20 @@ export class BatchesService {
       id: In([...parentIds, ...childIds]),
     });
     const batchMap = new Map(batches.map((batch) => [batch.id, batch]));
+    const productIds = Array.from(
+      new Set(
+        batches
+          .map((batch) => batch.productId)
+          .filter((pid): pid is number => pid != null),
+      ),
+    );
+    const products =
+      productIds.length > 0
+        ? await this.products.findBy({ id: In(productIds) })
+        : [];
+    const productMap = new Map(
+      products.map((product) => [product.id, product.name]),
+    );
     const ownerIds = batches
       .map((batch) => batch.ownerId)
       .filter((id): id is number => id != null);
@@ -282,6 +298,7 @@ export class BatchesService {
         batch: this.attachOwner(
           batchMap.get(relation.parentBatchId) ?? null,
           ownerMap,
+          productMap,
         ),
       })),
       children: children.map((relation) => ({
@@ -289,12 +306,17 @@ export class BatchesService {
         batch: this.attachOwner(
           batchMap.get(relation.childBatchId) ?? null,
           ownerMap,
+          productMap,
         ),
       })),
     };
   }
 
-  private attachOwner(batch: Batch | null, ownerMap: Map<number, User>) {
+  private attachOwner(
+    batch: Batch | null,
+    ownerMap: Map<number, User>,
+    productMap?: Map<number, string>,
+  ) {
     if (!batch || batch.ownerId == null) {
       return batch;
     }
@@ -302,13 +324,61 @@ export class BatchesService {
     if (!owner) {
       return batch;
     }
-    return {
+    const withOwner = {
       ...batch,
       owner: {
         id: owner.id,
         name: owner.name,
         email: owner.email,
       },
+    };
+    return this.attachProductName(withOwner, productMap);
+  }
+
+  private async attachProductNames<T extends Batch | Array<Batch>>(batches: T) {
+    if (!Array.isArray(batches) || batches.length === 0) {
+      return batches;
+    }
+    const productIds = Array.from(
+      new Set(
+        batches
+          .map((batch) => batch.productId)
+          .filter((id): id is number => id != null),
+      ),
+    );
+    const products =
+      productIds.length > 0
+        ? await this.products.findBy({ id: In(productIds) })
+        : [];
+    const productMap = new Map(
+      products.map((product) => [product.id, product.name]),
+    );
+    return batches.map((batch) => this.attachProductName(batch, productMap));
+  }
+
+  private attachProductName(
+    batch: Batch | (Batch & { [key: string]: unknown }),
+    productMap?: Map<number, string>,
+  ) {
+    if (!batch) {
+      return batch;
+    }
+    if (batch.isItem) {
+      return {
+        ...batch,
+        productName: batch.itemName ?? null,
+      };
+    }
+    if (batch.productId == null) {
+      return {
+        ...batch,
+        productName: null,
+      };
+    }
+    const resolvedName = productMap?.get(batch.productId) ?? null;
+    return {
+      ...batch,
+      productName: resolvedName,
     };
   }
 
