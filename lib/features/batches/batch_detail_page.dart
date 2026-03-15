@@ -46,7 +46,7 @@ class BatchDetailPage extends ConsumerWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text('Batch ${batch.id}'),
+            title: Text('${batch.isItem ? 'Item' : 'Batch'} ${batch.id}'),
             actions: [
               PopupMenuButton<String>(
                 onSelected: (value) {
@@ -154,7 +154,8 @@ class BatchDetailPage extends ConsumerWidget {
                       ),
                     ),
                   ),
-                if (batch.ownerId != null &&
+                if (!batch.isItem &&
+                    batch.ownerId != null &&
                     batch.ownerId != ref.watch(currentUserIdProvider))
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
@@ -558,7 +559,7 @@ Future<void> _showMergeDialog(
 ) async {
   var idsText = batchId;
   var productText = '';
-  var mergedProductNameText = '';
+  var mergedItemNameText = '';
   var gradeText = '';
 
   final result = await showDialog<bool>(
@@ -590,10 +591,10 @@ Future<void> _showMergeDialog(
             const SizedBox(height: 12),
             TextFormField(
               decoration: const InputDecoration(
-                labelText: 'Merged product name (for cross-product merge)',
-                hintText: 'Cinnamon Tea Powder',
+                labelText: 'Merged item name (for cross-product merge)',
+                hintText: 'Cinnamon Powder',
               ),
-              onChanged: (value) => mergedProductNameText = value,
+              onChanged: (value) => mergedItemNameText = value,
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -622,9 +623,9 @@ Future<void> _showMergeDialog(
 
   final ids = _parseInts(idsText);
   final productId = int.tryParse(productText.trim());
-  final newProductName = mergedProductNameText.trim().isEmpty
+  final newProductName = mergedItemNameText.trim().isEmpty
       ? null
-      : mergedProductNameText.trim();
+      : mergedItemNameText.trim();
   final grade = gradeText.trim().isEmpty ? null : gradeText.trim();
 
   final uniqueIds = ids.toSet().toList();
@@ -654,16 +655,6 @@ Future<void> _showMergeDialog(
     ref.invalidate(batchListProvider);
     ref.invalidate(ownedBatchListProvider);
     ref.invalidate(recentBatchesProvider);
-    ref.invalidate(productListProvider);
-    final mode = merged['mode']?.toString();
-    if (mode == 'PRODUCT_ONLY') {
-      final product = merged['product'] as Map<String, dynamic>?;
-      final productName = product?['name']?.toString() ?? 'Merged product';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Created product: $productName')));
-      return;
-    }
     final mergedBatchId = merged['id']?.toString();
     if (mergedBatchId == null) {
       ScaffoldMessenger.of(

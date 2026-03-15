@@ -60,6 +60,7 @@ export class BatchesService {
     grade?: string,
     ownerId?: number,
   ) {
+    await this.assertProductExists(productId);
     const saved = await this.createBatchRecord({
       productId,
       quantity,
@@ -395,29 +396,39 @@ export class BatchesService {
     }
 
     const sourceProductIds = Array.from(
-      new Set(batches.map((batch) => batch.productId)),
+      new Set(
+        batches
+          .map((batch) => batch.productId)
+          .filter((id): id is number => id != null),
+      ),
     );
-    const mergedProductName = body.newProductName?.trim();
-    const shouldCreateProductOnly =
-      sourceProductIds.length > 1 || !!mergedProductName;
+    const mergedItemName = body.newProductName?.trim();
+    const shouldCreateItem = sourceProductIds.length > 1 || !!mergedItemName;
 
-    if (shouldCreateProductOnly) {
+    if (shouldCreateItem) {
       if (ownerId == null) {
         throw new BadRequestException('Batch owner is required');
       }
 
-      const name = await this.reserveMergedProductName(
-        mergedProductName,
+      const itemName = await this.reserveMergedItemName(
+        mergedItemName,
         sourceProductIds,
       );
-      const mergedProduct = await this.products.save(
-        this.products.create({
-          name,
-          ownerId,
-          isMergedProduct: true,
-          sourceProductIds,
-        }),
+      const totalQuantity = batches.reduce(
+        (sum, batch) => sum + Number(batch.quantity),
+        0,
       );
+      const newItemBatch = await this.createBatchRecord({
+        productId: null,
+        quantity: totalQuantity,
+        grade: body.grade ?? null,
+        status: body.status ?? 'CREATED',
+        unit: body.unit ?? batches[0].unit,
+        stageId: body.stageId ?? null,
+        ownerId,
+        isItem: true,
+        itemName,
+      });
 
       for (const batch of batches) {
         const previousStatus = batch.status;
@@ -425,28 +436,44 @@ export class BatchesService {
         batch.status = 'MERGED';
         batch.quantity = 0;
         await this.repo.save(batch);
+        await this.createRelation(
+          batch.id,
+          newItemBatch.id,
+          'MERGE',
+          Number(previousQuantity),
+        );
         await this.events.log(
           batch.id,
           BatchEventType.MERGED,
-          `Merged into product ${mergedProduct.id}`,
+          `Merged into item batch ${newItemBatch.id}`,
           {
             statusBefore: previousStatus,
             statusAfter: batch.status,
             quantityBefore: previousQuantity,
             quantityAfter: batch.quantity,
             metadata: {
-              targetProductId: mergedProduct.id,
-              targetProductName: mergedProduct.name,
+              targetItemBatchId: newItemBatch.id,
+              targetItemName: newItemBatch.itemName,
             },
           },
         );
       }
 
-      return {
-        mode: 'PRODUCT_ONLY',
-        product: mergedProduct,
-        sourceBatchIds: uniqueIds,
-      };
+      await this.events.log(
+        newItemBatch.id,
+        BatchEventType.MERGED,
+        `Merged item created from batches ${uniqueIds.join(', ')}`,
+        {
+          quantityAfter: newItemBatch.quantity,
+          metadata: {
+            sources: uniqueIds,
+            sourceProductIds,
+            itemName: newItemBatch.itemName,
+          },
+        },
+      );
+
+      return newItemBatch;
     }
 
     if (!body.productId) {
@@ -454,6 +481,7 @@ export class BatchesService {
         'productId is required when merging into a new batch',
       );
     }
+    await this.assertProductExists(body.productId);
     const productId = batches[0].productId;
     if (batches.some((batch) => batch.productId !== productId)) {
       throw new BadRequestException(
@@ -511,16 +539,18 @@ export class BatchesService {
     return newBatch;
   }
 
-  private async reserveMergedProductName(
+  private async reserveMergedItemName(
     preferredName: string | undefined,
     sourceProductIds: number[],
   ): Promise<string> {
     const baseName =
-      preferredName?.trim() || `Merged Product ${sourceProductIds.join('-')}`;
+      preferredName?.trim() || `Merged Item ${sourceProductIds.join('-')}`;
     let candidate = baseName;
     let counter = 2;
 
-    while (await this.products.findOne({ where: { name: candidate } })) {
+    while (
+      await this.repo.findOne({ where: { isItem: true, itemName: candidate } })
+    ) {
       candidate = `${baseName} (${counter})`;
       counter += 1;
     }
@@ -529,6 +559,7 @@ export class BatchesService {
   }
 
   async transformBatch(id: number, body: TransformBatchDto) {
+    await this.assertProductExists(body.productId);
     const parent = await this.getBatch(id);
     await this.ensureMutable(parent);
     if (parent.ownerId == null) {
@@ -595,13 +626,15 @@ export class BatchesService {
   }
 
   private async createBatchRecord(params: {
-    productId: number;
+    productId: number | null;
     quantity: number;
     grade: string | null;
     status: string;
     unit: string;
     stageId: number | null;
     ownerId: number | null;
+    isItem?: boolean;
+    itemName?: string | null;
   }) {
     const batchCode = this.buildBatchCode();
     const batch = this.repo.create({
@@ -614,6 +647,8 @@ export class BatchesService {
       status: params.status,
       stageId: params.stageId,
       isDisqualified: false,
+      isItem: params.isItem ?? false,
+      itemName: params.itemName ?? null,
     });
 
     let saved = await this.repo.save(batch);
@@ -635,5 +670,12 @@ export class BatchesService {
       quantity: quantity ?? null,
     });
     return this.relations.save(relation);
+  }
+
+  private async assertProductExists(productId: number) {
+    const product = await this.products.findOne({ where: { id: productId } });
+    if (!product) {
+      throw new BadRequestException('Product not found');
+    }
   }
 }

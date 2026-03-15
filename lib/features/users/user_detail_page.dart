@@ -17,7 +17,6 @@ class UserDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final batchesAsync = ref.watch(_userBatchesProvider(user.id));
-    final ownerProductsAsync = ref.watch(ownerProductListProvider(user.id));
     final products = ref.watch(productListProvider).valueOrNull;
     final productMap = {
       for (final product in products ?? []) product.id: product.name,
@@ -33,49 +32,54 @@ class UserDetailPage extends ConsumerWidget {
           _InfoRow(label: 'Organization', value: user.organizationLabel),
           _InfoRow(label: 'Location', value: user.locationLabel),
           const SizedBox(height: 24),
-          Text('Products', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          ownerProductsAsync.when(
-            data: (ownerProducts) {
-              if (ownerProducts.isEmpty) {
-                return const Text('No merged products found');
-              }
-              return Column(
-                children: ownerProducts
-                    .map(
-                      (product) => Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          title: Text(product.name),
-                          subtitle: Text('Product ID: ${product.id}'),
-                          leading: const Icon(Icons.inventory_2_outlined),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, _) => const Text('Failed to load products'),
-          ),
-          const SizedBox(height: 24),
-          Text('Batches', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
           batchesAsync.when(
             data: (batches) {
               if (batches.isEmpty) {
                 return const Text('No batches found');
               }
+              final items = batches.where((batch) => batch.isItem).toList();
+              final regularBatches = batches
+                  .where((batch) => !batch.isItem)
+                  .toList();
               return Column(
-                children: batches
-                    .map(
-                      (batch) => _UserBatchCard(
-                        batch: batch,
-                        ownerId: user.id,
-                        productName: productMap[batch.productId],
-                      ),
-                    )
-                    .toList(),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: batches.isEmpty
+                    ? const []
+                    : [
+                        Text(
+                          'Items',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        if (items.isEmpty)
+                          const Text('No items found')
+                        else
+                          ...items.map(
+                            (batch) => _UserBatchCard(
+                              batch: batch,
+                              ownerId: user.id,
+                              productName: productMap[batch.productId],
+                              allowRequest: false,
+                              titlePrefix: 'Item',
+                            ),
+                          ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Batches',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        if (regularBatches.isEmpty)
+                          const Text('No batches found')
+                        else
+                          ...regularBatches.map(
+                            (batch) => _UserBatchCard(
+                              batch: batch,
+                              ownerId: user.id,
+                              productName: productMap[batch.productId],
+                            ),
+                          ),
+                      ],
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -129,11 +133,15 @@ class _UserBatchCard extends ConsumerWidget {
   final Batch batch;
   final String ownerId;
   final String? productName;
+  final bool allowRequest;
+  final String titlePrefix;
 
   const _UserBatchCard({
     required this.batch,
     required this.ownerId,
     this.productName,
+    this.allowRequest = true,
+    this.titlePrefix = 'Batch',
   });
 
   @override
@@ -142,13 +150,16 @@ class _UserBatchCard extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         title: Text(
-          'Batch ${batch.id} • ${productName ?? batch.displayProduct}',
+          '$titlePrefix ${batch.id} • ${productName ?? batch.displayProduct}',
         ),
         subtitle: Text('${batch.quantity} ${batch.unit} • ${batch.status}'),
-        trailing: ElevatedButton(
-          onPressed: () => _requestOwnership(context, ref, batch, ownerId),
-          child: const Text('Request'),
-        ),
+        trailing: allowRequest
+            ? ElevatedButton(
+                onPressed: () =>
+                    _requestOwnership(context, ref, batch, ownerId),
+                child: const Text('Request'),
+              )
+            : null,
         onTap: () {
           Navigator.push(
             context,

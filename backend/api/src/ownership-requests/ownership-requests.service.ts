@@ -35,6 +35,11 @@ export class OwnershipRequestsService {
   ) {
     const batch = await this.batches.findOne({ where: { id: batchId } });
     if (!batch) throw new NotFoundException('Batch not found');
+    if (batch.isItem) {
+      throw new BadRequestException(
+        'Ownership requests are not allowed for items',
+      );
+    }
     if (requesterId === ownerId) {
       throw new BadRequestException(
         'Cannot request ownership of your own batch',

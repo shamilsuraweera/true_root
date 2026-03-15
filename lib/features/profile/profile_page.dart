@@ -6,7 +6,6 @@ import '../../state/auth_state.dart';
 import '../auth/state/auth_provider.dart';
 import '../users/models/user.dart';
 import '../users/state/users_provider.dart';
-import '../products/state/product_provider.dart';
 import 'state/profile_provider.dart';
 import '../../state/theme_state.dart';
 import '../notifications/notifications_sheet.dart';
@@ -100,9 +99,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         (member) => member.toLowerCase().contains(_searchQuery),
                       )
                       .toList();
-            final myProductsAsync = ref.watch(
-              ownerProductListProvider(profile.id),
-            );
 
             return Form(
               key: _formKey,
@@ -196,36 +192,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         ),
                       ),
                   ],
-                  const SizedBox(height: 16),
-                  Text(
-                    'My Products',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  myProductsAsync.when(
-                    data: (products) {
-                      if (products.isEmpty) {
-                        return const Text('No merged products yet');
-                      }
-                      return Column(
-                        children: products
-                            .map(
-                              (product) => ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                leading: const Icon(Icons.inventory_2_outlined),
-                                title: Text(product.name),
-                                subtitle: Text('Product ID: ${product.id}'),
-                              ),
-                            )
-                            .toList(),
-                      );
-                    },
-                    loading: () => const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: LinearProgressIndicator(minHeight: 2),
-                    ),
-                    error: (_, _) => const Text('Failed to load products'),
-                  ),
                   const SizedBox(height: 24),
                   if (kIsWeb && auth.role == UserRole.admin) ...[
                     OutlinedButton.icon(
