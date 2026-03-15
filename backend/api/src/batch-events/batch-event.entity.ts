@@ -37,13 +37,30 @@ export class BatchEvent {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  @Column({ name: 'quantity_before', type: 'numeric', precision: 14, scale: 3, nullable: true })
+  @Column({
+    name: 'quantity_before',
+    type: 'numeric',
+    precision: 14,
+    scale: 3,
+    nullable: true,
+  })
   quantityBefore: number | null;
 
-  @Column({ name: 'quantity_after', type: 'numeric', precision: 14, scale: 3, nullable: true })
+  @Column({
+    name: 'quantity_after',
+    type: 'numeric',
+    precision: 14,
+    scale: 3,
+    nullable: true,
+  })
   quantityAfter: number | null;
 
-  @Column({ name: 'status_before', type: 'varchar', length: 50, nullable: true })
+  @Column({
+    name: 'status_before',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
   statusBefore: string | null;
 
   @Column({ name: 'status_after', type: 'varchar', length: 50, nullable: true })

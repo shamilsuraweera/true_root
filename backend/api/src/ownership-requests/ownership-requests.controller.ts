@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { OwnershipRequestsService } from './ownership-requests.service';
 import { CreateOwnershipRequestDto } from './dto/create-ownership-request.dto';
 import { UpdateOwnershipRequestDto } from './dto/update-ownership-request.dto';
@@ -30,7 +39,10 @@ export class OwnershipRequestsController {
   }
 
   @Get('outbox')
-  outbox(@Query('requesterId') requesterId: string, @Query('limit') limit?: string) {
+  outbox(
+    @Query('requesterId') requesterId: string,
+    @Query('limit') limit?: string,
+  ) {
     const parsedLimit = limit ? Number(limit) : undefined;
     return this.service.listOutbox(
       Number(requesterId),

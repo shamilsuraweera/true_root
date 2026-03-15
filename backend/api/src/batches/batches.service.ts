@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Batch } from './batch.entity';
@@ -9,6 +13,7 @@ import { MergeBatchesDto } from './dto/merge-batches.dto';
 import { TransformBatchDto } from './dto/transform-batch.dto';
 import { Stage } from '../stages/stage.entity';
 import { User } from '../users/user.entity';
+import { Product } from '../products/product.entity';
 
 @Injectable()
 export class BatchesService {
@@ -21,13 +26,17 @@ export class BatchesService {
     private readonly stages: Repository<Stage>,
     @InjectRepository(User)
     private readonly users: Repository<User>,
+    @InjectRepository(Product)
+    private readonly products: Repository<Product>,
     private readonly events: BatchEventsService,
   ) {}
 
   private isLocked(batch: Batch) {
     return (
       batch.isDisqualified ||
-      ['MERGED', 'TRANSFORMED', 'SPLIT', 'ARCHIVED', 'DELETED'].includes(batch.status)
+      ['MERGED', 'TRANSFORMED', 'SPLIT', 'ARCHIVED', 'DELETED'].includes(
+        batch.status,
+      )
     );
   }
 
@@ -35,13 +44,22 @@ export class BatchesService {
     if (this.isLocked(batch)) {
       throw new BadRequestException('Batch is locked and cannot be modified');
     }
-    const childrenCount = await this.relations.count({ where: { parentBatchId: batch.id } });
+    const childrenCount = await this.relations.count({
+      where: { parentBatchId: batch.id },
+    });
     if (childrenCount > 0) {
-      throw new BadRequestException('Batch has derived batches and cannot be modified');
+      throw new BadRequestException(
+        'Batch has derived batches and cannot be modified',
+      );
     }
   }
 
-  async createBatch(productId: number, quantity: number, grade?: string, ownerId?: number) {
+  async createBatch(
+    productId: number,
+    quantity: number,
+    grade?: string,
+    ownerId?: number,
+  ) {
     const saved = await this.createBatchRecord({
       productId,
       quantity,
@@ -59,7 +77,12 @@ export class BatchesService {
     return saved;
   }
 
-  async listBatches(limit = 20, offset = 0, ownerId?: number, includeInactive = false) {
+  async listBatches(
+    limit = 20,
+    offset = 0,
+    ownerId?: number,
+    includeInactive = false,
+  ) {
     const qb = this.repo
       .createQueryBuilder('batch')
       .orderBy('batch.createdAt', 'DESC')
@@ -92,10 +115,15 @@ export class BatchesService {
     const previous = batch.quantity;
     batch.quantity = quantity;
     const saved = await this.repo.save(batch);
-    await this.events.log(id, BatchEventType.QUANTITY_CHANGED, `Quantity set to ${quantity}`, {
-      quantityBefore: previous,
-      quantityAfter: quantity,
-    });
+    await this.events.log(
+      id,
+      BatchEventType.QUANTITY_CHANGED,
+      `Quantity set to ${quantity}`,
+      {
+        quantityBefore: previous,
+        quantityAfter: quantity,
+      },
+    );
     return saved;
   }
 
@@ -105,10 +133,15 @@ export class BatchesService {
     const previous = batch.status;
     batch.status = status;
     const saved = await this.repo.save(batch);
-    await this.events.log(id, BatchEventType.STATUS_CHANGED, `Status set to ${status}`, {
-      statusBefore: previous,
-      statusAfter: status,
-    });
+    await this.events.log(
+      id,
+      BatchEventType.STATUS_CHANGED,
+      `Status set to ${status}`,
+      {
+        statusBefore: previous,
+        statusAfter: status,
+      },
+    );
     return saved;
   }
 
@@ -125,7 +158,9 @@ export class BatchesService {
         throw new BadRequestException('Stage not found');
       }
       if (previous != null) {
-        const previousStage = await this.stages.findOne({ where: { id: previous } });
+        const previousStage = await this.stages.findOne({
+          where: { id: previous },
+        });
         if (previousStage && nextStage.sequence < previousStage.sequence) {
           throw new BadRequestException('Stage cannot move backwards');
         }
@@ -146,10 +181,15 @@ export class BatchesService {
     const previous = batch.grade ?? null;
     batch.grade = grade;
     const saved = await this.repo.save(batch);
-    await this.events.log(id, BatchEventType.GRADE_CHANGED, `Grade set to ${grade}`, {
-      gradeBefore: previous,
-      gradeAfter: grade,
-    });
+    await this.events.log(
+      id,
+      BatchEventType.GRADE_CHANGED,
+      `Grade set to ${grade}`,
+      {
+        gradeBefore: previous,
+        gradeAfter: grade,
+      },
+    );
     return saved;
   }
 
@@ -224,20 +264,31 @@ export class BatchesService {
 
     const parentIds = parents.map((item) => item.parentBatchId);
     const childIds = children.map((item) => item.childBatchId);
-    const batches = await this.repo.findBy({ id: In([...parentIds, ...childIds]) });
+    const batches = await this.repo.findBy({
+      id: In([...parentIds, ...childIds]),
+    });
     const batchMap = new Map(batches.map((batch) => [batch.id, batch]));
-    const ownerIds = batches.map((batch) => batch.ownerId).filter((id): id is number => id != null);
-    const owners = ownerIds.length > 0 ? await this.users.findBy({ id: In(ownerIds) }) : [];
+    const ownerIds = batches
+      .map((batch) => batch.ownerId)
+      .filter((id): id is number => id != null);
+    const owners =
+      ownerIds.length > 0 ? await this.users.findBy({ id: In(ownerIds) }) : [];
     const ownerMap = new Map(owners.map((owner) => [owner.id, owner]));
 
     return {
       parents: parents.map((relation) => ({
         ...relation,
-        batch: this.attachOwner(batchMap.get(relation.parentBatchId) ?? null, ownerMap),
+        batch: this.attachOwner(
+          batchMap.get(relation.parentBatchId) ?? null,
+          ownerMap,
+        ),
       })),
       children: children.map((relation) => ({
         ...relation,
-        batch: this.attachOwner(batchMap.get(relation.childBatchId) ?? null, ownerMap),
+        batch: this.attachOwner(
+          batchMap.get(relation.childBatchId) ?? null,
+          ownerMap,
+        ),
       })),
     };
   }
@@ -270,12 +321,17 @@ export class BatchesService {
     if (parent.ownerId == null) {
       throw new BadRequestException('Batch owner is required');
     }
-    const total = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+    const total = items.reduce(
+      (sum, item) => sum + Number(item.quantity || 0),
+      0,
+    );
     if (total <= 0) {
       throw new BadRequestException('Split quantity must be greater than zero');
     }
     if (total > Number(parent.quantity)) {
-      throw new BadRequestException('Split quantity exceeds available quantity');
+      throw new BadRequestException(
+        'Split quantity exceeds available quantity',
+      );
     }
 
     const previousQuantity = parent.quantity;
@@ -287,27 +343,37 @@ export class BatchesService {
 
     const children: Batch[] = [];
     for (const item of items) {
-    const child = await this.createBatchRecord({
-      productId: parent.productId,
-      quantity: item.quantity,
-      grade: item.grade ?? parent.grade ?? null,
-      status: parent.status === 'SPLIT' ? 'CREATED' : parent.status,
-      unit: parent.unit,
-      stageId: parent.stageId ?? null,
-      ownerId: parent.ownerId ?? null,
-    });
-      await this.createRelation(parent.id, child.id, 'SPLIT', child.quantity);
-      await this.events.log(child.id, BatchEventType.SPLIT, `Split from batch ${parent.id}`, {
-        quantityAfter: child.quantity,
+      const child = await this.createBatchRecord({
+        productId: parent.productId,
+        quantity: item.quantity,
+        grade: item.grade ?? parent.grade ?? null,
+        status: parent.status === 'SPLIT' ? 'CREATED' : parent.status,
+        unit: parent.unit,
+        stageId: parent.stageId ?? null,
+        ownerId: parent.ownerId ?? null,
       });
+      await this.createRelation(parent.id, child.id, 'SPLIT', child.quantity);
+      await this.events.log(
+        child.id,
+        BatchEventType.SPLIT,
+        `Split from batch ${parent.id}`,
+        {
+          quantityAfter: child.quantity,
+        },
+      );
       children.push(child);
     }
 
-    await this.events.log(parent.id, BatchEventType.SPLIT, `Split into ${children.length} batches`, {
-      quantityBefore: previousQuantity,
-      quantityAfter: savedParent.quantity,
-      metadata: { children: children.map((child) => child.id) },
-    });
+    await this.events.log(
+      parent.id,
+      BatchEventType.SPLIT,
+      `Split into ${children.length} batches`,
+      {
+        quantityBefore: previousQuantity,
+        quantityAfter: savedParent.quantity,
+        metadata: { children: children.map((child) => child.id) },
+      },
+    );
 
     return { parent: savedParent, children };
   }
@@ -324,15 +390,81 @@ export class BatchesService {
     }
     await Promise.all(batches.map((batch) => this.ensureMutable(batch)));
     const ownerId = batches[0].ownerId ?? null;
-    const productId = batches[0].productId;
     if (batches.some((batch) => batch.ownerId != ownerId)) {
       throw new BadRequestException('All batches must have the same owner');
     }
-    if (batches.some((batch) => batch.productId !== productId)) {
-      throw new BadRequestException('All batches must have the same product');
+
+    const sourceProductIds = Array.from(
+      new Set(batches.map((batch) => batch.productId)),
+    );
+    const mergedProductName = body.newProductName?.trim();
+    const shouldCreateProductOnly =
+      sourceProductIds.length > 1 || !!mergedProductName;
+
+    if (shouldCreateProductOnly) {
+      if (ownerId == null) {
+        throw new BadRequestException('Batch owner is required');
+      }
+
+      const name = await this.reserveMergedProductName(
+        mergedProductName,
+        sourceProductIds,
+      );
+      const mergedProduct = await this.products.save(
+        this.products.create({
+          name,
+          ownerId,
+          isMergedProduct: true,
+          sourceProductIds,
+        }),
+      );
+
+      for (const batch of batches) {
+        const previousStatus = batch.status;
+        const previousQuantity = batch.quantity;
+        batch.status = 'MERGED';
+        batch.quantity = 0;
+        await this.repo.save(batch);
+        await this.events.log(
+          batch.id,
+          BatchEventType.MERGED,
+          `Merged into product ${mergedProduct.id}`,
+          {
+            statusBefore: previousStatus,
+            statusAfter: batch.status,
+            quantityBefore: previousQuantity,
+            quantityAfter: batch.quantity,
+            metadata: {
+              targetProductId: mergedProduct.id,
+              targetProductName: mergedProduct.name,
+            },
+          },
+        );
+      }
+
+      return {
+        mode: 'PRODUCT_ONLY',
+        product: mergedProduct,
+        sourceBatchIds: uniqueIds,
+      };
     }
 
-    const totalQuantity = batches.reduce((sum, batch) => sum + Number(batch.quantity), 0);
+    if (!body.productId) {
+      throw new BadRequestException(
+        'productId is required when merging into a new batch',
+      );
+    }
+    const productId = batches[0].productId;
+    if (batches.some((batch) => batch.productId !== productId)) {
+      throw new BadRequestException(
+        'All batches must have the same product unless creating a merged product',
+      );
+    }
+
+    const totalQuantity = batches.reduce(
+      (sum, batch) => sum + Number(batch.quantity),
+      0,
+    );
     const newBatch = await this.createBatchRecord({
       productId: body.productId,
       quantity: totalQuantity,
@@ -349,19 +481,51 @@ export class BatchesService {
       batch.status = 'MERGED';
       batch.quantity = 0;
       await this.repo.save(batch);
-      await this.createRelation(batch.id, newBatch.id, 'MERGE', Number(previousQuantity));
-      await this.events.log(batch.id, BatchEventType.MERGED, `Merged into batch ${newBatch.id}`, {
-        statusBefore: previousStatus,
-        statusAfter: batch.status,
-      });
+      await this.createRelation(
+        batch.id,
+        newBatch.id,
+        'MERGE',
+        Number(previousQuantity),
+      );
+      await this.events.log(
+        batch.id,
+        BatchEventType.MERGED,
+        `Merged into batch ${newBatch.id}`,
+        {
+          statusBefore: previousStatus,
+          statusAfter: batch.status,
+        },
+      );
     }
 
-    await this.events.log(newBatch.id, BatchEventType.MERGED, `Merged from batches ${uniqueIds.join(', ')}`, {
-      quantityAfter: newBatch.quantity,
-      metadata: { sources: uniqueIds },
-    });
+    await this.events.log(
+      newBatch.id,
+      BatchEventType.MERGED,
+      `Merged from batches ${uniqueIds.join(', ')}`,
+      {
+        quantityAfter: newBatch.quantity,
+        metadata: { sources: uniqueIds },
+      },
+    );
 
     return newBatch;
+  }
+
+  private async reserveMergedProductName(
+    preferredName: string | undefined,
+    sourceProductIds: number[],
+  ): Promise<string> {
+    const baseName =
+      preferredName?.trim() || `Merged Product ${sourceProductIds.join('-')}`;
+    let candidate = baseName;
+    let counter = 2;
+
+    while (await this.products.findOne({ where: { name: candidate } })) {
+      candidate = `${baseName} (${counter})`;
+      counter += 1;
+    }
+
+    return candidate;
   }
 
   async transformBatch(id: number, body: TransformBatchDto) {
@@ -372,10 +536,14 @@ export class BatchesService {
     }
     const quantity = body.quantity ?? Number(parent.quantity);
     if (quantity <= 0) {
-      throw new BadRequestException('Transform quantity must be greater than zero');
+      throw new BadRequestException(
+        'Transform quantity must be greater than zero',
+      );
     }
     if (quantity > Number(parent.quantity)) {
-      throw new BadRequestException('Transform quantity exceeds available quantity');
+      throw new BadRequestException(
+        'Transform quantity exceeds available quantity',
+      );
     }
 
     const previousQuantity = parent.quantity;
@@ -396,15 +564,25 @@ export class BatchesService {
     });
 
     await this.createRelation(parent.id, newBatch.id, 'TRANSFORM', quantity);
-    await this.events.log(parent.id, BatchEventType.TRANSFORMED, `Transformed into batch ${newBatch.id}`, {
-      quantityBefore: previousQuantity,
-      quantityAfter: savedParent.quantity,
-      metadata: { targetBatchId: newBatch.id },
-    });
-    await this.events.log(newBatch.id, BatchEventType.TRANSFORMED, `Transformed from batch ${parent.id}`, {
-      quantityAfter: newBatch.quantity,
-      metadata: { sourceBatchId: parent.id },
-    });
+    await this.events.log(
+      parent.id,
+      BatchEventType.TRANSFORMED,
+      `Transformed into batch ${newBatch.id}`,
+      {
+        quantityBefore: previousQuantity,
+        quantityAfter: savedParent.quantity,
+        metadata: { targetBatchId: newBatch.id },
+      },
+    );
+    await this.events.log(
+      newBatch.id,
+      BatchEventType.TRANSFORMED,
+      `Transformed from batch ${parent.id}`,
+      {
+        quantityAfter: newBatch.quantity,
+        metadata: { sourceBatchId: parent.id },
+      },
+    );
 
     return { parent: savedParent, transformed: newBatch };
   }
@@ -444,7 +622,12 @@ export class BatchesService {
     return saved;
   }
 
-  private async createRelation(parentId: number, childId: number, type: string, quantity?: number) {
+  private async createRelation(
+    parentId: number,
+    childId: number,
+    type: string,
+    quantity?: number,
+  ) {
     const relation = this.relations.create({
       parentBatchId: parentId,
       childBatchId: childId,

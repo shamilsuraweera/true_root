@@ -1,4 +1,10 @@
-import { IsInt, IsNumber, IsOptional, IsPositive, IsString } from 'class-validator';
+import {
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+} from 'class-validator';
 
 export class TransformBatchDto {
   @IsInt()

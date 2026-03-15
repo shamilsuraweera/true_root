@@ -9,7 +9,9 @@ import { Stage } from '../stages/stage.entity';
 import { User } from '../users/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Product, Stage, Batch, BatchEvent])],
+  imports: [
+    TypeOrmModule.forFeature([User, Product, Stage, Batch, BatchEvent]),
+  ],
   controllers: [AdminController],
   providers: [AdminService],
 })

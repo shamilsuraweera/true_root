@@ -1,7 +1,14 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { OwnershipRequest, OwnershipRequestStatus } from './ownership-request.entity';
+import {
+  OwnershipRequest,
+  OwnershipRequestStatus,
+} from './ownership-request.entity';
 import { Batch } from '../batches/batch.entity';
 import { BatchRelation } from '../batches/batch-relation.entity';
 import { BatchEventsService } from '../batch-events/batch-events.service';
@@ -19,17 +26,29 @@ export class OwnershipRequestsService {
     private readonly events: BatchEventsService,
   ) {}
 
-  async createRequest(batchId: number, requesterId: number, ownerId: number, quantity: number, note?: string) {
+  async createRequest(
+    batchId: number,
+    requesterId: number,
+    ownerId: number,
+    quantity: number,
+    note?: string,
+  ) {
     const batch = await this.batches.findOne({ where: { id: batchId } });
     if (!batch) throw new NotFoundException('Batch not found');
     if (requesterId === ownerId) {
-      throw new BadRequestException('Cannot request ownership of your own batch');
+      throw new BadRequestException(
+        'Cannot request ownership of your own batch',
+      );
     }
     if (
       batch.isDisqualified ||
-      ['MERGED', 'TRANSFORMED', 'SPLIT', 'ARCHIVED', 'DELETED'].includes(batch.status)
+      ['MERGED', 'TRANSFORMED', 'SPLIT', 'ARCHIVED', 'DELETED'].includes(
+        batch.status,
+      )
     ) {
-      throw new BadRequestException('Batch is not eligible for ownership requests');
+      throw new BadRequestException(
+        'Batch is not eligible for ownership requests',
+      );
     }
     if (batch.ownerId !== ownerId) {
       throw new BadRequestException('Owner mismatch');
@@ -72,7 +91,9 @@ export class OwnershipRequestsService {
       throw new BadRequestException('Request already resolved');
     }
 
-    const batch = await this.batches.findOne({ where: { id: request.batchId } });
+    const batch = await this.batches.findOne({
+      where: { id: request.batchId },
+    });
     if (!batch) throw new NotFoundException('Batch not found');
     if (batch.ownerId !== request.ownerId) {
       throw new BadRequestException('Owner mismatch');
@@ -91,21 +112,40 @@ export class OwnershipRequestsService {
     } else {
       batch.quantity = remaining;
       await this.batches.save(batch);
-      transferredBatch = await this.createBatchFromTransfer(batch, transferQty, request.requesterId);
-      await this.createRelation(batch.id, transferredBatch.id, 'TRANSFER', transferQty);
+      transferredBatch = await this.createBatchFromTransfer(
+        batch,
+        transferQty,
+        request.requesterId,
+      );
+      await this.createRelation(
+        batch.id,
+        transferredBatch.id,
+        'TRANSFER',
+        transferQty,
+      );
     }
 
     request.status = OwnershipRequestStatus.APPROVED;
     await this.repo.save(request);
 
-    await this.events.log(batch.id, BatchEventType.TRANSFERRED, `Transferred ${transferQty}`, {
-      quantityAfter: batch.quantity,
-      metadata: { to: request.requesterId, requestId: request.id },
-    });
-    await this.events.log(transferredBatch.id, BatchEventType.TRANSFERRED, `Received ${transferQty}`, {
-      quantityAfter: transferredBatch.quantity,
-      metadata: { from: request.ownerId, requestId: request.id },
-    });
+    await this.events.log(
+      batch.id,
+      BatchEventType.TRANSFERRED,
+      `Transferred ${transferQty}`,
+      {
+        quantityAfter: batch.quantity,
+        metadata: { to: request.requesterId, requestId: request.id },
+      },
+    );
+    await this.events.log(
+      transferredBatch.id,
+      BatchEventType.TRANSFERRED,
+      `Received ${transferQty}`,
+      {
+        quantityAfter: transferredBatch.quantity,
+        metadata: { from: request.ownerId, requestId: request.id },
+      },
+    );
 
     return { request, batch: transferredBatch };
   }
@@ -121,7 +161,11 @@ export class OwnershipRequestsService {
     return this.repo.save(request);
   }
 
-  private async createBatchFromTransfer(source: Batch, quantity: number, ownerId: number) {
+  private async createBatchFromTransfer(
+    source: Batch,
+    quantity: number,
+    ownerId: number,
+  ) {
     const batchCode = `BATCH-${Date.now()}-${Math.floor(Math.random() * 1000)
       .toString()
       .padStart(3, '0')}`;
@@ -143,7 +187,12 @@ export class OwnershipRequestsService {
     return saved;
   }
 
-  private async createRelation(parentId: number, childId: number, type: string, quantity: number) {
+  private async createRelation(
+    parentId: number,
+    childId: number,
+    type: string,
+    quantity: number,
+  ) {
     const relation = this.relations.create({
       parentBatchId: parentId,
       childBatchId: childId,

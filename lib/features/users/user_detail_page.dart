@@ -17,6 +17,7 @@ class UserDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final batchesAsync = ref.watch(_userBatchesProvider(user.id));
+    final ownerProductsAsync = ref.watch(ownerProductListProvider(user.id));
     final products = ref.watch(productListProvider).valueOrNull;
     final productMap = {
       for (final product in products ?? []) product.id: product.name,
@@ -31,6 +32,32 @@ class UserDetailPage extends ConsumerWidget {
           _InfoRow(label: 'Role', value: user.roleLabel),
           _InfoRow(label: 'Organization', value: user.organizationLabel),
           _InfoRow(label: 'Location', value: user.locationLabel),
+          const SizedBox(height: 24),
+          Text('Products', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          ownerProductsAsync.when(
+            data: (ownerProducts) {
+              if (ownerProducts.isEmpty) {
+                return const Text('No merged products found');
+              }
+              return Column(
+                children: ownerProducts
+                    .map(
+                      (product) => Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          title: Text(product.name),
+                          subtitle: Text('Product ID: ${product.id}'),
+                          leading: const Icon(Icons.inventory_2_outlined),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, _) => const Text('Failed to load products'),
+          ),
           const SizedBox(height: 24),
           Text('Batches', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
@@ -57,7 +84,8 @@ class UserDetailPage extends ConsumerWidget {
               children: [
                 const Text('Failed to load batches'),
                 TextButton(
-                  onPressed: () => ref.invalidate(_userBatchesProvider(user.id)),
+                  onPressed: () =>
+                      ref.invalidate(_userBatchesProvider(user.id)),
                   child: const Text('Retry'),
                 ),
               ],
@@ -69,7 +97,10 @@ class UserDetailPage extends ConsumerWidget {
   }
 }
 
-final _userBatchesProvider = FutureProvider.family<List<Batch>, String>((ref, userId) async {
+final _userBatchesProvider = FutureProvider.family<List<Batch>, String>((
+  ref,
+  userId,
+) async {
   final api = ref.watch(batchApiProvider);
   return api.fetchBatches(ownerId: userId, limit: 50, includeInactive: true);
 });
@@ -110,7 +141,9 @@ class _UserBatchCard extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        title: Text('Batch ${batch.id} • ${productName ?? batch.displayProduct}'),
+        title: Text(
+          'Batch ${batch.id} • ${productName ?? batch.displayProduct}',
+        ),
         subtitle: Text('${batch.quantity} ${batch.unit} • ${batch.status}'),
         trailing: ElevatedButton(
           onPressed: () => _requestOwnership(context, ref, batch, ownerId),
@@ -119,7 +152,9 @@ class _UserBatchCard extends ConsumerWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => BatchDetailPage(batchId: batch.id)),
+            MaterialPageRoute(
+              builder: (_) => BatchDetailPage(batchId: batch.id),
+            ),
           );
         },
       ),
@@ -136,9 +171,9 @@ Future<void> _requestOwnership(
   final requesterId = ref.read(currentUserIdProvider);
   if (requesterId == ownerId) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('You already own this batch')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('You already own this batch')));
     return;
   }
 
@@ -176,9 +211,9 @@ Future<void> _requestOwnership(
   final quantity = double.tryParse(quantityText.trim());
   if (quantity == null || quantity <= 0) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Enter a valid quantity')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Enter a valid quantity')));
     return;
   }
 
@@ -190,18 +225,20 @@ Future<void> _requestOwnership(
       ownerId: ownerId,
       quantity: quantity,
     );
-    ref.read(notificationsProvider.notifier).add(
+    ref
+        .read(notificationsProvider.notifier)
+        .add(
           title: 'Request sent',
           message: 'Batch ${batch.id} request sent to owner $ownerId.',
         );
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Request sent')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Request sent')));
   } catch (_) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to send request')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Failed to send request')));
   }
 }

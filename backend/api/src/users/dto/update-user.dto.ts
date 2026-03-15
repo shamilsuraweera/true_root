@@ -1,4 +1,10 @@
-import { IsArray, IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { UserRole } from '../../auth/auth.types';
 
 export class UpdateUserDto {

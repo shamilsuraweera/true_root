@@ -1,4 +1,11 @@
-import { ArrayMinSize, IsArray, IsInt, IsOptional, IsPositive, IsString } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsInt,
+  IsOptional,
+  IsPositive,
+  IsString,
+} from 'class-validator';
 
 export class MergeBatchesDto {
   @IsArray()
@@ -7,9 +14,14 @@ export class MergeBatchesDto {
   @IsPositive({ each: true })
   batchIds: number[];
 
+  @IsOptional()
   @IsInt()
   @IsPositive()
-  productId: number;
+  productId?: number;
+
+  @IsOptional()
+  @IsString()
+  newProductName?: string;
 
   @IsOptional()
   @IsString()

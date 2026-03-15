@@ -4,7 +4,8 @@ import '../../../core/api/api_config.dart';
 import '../models/product.dart';
 
 class ProductsApi {
-  ProductsApi({String? baseUrl, this.authToken}) : baseUrl = baseUrl ?? ApiConfig.baseUrl;
+  ProductsApi({String? baseUrl, this.authToken})
+    : baseUrl = baseUrl ?? ApiConfig.baseUrl;
 
   final String baseUrl;
   final String? authToken;
@@ -27,7 +28,21 @@ class ProductsApi {
       throw Exception('Failed to load products');
     }
     final data = jsonDecode(response.body) as List<dynamic>;
-    return data.map((item) => Product.fromApi(item as Map<String, dynamic>)).toList();
+    return data
+        .map((item) => Product.fromApi(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<Product>> fetchProductsByOwner(String ownerId) async {
+    final uri = Uri.parse('$baseUrl/products/owners/$ownerId');
+    final response = await http.get(uri, headers: _headers(json: false));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load owner products');
+    }
+    final data = jsonDecode(response.body) as List<dynamic>;
+    return data
+        .map((item) => Product.fromApi(item as Map<String, dynamic>))
+        .toList();
   }
 
   Future<Product> createProduct(Map<String, dynamic> payload) async {

@@ -1,4 +1,14 @@
-import { Controller, Post, Get, Patch, Param, Body, Query, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Param,
+  Body,
+  Query,
+  Delete,
+  UseGuards,
+} from '@nestjs/common';
 import { BatchesService } from './batches.service';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { UpdateQuantityDto } from './dto/update-quantity.dto';
@@ -18,7 +28,12 @@ export class BatchesController {
 
   @Post()
   create(@Body() body: CreateBatchDto) {
-    return this.service.createBatch(body.productId, body.quantity, body.grade, body.ownerId);
+    return this.service.createBatch(
+      body.productId,
+      body.quantity,
+      body.grade,
+      body.ownerId,
+    );
   }
 
   @Get()

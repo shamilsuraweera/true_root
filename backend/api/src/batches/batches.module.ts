@@ -7,9 +7,13 @@ import { BatchesController } from './batches.controller';
 import { BatchEventsModule } from '../batch-events/batch-events.module';
 import { Stage } from '../stages/stage.entity';
 import { User } from '../users/user.entity';
+import { Product } from '../products/product.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Batch, BatchRelation, Stage, User]), BatchEventsModule],
+  imports: [
+    TypeOrmModule.forFeature([Batch, BatchRelation, Stage, User, Product]),
+    BatchEventsModule,
+  ],
   providers: [BatchesService],
   controllers: [BatchesController],
 })

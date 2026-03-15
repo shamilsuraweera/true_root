@@ -12,3 +12,11 @@ final productListProvider = FutureProvider<List<Product>>((ref) async {
   final api = ref.watch(productsApiProvider);
   return api.fetchProducts();
 });
+
+final ownerProductListProvider = FutureProvider.family<List<Product>, String>((
+  ref,
+  ownerId,
+) async {
+  final api = ref.watch(productsApiProvider);
+  return api.fetchProductsByOwner(ownerId);
+});

@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { CorsOptionsDelegate, CorsOptions } from 'cors';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -18,19 +19,28 @@ async function bootstrap() {
     .filter((origin) => origin.length > 0);
   const isDev = process.env.NODE_ENV !== 'production';
 
+  const corsOrigin: CorsOptionsDelegate = (
+    origin: string | undefined,
+    callback: (err: Error | null, options?: CorsOptions) => void,
+  ) => {
+    if (!origin) {
+      callback(null, { origin: true });
+      return;
+    }
+    if (allowedOrigins.length === 0) {
+      callback(null, { origin: isDev });
+      return;
+    }
+    if (allowedOrigins.includes(origin)) {
+      callback(null, { origin: true });
+      return;
+    }
+    callback(new Error('Not allowed by CORS'));
+  };
+
   app.enableCors({
-    origin: (origin, callback) => {
-      if (!origin) {
-        return callback(null, true);
-      }
-      if (allowedOrigins.length === 0) {
-        return callback(null, isDev);
-      }
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error('Not allowed by CORS'), false);
-    },
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    origin: corsOrigin,
     credentials: true,
   });
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');

@@ -14,6 +14,13 @@ export class ProductsService {
     return this.repo.find({ order: { name: 'ASC' } });
   }
 
+  listByOwner(ownerId: number) {
+    return this.repo.find({
+      where: { ownerId, isMergedProduct: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   create(name: string) {
     const product = this.repo.create({ name });
     return this.repo.save(product);
