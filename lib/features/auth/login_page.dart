@@ -36,15 +36,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      appBar: AppBar(title: const Text('Login'), centerTitle: true),
+      body: SafeArea(
         child: Form(
           key: _formKey,
-          child: Column(
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              16 + MediaQuery.viewInsetsOf(context).bottom,
+            ),
             children: [
               if (_accounts.isNotEmpty) ...[
                 Align(
@@ -60,7 +62,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
                       title: Text(account.email),
-                      subtitle: account.role != null ? Text(account.role!) : null,
+                      subtitle: account.role != null
+                          ? Text(account.role!)
+                          : null,
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -93,8 +97,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(labelText: 'Email'),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) return 'Email is required';
-                  if (!value.contains('@')) return 'Enter a valid email';
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Email is required';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Enter a valid email';
+                  }
                   return null;
                 },
               ),
@@ -104,14 +112,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 obscureText: true,
                 decoration: const InputDecoration(labelText: 'Password'),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return 'Password is required';
+                  if (value == null || value.isEmpty) {
+                    return 'Password is required';
+                  }
                   return null;
                 },
               ),
               const SizedBox(height: 12),
               CheckboxListTile(
                 value: _rememberAccount,
-                onChanged: (value) => setState(() => _rememberAccount = value ?? true),
+                onChanged: (value) =>
+                    setState(() => _rememberAccount = value ?? true),
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Remember this account'),
               ),
@@ -136,6 +147,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 },
                 child: const Text('Create account'),
               ),
+              const SizedBox(height: 8),
             ],
           ),
         ),
@@ -157,9 +169,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login failed')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Login failed')));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

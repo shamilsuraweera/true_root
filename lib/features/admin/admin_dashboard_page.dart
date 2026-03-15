@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../home/models/recent_activity.dart';
 import 'state/admin_provider.dart';
+import 'widgets/admin_page_shell.dart';
 
 class AdminDashboardPage extends ConsumerWidget {
   const AdminDashboardPage({super.key});
@@ -9,49 +10,71 @@ class AdminDashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final overviewAsync = ref.watch(adminOverviewProvider);
-    return RefreshIndicator(
-      onRefresh: () async {
-        ref.invalidate(adminOverviewProvider);
-        await ref.read(adminOverviewProvider.future);
-      },
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(24),
-        children: [
-          Text('Overview', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 16),
-          overviewAsync.when(
-            data: (overview) {
-              return Column(
-                children: [
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    children: [
-                      _MetricCard(label: 'Users', value: overview.users.toString()),
-                      _MetricCard(label: 'Products', value: overview.products.toString()),
-                      _MetricCard(label: 'Stages', value: overview.stages.toString()),
-                      _MetricCard(label: 'Batches', value: overview.batches.toString()),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  _SectionTitle(title: 'Recent Activity'),
-                  const SizedBox(height: 12),
-                  if (overview.recentActivity.isEmpty)
-                    const Text('No recent activity')
-                  else
-                    Column(
-                      children: overview.recentActivity
-                          .map((item) => _ActivityRow(activity: item))
-                          .toList(),
+    return AdminPageShell(
+      title: 'Admin overview',
+      subtitle: 'Monitor key platform counts and recent system activity.',
+      actions: [
+        AdminHeaderIconButton(
+          icon: Icons.refresh,
+          onPressed: () {
+            ref.invalidate(adminOverviewProvider);
+          },
+        ),
+      ],
+      child: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(adminOverviewProvider);
+          await ref.read(adminOverviewProvider.future);
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(24),
+          children: [
+            overviewAsync.when(
+              data: (overview) {
+                return Column(
+                  children: [
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: [
+                        _MetricCard(
+                          label: 'Users',
+                          value: overview.users.toString(),
+                        ),
+                        _MetricCard(
+                          label: 'Products',
+                          value: overview.products.toString(),
+                        ),
+                        _MetricCard(
+                          label: 'Stages',
+                          value: overview.stages.toString(),
+                        ),
+                        _MetricCard(
+                          label: 'Batches',
+                          value: overview.batches.toString(),
+                        ),
+                      ],
                     ),
-                ],
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, _) => const Text('Failed to load overview'),
-          ),
-        ],
+                    const SizedBox(height: 24),
+                    _SectionTitle(title: 'Recent Activity'),
+                    const SizedBox(height: 12),
+                    if (overview.recentActivity.isEmpty)
+                      const Text('No recent activity')
+                    else
+                      Column(
+                        children: overview.recentActivity
+                            .map((item) => _ActivityRow(activity: item))
+                            .toList(),
+                      ),
+                  ],
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (_, _) => const Text('Failed to load overview'),
+            ),
+          ],
+        ),
       ),
     );
   }

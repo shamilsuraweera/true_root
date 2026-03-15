@@ -27,7 +27,9 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController(text: ref.read(dashboardSearchProvider));
+    _searchController = TextEditingController(
+      text: ref.read(dashboardSearchProvider),
+    );
   }
 
   @override
@@ -40,7 +42,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     ref.read(dashboardSearchProvider.notifier).state = value;
   }
 
-  List<OwnershipRequest> _filterRequests(List<OwnershipRequest> items, String query) {
+  List<OwnershipRequest> _filterRequests(
+    List<OwnershipRequest> items,
+    String query,
+  ) {
     if (query.isEmpty) return items;
     final normalized = query.toLowerCase();
     return items.where((request) {
@@ -55,17 +60,27 @@ class _HomePageState extends ConsumerState<HomePage> {
     }).toList();
   }
 
-  List<Batch> _filterBatches(List<Batch> items, String query, Map<int, String> productMap) {
+  List<Batch> _filterBatches(
+    List<Batch> items,
+    String query,
+    Map<int, String> productMap,
+  ) {
     if (query.isEmpty) return items;
     final normalized = query.toLowerCase();
     return items.where((batch) {
-      final productName = productMap[batch.productId ?? -1] ?? batch.displayProduct;
-      final text = 'Batch ${batch.id} $productName ${batch.status} ${batch.ownerName ?? ''}'.toLowerCase();
+      final productName =
+          productMap[batch.productId ?? -1] ?? batch.displayProduct;
+      final text =
+          'Batch ${batch.id} $productName ${batch.status} ${batch.ownerName ?? ''}'
+              .toLowerCase();
       return text.contains(normalized);
     }).toList();
   }
 
-  List<RecentActivity> _filterActivity(List<RecentActivity> items, String query) {
+  List<RecentActivity> _filterActivity(
+    List<RecentActivity> items,
+    String query,
+  ) {
     if (query.isEmpty) return items;
     final normalized = query.toLowerCase();
     return items.where((activity) {
@@ -76,6 +91,21 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final headerBackground = isDark ? colorScheme.surface : AppColors.primary;
+    final contentBackground = isDark
+        ? theme.scaffoldBackgroundColor
+        : AppColors.background;
+    final headerIconBackground = isDark
+        ? colorScheme.onSurface.withValues(alpha: 0.12)
+        : Colors.white.withValues(alpha: 0.2);
+    final headerTitleColor = isDark ? colorScheme.onSurface : Colors.white;
+    final headerSubtitleColor = isDark
+        ? colorScheme.onSurface.withValues(alpha: 0.82)
+        : Colors.white.withValues(alpha: 0.9);
+
     final searchQuery = ref.watch(dashboardSearchProvider);
     if (_searchController.text != searchQuery) {
       _searchController.value = TextEditingValue(
@@ -94,206 +124,300 @@ class _HomePageState extends ConsumerState<HomePage> {
       for (final product in products ?? []) product.id: product.name,
     };
 
+    final topInset = MediaQuery.paddingOf(context).top;
+
     return Scaffold(
-      appBar: AppBar(
-        title: _AppSearchField(
-          hintText: 'Search',
-          controller: _searchController,
-          onChanged: _handleSearchChanged,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () {
-              showNotificationsSheet(context, ref);
-            },
+      backgroundColor: headerBackground,
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _AppSearchField(
+                        hintText: 'Search',
+                        controller: _searchController,
+                        onChanged: _handleSearchChanged,
+                        useLightStyle: !isDark,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Material(
+                      color: headerIconBackground,
+                      shape: const CircleBorder(),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.notifications_none,
+                          color: headerTitleColor,
+                        ),
+                        onPressed: () {
+                          showNotificationsSheet(context, ref);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Stay on top of your batches',
+                  style: TextStyle(
+                    color: headerTitleColor,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'See requests, recent activity, and stock movement in one place.',
+                  style: TextStyle(color: headerSubtitleColor, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: contentBackground,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(28),
+                  topRight: Radius.circular(28),
+                ),
+              ),
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(pendingRequestsProvider);
+                  ref.invalidate(recentBatchesProvider);
+                  ref.invalidate(recentActivityProvider);
+                  await Future.wait([
+                    ref.read(pendingRequestsProvider.future),
+                    ref.read(recentBatchesProvider.future),
+                    ref.read(recentActivityProvider.future),
+                  ]);
+                },
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+                  children: [
+                    _SectionCard(
+                      title: 'Purchase Requests',
+                      actionLabel: 'View all',
+                      onAction: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RequestsPage(),
+                          ),
+                        );
+                      },
+                      child: requestsAsync.when(
+                        data: (items) {
+                          final pending = items
+                              .where((item) => item.status == 'PENDING')
+                              .toList();
+                          final filtered = _filterRequests(
+                            pending,
+                            searchQuery,
+                          );
+                          final emptyMessage = searchQuery.isEmpty
+                              ? 'No pending requests'
+                              : 'No matching requests';
+                          if (filtered.isEmpty) {
+                            return _EmptyState(message: emptyMessage);
+                          }
+                          return Column(
+                            children: filtered
+                                .map(
+                                  (item) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: _RequestCard(
+                                      name: 'Requester ${item.requesterId}',
+                                      batchId: 'Batch ${item.batchId}',
+                                      quantity: _requestQuantityText(ref, item),
+                                      onReject: () =>
+                                          _rejectRequest(context, ref, item.id),
+                                      onApprove: () => _approveRequest(
+                                        context,
+                                        ref,
+                                        item.id,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                          );
+                        },
+                        loading: () => const _LoadingState(),
+                        error: (_, _) {
+                          final fallback = _filterRequests(
+                            cachedRequests
+                                .where((item) => item.status == 'PENDING')
+                                .toList(),
+                            searchQuery,
+                          );
+                          if (fallback.isNotEmpty) {
+                            return Column(
+                              children: [
+                                const _OfflineNote(),
+                                ...fallback.map(
+                                  (item) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: _RequestCard(
+                                      name: 'Requester ${item.requesterId}',
+                                      batchId: 'Batch ${item.batchId}',
+                                      quantity: _requestQuantityText(ref, item),
+                                      onReject: () =>
+                                          _rejectRequest(context, ref, item.id),
+                                      onApprove: () => _approveRequest(
+                                        context,
+                                        ref,
+                                        item.id,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                          return _ErrorState(
+                            message: 'Failed to load requests',
+                            onRetry: () =>
+                                ref.invalidate(pendingRequestsProvider),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _SectionCard(
+                      title: 'My Batches',
+                      actionLabel: 'View all',
+                      onAction: () {
+                        ref.read(dashboardTabProvider.notifier).state = 1;
+                      },
+                      child: batchesAsync.when(
+                        data: (items) {
+                          final filtered = _filterBatches(
+                            items,
+                            searchQuery,
+                            productMap,
+                          );
+                          final emptyMessage = searchQuery.isEmpty
+                              ? 'No batches yet'
+                              : 'No matching batches';
+                          if (filtered.isEmpty) {
+                            return _EmptyState(message: emptyMessage);
+                          }
+                          return Column(
+                            children: filtered
+                                .map(
+                                  (item) => _InfoTile(
+                                    title:
+                                        'Batch ${item.id} • ${productMap[item.productId] ?? item.displayProduct}',
+                                    subtitle: '${item.quantity} ${item.unit}',
+                                    trailing: _StatusChip(label: item.status),
+                                  ),
+                                )
+                                .toList(),
+                          );
+                        },
+                        loading: () => const _LoadingState(),
+                        error: (_, _) {
+                          final fallback = _filterBatches(
+                            cachedBatches,
+                            searchQuery,
+                            productMap,
+                          );
+                          if (fallback.isNotEmpty) {
+                            return Column(
+                              children: [
+                                const _OfflineNote(),
+                                ...fallback.map(
+                                  (item) => _InfoTile(
+                                    title:
+                                        'Batch ${item.id} • ${productMap[item.productId] ?? item.displayProduct}',
+                                    subtitle: '${item.quantity} ${item.unit}',
+                                    trailing: _StatusChip(label: item.status),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                          return _ErrorState(
+                            message: 'Failed to load batches',
+                            onRetry: () =>
+                                ref.invalidate(recentBatchesProvider),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _SectionCard(
+                      title: 'Recent Activity',
+                      actionLabel: 'View all',
+                      onAction: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ActivityPage(),
+                          ),
+                        );
+                      },
+                      child: activityAsync.when(
+                        data: (items) {
+                          final filtered = _filterActivity(items, searchQuery);
+                          final emptyMessage = searchQuery.isEmpty
+                              ? 'No recent activity'
+                              : 'No matching activity';
+                          if (filtered.isEmpty) {
+                            return _EmptyState(message: emptyMessage);
+                          }
+                          return Column(
+                            children: filtered
+                                .map(
+                                  (item) => _ActivityTile(
+                                    title: item.title,
+                                    subtitle: item.subtitle,
+                                  ),
+                                )
+                                .toList(),
+                          );
+                        },
+                        loading: () => const _LoadingState(),
+                        error: (_, _) {
+                          final fallback = _filterActivity(
+                            cachedActivity,
+                            searchQuery,
+                          );
+                          if (fallback.isNotEmpty) {
+                            return Column(
+                              children: [
+                                const _OfflineNote(),
+                                ...fallback.map(
+                                  (item) => _ActivityTile(
+                                    title: item.title,
+                                    subtitle: item.subtitle,
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                          return _ErrorState(
+                            message: 'Failed to load activity',
+                            onRetry: () =>
+                                ref.invalidate(recentActivityProvider),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(pendingRequestsProvider);
-          ref.invalidate(recentBatchesProvider);
-          ref.invalidate(recentActivityProvider);
-          await Future.wait([
-            ref.read(pendingRequestsProvider.future),
-            ref.read(recentBatchesProvider.future),
-            ref.read(recentActivityProvider.future),
-          ]);
-        },
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          children: [
-            _SectionCard(
-              title: 'Purchase Requests',
-              actionLabel: 'View all',
-              onAction: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const RequestsPage()),
-                );
-              },
-              child: requestsAsync.when(
-                data: (items) {
-                  final pending = items.where((item) => item.status == 'PENDING').toList();
-                  final filtered = _filterRequests(pending, searchQuery);
-                  final emptyMessage = searchQuery.isEmpty ? 'No pending requests' : 'No matching requests';
-                  if (filtered.isEmpty) {
-                    return _EmptyState(message: emptyMessage);
-                  }
-                  return Column(
-                    children: filtered
-                        .map(
-                          (item) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: _RequestCard(
-                              name: 'Requester ${item.requesterId}',
-                              batchId: 'Batch ${item.batchId}',
-                              quantity: _requestQuantityText(ref, item),
-                              onReject: () => _rejectRequest(context, ref, item.id),
-                              onApprove: () => _approveRequest(context, ref, item.id),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  );
-                },
-                loading: () => const _LoadingState(),
-                error: (_, _) {
-                  final fallback = _filterRequests(
-                    cachedRequests.where((item) => item.status == 'PENDING').toList(),
-                    searchQuery,
-                  );
-                  if (fallback.isNotEmpty) {
-                    return Column(
-                      children: [
-                        const _OfflineNote(),
-                        ...fallback.map(
-                          (item) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: _RequestCard(
-                              name: 'Requester ${item.requesterId}',
-                              batchId: 'Batch ${item.batchId}',
-                              quantity: _requestQuantityText(ref, item),
-                              onReject: () => _rejectRequest(context, ref, item.id),
-                              onApprove: () => _approveRequest(context, ref, item.id),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                  return _ErrorState(
-                    message: 'Failed to load requests',
-                    onRetry: () => ref.invalidate(pendingRequestsProvider),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 24),
-            _SectionCard(
-              title: 'My Batches',
-              actionLabel: 'View all',
-              onAction: () {
-                ref.read(dashboardTabProvider.notifier).state = 1;
-              },
-              child: batchesAsync.when(
-                data: (items) {
-                  final filtered = _filterBatches(items, searchQuery, productMap);
-                  final emptyMessage = searchQuery.isEmpty ? 'No batches yet' : 'No matching batches';
-                  if (filtered.isEmpty) {
-                    return _EmptyState(message: emptyMessage);
-                  }
-                  return Column(
-                    children: filtered
-                        .map(
-                          (item) => _InfoTile(
-                            title: 'Batch ${item.id} • ${productMap[item.productId] ?? item.displayProduct}',
-                            subtitle: '${item.quantity} ${item.unit}',
-                            trailing: _StatusChip(label: item.status),
-                          ),
-                        )
-                        .toList(),
-                  );
-                },
-                loading: () => const _LoadingState(),
-                error: (_, _) {
-                  final fallback = _filterBatches(cachedBatches, searchQuery, productMap);
-                  if (fallback.isNotEmpty) {
-                    return Column(
-                      children: [
-                        const _OfflineNote(),
-                        ...fallback.map(
-                          (item) => _InfoTile(
-                            title: 'Batch ${item.id} • ${productMap[item.productId] ?? item.displayProduct}',
-                            subtitle: '${item.quantity} ${item.unit}',
-                            trailing: _StatusChip(label: item.status),
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                  return _ErrorState(
-                    message: 'Failed to load batches',
-                    onRetry: () => ref.invalidate(recentBatchesProvider),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 24),
-            _SectionCard(
-              title: 'Recent Activity',
-              actionLabel: 'View all',
-              onAction: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ActivityPage()),
-                );
-              },
-              child: activityAsync.when(
-                data: (items) {
-                  final filtered = _filterActivity(items, searchQuery);
-                  final emptyMessage = searchQuery.isEmpty ? 'No recent activity' : 'No matching activity';
-                  if (filtered.isEmpty) {
-                    return _EmptyState(message: emptyMessage);
-                  }
-                  return Column(
-                    children: filtered
-                        .map(
-                          (item) => _ActivityTile(
-                            title: item.title,
-                            subtitle: item.subtitle,
-                          ),
-                        )
-                        .toList(),
-                  );
-                },
-                loading: () => const _LoadingState(),
-                error: (_, _) {
-                  final fallback = _filterActivity(cachedActivity, searchQuery);
-                  if (fallback.isNotEmpty) {
-                    return Column(
-                      children: [
-                        const _OfflineNote(),
-                        ...fallback.map(
-                          (item) => _ActivityTile(
-                            title: item.title,
-                            subtitle: item.subtitle,
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                  return _ErrorState(
-                    message: 'Failed to load activity',
-                    onRetry: () => ref.invalidate(recentActivityProvider),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -324,10 +448,7 @@ class _SectionCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(title, style: Theme.of(context).textTheme.titleMedium),
-                TextButton(
-                  onPressed: onAction,
-                  child: Text(actionLabel),
-                ),
+                TextButton(onPressed: onAction, child: Text(actionLabel)),
               ],
             ),
             const SizedBox(height: 8),
@@ -343,11 +464,13 @@ class _AppSearchField extends StatelessWidget {
   final String hintText;
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
+  final bool useLightStyle;
 
   const _AppSearchField({
     required this.hintText,
     this.controller,
     this.onChanged,
+    this.useLightStyle = false,
   });
 
   @override
@@ -358,17 +481,45 @@ class _AppSearchField extends StatelessWidget {
         controller: controller,
         decoration: InputDecoration(
           hintText: hintText,
-          prefixIcon: const Icon(Icons.search),
+          prefixIcon: Icon(
+            Icons.search,
+            color: useLightStyle ? Colors.white.withValues(alpha: 0.9) : null,
+          ),
           filled: true,
-          fillColor: Theme.of(context).colorScheme.surface,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          fillColor: useLightStyle
+              ? Colors.white.withValues(alpha: 0.18)
+              : Theme.of(context).colorScheme.surface,
+          hintStyle: useLightStyle
+              ? TextStyle(color: Colors.white.withValues(alpha: 0.85))
+              : null,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+            borderSide: BorderSide(
+              color: useLightStyle
+                  ? Colors.white.withValues(alpha: 0.25)
+                  : Theme.of(context).colorScheme.outline,
+            ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+            borderSide: BorderSide(
+              color: useLightStyle
+                  ? Colors.white.withValues(alpha: 0.25)
+                  : Theme.of(context).colorScheme.outline,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(999),
+            borderSide: BorderSide(
+              color: useLightStyle
+                  ? Colors.white
+                  : Theme.of(context).colorScheme.primary,
+              width: 1.4,
+            ),
           ),
         ),
         onChanged: onChanged,
@@ -440,7 +591,9 @@ String _requestQuantityText(WidgetRef ref, OwnershipRequest request) {
     for (final product in products ?? []) product.id: product.name,
   };
   final batch = batchAsync.valueOrNull;
-  final productName = batch?.productId != null ? productMap[batch!.productId] : null;
+  final productName = batch?.productId != null
+      ? productMap[batch!.productId]
+      : null;
   final unit = batch?.unit ?? 'kg';
   if (productName != null) {
     return '${request.quantity} $unit • $productName';
@@ -474,16 +627,16 @@ class _ActivityTile extends StatelessWidget {
   final String title;
   final String subtitle;
 
-  const _ActivityTile({
-    required this.title,
-    required this.subtitle,
-  });
+  const _ActivityTile({required this.title, required this.subtitle});
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: const Icon(Icons.check_circle_outline, color: AppColors.secondary),
+      leading: const Icon(
+        Icons.check_circle_outline,
+        color: AppColors.secondary,
+      ),
       title: Text(title),
       subtitle: Text(subtitle),
     );
@@ -517,10 +670,7 @@ class _ErrorState extends StatelessWidget {
         children: [
           Text(message, style: Theme.of(context).textTheme.bodyMedium),
           if (onRetry != null)
-            TextButton(
-              onPressed: onRetry,
-              child: const Text('Retry'),
-            ),
+            TextButton(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
     );
@@ -573,27 +723,33 @@ class _StatusChip extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: onSurface.withValues(alpha: 0.75),
-              fontWeight: FontWeight.w600,
-            ),
+          color: onSurface.withValues(alpha: 0.75),
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 }
 
-Future<void> _approveRequest(BuildContext context, WidgetRef ref, String requestId) async {
+Future<void> _approveRequest(
+  BuildContext context,
+  WidgetRef ref,
+  String requestId,
+) async {
   try {
     final api = ref.read(ownershipRequestsApiProvider);
     await api.approve(requestId);
     _invalidateRequests(ref);
-    ref.read(notificationsProvider.notifier).add(
+    ref
+        .read(notificationsProvider.notifier)
+        .add(
           title: 'Request approved',
           message: 'Purchase request $requestId approved.',
         );
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Request approved')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Request approved')));
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -602,19 +758,25 @@ Future<void> _approveRequest(BuildContext context, WidgetRef ref, String request
   }
 }
 
-Future<void> _rejectRequest(BuildContext context, WidgetRef ref, String requestId) async {
+Future<void> _rejectRequest(
+  BuildContext context,
+  WidgetRef ref,
+  String requestId,
+) async {
   try {
     final api = ref.read(ownershipRequestsApiProvider);
     await api.reject(requestId);
     _invalidateRequests(ref);
-    ref.read(notificationsProvider.notifier).add(
+    ref
+        .read(notificationsProvider.notifier)
+        .add(
           title: 'Request rejected',
           message: 'Purchase request $requestId rejected.',
         );
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Request rejected')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Request rejected')));
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
