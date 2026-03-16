@@ -34,11 +34,21 @@ class BatchDetailPage extends ConsumerWidget {
         final isLocked = _isLockedBatch(batch) || hasChildren;
 
         final products = ref.watch(productListProvider).valueOrNull;
+        final stages = ref.watch(stageListProvider).valueOrNull;
         String? productName;
+        String? stageName;
         if (products != null && batch.productId != null) {
           for (final product in products) {
             if (product.id == batch.productId) {
               productName = product.name;
+              break;
+            }
+          }
+        }
+        if (stages != null && batch.stageId != null) {
+          for (final stage in stages) {
+            if (stage.id == batch.stageId) {
+              stageName = stage.name;
               break;
             }
           }
@@ -140,6 +150,8 @@ class BatchDetailPage extends ConsumerWidget {
               const SizedBox(height: 8),
               Text('Quantity: ${batch.quantity} ${batch.unit}'),
               Text('Status: ${batch.status}'),
+              if (batch.stageId != null)
+                Text('Stage: ${stageName ?? 'Stage #${batch.stageId}'}'),
               if (batch.ownerName != null || batch.ownerEmail != null)
                 Text('Owner: ${batch.ownerName ?? batch.ownerEmail}'),
               if (batch.grade != null && batch.grade!.isNotEmpty)
