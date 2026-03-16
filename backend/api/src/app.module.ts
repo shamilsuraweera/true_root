@@ -20,7 +20,9 @@ import { AdminModule } from './admin/admin.module';
       password: process.env.DB_PASS ?? 'true_root',
       database: process.env.DB_NAME ?? 'true_root',
       autoLoadEntities: true,
-      synchronize: true, // change to false once stable + use migrations
+      synchronize: true,
+      ssl:
+        process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     }),
 
     AuthModule,
