@@ -140,6 +140,8 @@ class BatchDetailPage extends ConsumerWidget {
               const SizedBox(height: 8),
               Text('Quantity: ${batch.quantity} ${batch.unit}'),
               Text('Status: ${batch.status}'),
+              if (batch.ownerName != null || batch.ownerEmail != null)
+                Text('Owner: ${batch.ownerName ?? batch.ownerEmail}'),
               if (batch.grade != null && batch.grade!.isNotEmpty)
                 Text('Grade: ${batch.grade}'),
               if (isLocked)
