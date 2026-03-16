@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import 'features/splash/splash_page.dart';
 import 'features/auth/login_page.dart';
@@ -19,7 +20,7 @@ class AppRoutes {
     splash: (_) => const SplashPage(),
     login: (_) => const LoginPage(),
     register: (_) => const RegisterPage(),
-    dashboard: (_) => const DashboardPage(),
+    dashboard: (_) => kIsWeb ? const AdminGuardPage() : const DashboardPage(),
     admin: (_) => const AdminGuardPage(),
   };
 }

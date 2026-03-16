@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_routes.dart';
+import '../../state/auth_state.dart';
 import 'state/auth_provider.dart';
 import 'models/saved_account.dart';
+import 'widgets/auth_shell.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -35,121 +38,163 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Login'), centerTitle: true),
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              16 + MediaQuery.viewInsetsOf(context).bottom,
-            ),
-            children: [
-              if (_accounts.isNotEmpty) ...[
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Saved accounts',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
+    return AuthShell(
+      title: 'Login',
+      subtitle: 'True Root',
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_accounts.isNotEmpty) ...[
+              Text(
+                'Saved accounts',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Colors.white,
                 ),
-                const SizedBox(height: 8),
-                ..._accounts.map(
-                  (account) => Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      title: Text(account.email),
-                      subtitle: account.role != null
-                          ? Text(account.role!)
-                          : null,
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            onPressed: () => _removeAccount(account.email),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.login),
-                            onPressed: _isSubmitting
-                                ? null
-                                : () => _quickLogin(account),
-                          ),
-                        ],
-                      ),
-                      onTap: () {
-                        _emailController.text = account.email;
-                        _passwordController.clear();
-                        setState(() {});
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ] else if (_loadingAccounts) ...[
-                const SizedBox(height: 12),
-              ],
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Email'),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Email is required';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Password is required';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              CheckboxListTile(
-                value: _rememberAccount,
-                onChanged: (value) =>
-                    setState(() => _rememberAccount = value ?? true),
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Remember this account'),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Login'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.register);
-                },
-                child: const Text('Create account'),
               ),
               const SizedBox(height: 8),
-            ],
-          ),
+              ..._accounts.map(
+                (account) => Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
+                  child: ListTile(
+                    dense: true,
+                    title: Text(
+                      account.email,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    subtitle: account.role != null
+                        ? Text(
+                            account.role!,
+                            style: const TextStyle(color: Colors.white70),
+                          )
+                        : null,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.white),
+                          onPressed: () => _removeAccount(account.email),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.login, color: Colors.white),
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => _quickLogin(account),
+                        ),
+                      ],
+                    ),
+                    onTap: () {
+                      _emailController.text = account.email;
+                      _passwordController.clear();
+                      setState(() {});
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ] else if (_loadingAccounts)
+              const SizedBox(height: 8),
+            const Text('Email', style: TextStyle(color: Colors.white)),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                hintText: 'username@email.com',
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Email is required';
+                }
+                if (!value.contains('@')) {
+                  return 'Enter a valid email';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            const Text('Password', style: TextStyle(color: Colors.white)),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(hintText: 'Password'),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Password is required';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 4),
+            TextButton(
+              onPressed: () {},
+              style: TextButton.styleFrom(padding: EdgeInsets.zero),
+              child: const Text(
+                'Forgot Password?',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+            CheckboxListTile(
+              value: _rememberAccount,
+              onChanged: (value) =>
+                  setState(() => _rememberAccount = value ?? true),
+              contentPadding: EdgeInsets.zero,
+              activeColor: Colors.white,
+              checkColor: Colors.black,
+              side: const BorderSide(color: Colors.white70),
+              title: const Text(
+                'Remember this account',
+                style: TextStyle(color: Colors.white),
+              ),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isSubmitting ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0A355E),
+                  foregroundColor: Colors.white,
+                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Sign in'),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Center(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: const [
+                  _SocialStub(icon: Icons.g_mobiledata),
+                  _SocialStub(icon: Icons.code),
+                  _SocialStub(icon: Icons.facebook),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: TextButton(
+                onPressed: () => Navigator.pushNamed(context, AppRoutes.register),
+                child: const Text(
+                  'Need an account? Register',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -165,8 +210,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         _passwordController.text.trim(),
         remember: _rememberAccount,
       );
+      final auth = ref.read(authProvider);
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+      if (kIsWeb) {
+        if (auth.role != UserRole.admin) {
+          ref.read(authProvider.notifier).logout();
+          await ref.read(authStorageProvider).clearActiveEmail();
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Web portal is admin-only. Use an admin account.'),
+            ),
+          );
+          return;
+        }
+        Navigator.pushReplacementNamed(context, AppRoutes.admin);
+      } else {
+        Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+      }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -200,6 +261,26 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Enter your password to continue')),
+    );
+  }
+}
+
+class _SocialStub extends StatelessWidget {
+  final IconData icon;
+
+  const _SocialStub({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 54,
+      height: 30,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(icon, size: 16, color: const Color(0xFF0A355E)),
     );
   }
 }
