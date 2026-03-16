@@ -53,6 +53,14 @@ class _SplashPageState extends ConsumerState<SplashPage> {
 
     if (!mounted) return;
     final isLoggedIn = ref.read(authProvider).isLoggedIn;
+    final role = ref.read(authProvider).role;
+    if (kIsWeb) {
+      Navigator.pushReplacementNamed(
+        context,
+        isLoggedIn && role == UserRole.admin ? AppRoutes.admin : AppRoutes.login,
+      );
+      return;
+    }
     Navigator.pushReplacementNamed(
       context,
       isLoggedIn ? AppRoutes.dashboard : AppRoutes.login,

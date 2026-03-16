@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_routes.dart';
+import '../../state/auth_state.dart';
 import 'state/auth_provider.dart';
+import 'widgets/auth_shell.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -28,78 +31,100 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Full name'),
-                validator: (value) => value == null || value.trim().isEmpty ? 'Name is required' : null,
+    return AuthShell(
+      title: 'Register',
+      subtitle: 'True Root',
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Full name', style: TextStyle(color: Colors.white)),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(hintText: 'Your full name'),
+              validator: (value) =>
+                  value == null || value.trim().isEmpty ? 'Name is required' : null,
+            ),
+            const SizedBox(height: 12),
+            const Text('Email', style: TextStyle(color: Colors.white)),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(hintText: 'username@email.com'),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Email is required';
+                }
+                if (!value.contains('@')) {
+                  return 'Enter a valid email';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            const Text('Password', style: TextStyle(color: Colors.white)),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(hintText: 'At least 6 characters'),
+              validator: (value) {
+                if (value == null || value.length < 6) {
+                  return 'Min 6 characters';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            const Text('Role', style: TextStyle(color: Colors.white)),
+            const SizedBox(height: 6),
+            DropdownButtonFormField<String>(
+              initialValue: _role,
+              dropdownColor: const Color(0xFF2A76C5),
+              decoration: const InputDecoration(),
+              style: const TextStyle(color: Colors.white),
+              items: const [
+                DropdownMenuItem(value: 'farmer', child: Text('Farmer')),
+                DropdownMenuItem(value: 'trader', child: Text('Trader')),
+                DropdownMenuItem(value: 'exporter', child: Text('Exporter')),
+              ],
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => _role = value);
+              },
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isSubmitting ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0A355E),
+                  foregroundColor: Colors.white,
+                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Create account'),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Email'),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) return 'Email is required';
-                  if (!value.contains('@')) return 'Enter a valid email';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password'),
-                validator: (value) {
-                  if (value == null || value.length < 6) return 'Min 6 characters';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _role,
-                decoration: const InputDecoration(labelText: 'Role'),
-                items: const [
-                  DropdownMenuItem(value: 'farmer', child: Text('Farmer')),
-                  DropdownMenuItem(value: 'trader', child: Text('Trader')),
-                  DropdownMenuItem(value: 'exporter', child: Text('Exporter')),
-                ],
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() => _role = value);
-                },
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Create account'),
+            ),
+            const SizedBox(height: 10),
+            Center(
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Back to login',
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Back to login'),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -116,8 +141,24 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         password: _passwordController.text.trim(),
         role: _role,
       );
+      final auth = ref.read(authProvider);
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+      if (kIsWeb) {
+        if (auth.role != UserRole.admin) {
+          ref.read(authProvider.notifier).logout();
+          await ref.read(authStorageProvider).clearActiveEmail();
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Web portal is admin-only. Use an admin account.'),
+            ),
+          );
+          return;
+        }
+        Navigator.pushReplacementNamed(context, AppRoutes.admin);
+      } else {
+        Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+      }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
