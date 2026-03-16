@@ -123,9 +123,22 @@ export class OwnershipRequestsService {
     let transferredBatch = batch;
     let ownerRemainingBatch: Batch | null = null;
     if (remaining === 0) {
-      batch.ownerId = request.requesterId;
+      batch.quantity = 0;
       batch.status = 'TRANSFERRED';
       await this.batches.save(batch);
+
+      transferredBatch = await this.createBatchFromTransfer(
+        batch,
+        transferQty,
+        request.requesterId,
+        'CREATED',
+      );
+      await this.createRelation(
+        batch.id,
+        transferredBatch.id,
+        'TRANSFER',
+        transferQty,
+      );
     } else {
       batch.quantity = 0;
       batch.status = 'SPLIT';
