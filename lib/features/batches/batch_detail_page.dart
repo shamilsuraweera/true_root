@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../../core/theme/app_colors.dart';
 import 'batch_history_timeline.dart';
 import 'state/batch_provider.dart';
 import 'models/batch.dart';
@@ -25,12 +27,14 @@ class BatchDetailPage extends ConsumerWidget {
     return batchAsync.when(
       data: (batch) {
         if (batch == null) {
-          return const Scaffold(body: Center(child: Text('Batch not found')));
+          return Scaffold(
+            appBar: AppBar(title: const Text('Batch Details')),
+            body: const Center(child: Text('Batch not found')),
+          );
         }
 
         final lineageAsync = ref.watch(batchLineageProvider(batch.id));
-        final hasChildren =
-            lineageAsync.valueOrNull?.children.isNotEmpty ?? false;
+        final hasChildren = lineageAsync.valueOrNull?.children.isNotEmpty ?? false;
         final isLocked = _isLockedBatch(batch) || hasChildren;
 
         final products = ref.watch(productListProvider).valueOrNull;
@@ -54,18 +58,32 @@ class BatchDetailPage extends ConsumerWidget {
           }
         }
 
+        final statusColor = AppColors.statusColor(batch.status);
+        final currentUserId = ref.watch(currentUserIdProvider);
+        final isOwner = batch.ownerId != null && batch.ownerId.toString() == currentUserId;
+
         return Scaffold(
           appBar: AppBar(
-            title: Text('${batch.isItem ? 'Item' : 'Batch'} ${batch.id}'),
+            title: Text('${batch.isItem ? 'Item' : 'Batch'} #${batch.id}'),
+            elevation: 0,
             actions: [
+              IconButton(
+                icon: const Icon(Icons.copy_outlined),
+                tooltip: 'Copy Batch ID',
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: batch.id));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Copied Batch ID #${batch.id}')),
+                  );
+                },
+              ),
               PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
                 onSelected: (value) {
-                  if (isLocked) {
+                  if (isLocked && ['update', 'split', 'merge', 'transform', 'delete'].contains(value)) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text(
-                          'This batch is locked and cannot be modified',
-                        ),
+                        content: Text('This batch is locked and cannot be modified'),
                       ),
                     );
                     return;
@@ -81,12 +99,7 @@ class BatchDetailPage extends ConsumerWidget {
                       _showMergeDialog(context, ref, batch.id);
                       break;
                     case 'transform':
-                      _showTransformDialog(
-                        context,
-                        ref,
-                        batch.id,
-                        batch.quantity,
-                      );
+                      _showTransformDialog(context, ref, batch.id, batch.quantity);
                       break;
                     case 'archive':
                       _archiveBatch(context, ref, batch.id);
@@ -103,106 +116,434 @@ class BatchDetailPage extends ConsumerWidget {
                   PopupMenuItem(
                     value: 'update',
                     enabled: !isLocked,
-                    child: const Text('Update batch'),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.edit_outlined, size: 18),
+                        SizedBox(width: 8),
+                        Text('Update details'),
+                      ],
+                    ),
                   ),
                   PopupMenuItem(
                     value: 'split',
                     enabled: !isLocked,
-                    child: const Text('Split batch'),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.call_split, size: 18),
+                        SizedBox(width: 8),
+                        Text('Split batch'),
+                      ],
+                    ),
                   ),
                   PopupMenuItem(
                     value: 'merge',
                     enabled: !isLocked,
-                    child: const Text('Merge batches'),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.merge_type, size: 18),
+                        SizedBox(width: 8),
+                        Text('Merge batches'),
+                      ],
+                    ),
                   ),
                   PopupMenuItem(
                     value: 'transform',
                     enabled: !isLocked,
-                    child: const Text('Transform batch'),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.transform, size: 18),
+                        SizedBox(width: 8),
+                        Text('Transform product'),
+                      ],
+                    ),
                   ),
                   const PopupMenuDivider(),
                   PopupMenuItem(
                     value: 'archive',
                     enabled: !isLocked,
-                    child: const Text('Archive batch'),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.archive_outlined, size: 18),
+                        SizedBox(width: 8),
+                        Text('Archive batch'),
+                      ],
+                    ),
                   ),
                   PopupMenuItem(
                     value: 'disqualify',
                     enabled: !isLocked,
-                    child: const Text('Mark not suitable'),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.cancel_outlined, size: 18, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Mark not suitable', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
                   ),
                   PopupMenuItem(
                     value: 'delete',
                     enabled: !isLocked,
-                    child: const Text('Delete batch'),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Delete permanently', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ],
           ),
-          body: ListView(
+          body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
-            children: [
-              Text(
-                productName ?? batch.displayProduct,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text('Quantity: ${batch.quantity} ${batch.unit}'),
-              Text('Status: ${batch.status}'),
-              if (batch.stageId != null)
-                Text('Stage: ${stageName ?? 'Stage #${batch.stageId}'}'),
-              if (batch.ownerName != null || batch.ownerEmail != null)
-                Text('Owner: ${batch.ownerName ?? batch.ownerEmail}'),
-              if (batch.grade != null && batch.grade!.isNotEmpty)
-                Text('Grade: ${batch.grade}'),
-              if (isLocked)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    'This batch is locked because it is archived/disqualified or has derived batches.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.error,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Hero Card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primary,
+                        AppColors.primary.withValues(alpha: 0.8),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              batch.isItem ? 'SINGLE ITEM' : 'BULK LOT',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              batch.status.toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        productName ?? batch.displayProduct,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Created: ${batch.createdAt.toLocal().toString().split(' ').first}',
+                        style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (isLocked) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.amber.shade300),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.lock_outline, color: Colors.amber.shade900, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'This batch is locked because it is finalized, archived, or has child derived batches.',
+                            style: TextStyle(color: Colors.amber.shade900, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+                // Metric Tiles 2x2 Grid
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MetricTile(
+                        icon: Icons.scale_outlined,
+                        iconColor: Colors.blue,
+                        label: 'Quantity',
+                        value: '${batch.quantity.toStringAsFixed(batch.quantity.truncateToDouble() == batch.quantity ? 0 : 2)} ${batch.unit}',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _MetricTile(
+                        icon: Icons.timeline_outlined,
+                        iconColor: Colors.purple,
+                        label: 'Current Stage',
+                        value: stageName ?? (batch.stageId != null ? 'Stage #${batch.stageId}' : 'None'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MetricTile(
+                        icon: Icons.star_outline,
+                        iconColor: Colors.amber,
+                        label: 'Grade / Quality',
+                        value: (batch.grade != null && batch.grade!.isNotEmpty) ? batch.grade! : 'Standard',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _MetricTile(
+                        icon: Icons.person_outline,
+                        iconColor: Colors.teal,
+                        label: 'Owner',
+                        value: batch.ownerName ?? batch.ownerEmail ?? 'System',
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Ownership request button if not owned
+                if (!batch.isItem && !isOwner && batch.ownerId != null) ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _requestOwnershipForBatch(context, ref, batch),
+                      icon: const Icon(Icons.shopping_cart_outlined),
+                      label: const Text('Request Purchase / Transfer'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2E7D32),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+
+                // Action buttons row if not locked
+                if (!isLocked) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _showSplitDialog(context, ref, batch.id, batch.quantity),
+                          icon: const Icon(Icons.call_split, size: 18),
+                          label: const Text('Split'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _showMergeDialog(context, ref, batch.id),
+                          icon: const Icon(Icons.merge_type, size: 18),
+                          label: const Text('Merge'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _showTransformDialog(context, ref, batch.id, batch.quantity),
+                          icon: const Icon(Icons.transform, size: 18),
+                          label: const Text('Transform'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
+                const SizedBox(height: 24),
+                // QR Code Section
+                Card(
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.qr_code_2, color: Theme.of(context).colorScheme.primary),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'QR Traceability Code',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                              ],
+                            ),
+                            TextButton.icon(
+                              onPressed: () async {
+                                final api = ref.read(batchApiProvider);
+                                try {
+                                  final payload = await api.fetchQrPayload(batch.id);
+                                  Clipboard.setData(ClipboardData(text: payload));
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('QR payload copied to clipboard')),
+                                    );
+                                  }
+                                } catch (_) {}
+                              },
+                              icon: const Icon(Icons.copy, size: 16),
+                              label: const Text('Copy Data'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Center(child: _QrPayloadView(batchId: batch.id)),
+                        const SizedBox(height: 8),
+                        Center(
+                          child: Text(
+                            'Scan with True Root mobile app to verify origin & authenticity',
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              if (!batch.isItem &&
-                  batch.ownerId != null &&
-                  batch.ownerId != ref.watch(currentUserIdProvider))
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: OutlinedButton.icon(
-                    onPressed: () =>
-                        _requestOwnershipForBatch(context, ref, batch),
-                    icon: const Icon(Icons.shopping_cart_outlined),
-                    label: const Text('Request purchase'),
-                  ),
+
+                const SizedBox(height: 24),
+                // Batch Lineage Section
+                _BatchLineageSection(batchId: batch.id),
+
+                const SizedBox(height: 24),
+                // History Section
+                Row(
+                  children: [
+                    Icon(Icons.history, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Batch History & Audit Trail',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ],
                 ),
-              Text('Created: ${batch.createdAt}'),
-              const SizedBox(height: 16),
-              Text('QR Code', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              _QrPayloadView(batchId: batch.id),
-              const SizedBox(height: 24),
-              _BatchLineageSection(batchId: batch.id),
-              const SizedBox(height: 24),
-              const Text(
-                'History',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 320,
-                child: BatchHistoryTimeline(batchId: batch.id),
-              ),
-            ],
+                const SizedBox(height: 12),
+                BatchHistoryTimeline(batchId: batch.id),
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         );
       },
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (error, stackTrace) =>
-          const Scaffold(body: Center(child: Text('Failed to load batch'))),
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, stackTrace) => Scaffold(
+        appBar: AppBar(title: const Text('Batch Details')),
+        body: Center(child: Text('Failed to load batch: $error')),
+      ),
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String value;
+
+  const _MetricTile({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: iconColor),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -219,44 +560,63 @@ class _BatchLineageSection extends ConsumerWidget {
     final Map<int, String> productMap = {
       for (final product in products ?? []) product.id: product.name,
     };
+
     return lineageAsync.when(
       data: (lineage) {
         if (lineage.parents.isEmpty && lineage.children.isEmpty) {
-          return const Text('Lineage: none');
+          return const SizedBox.shrink();
         }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Lineage', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            if (lineage.parents.isNotEmpty) ...[
-              Text('Parents', style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 4),
-              ...lineage.parents.map(
-                (item) => _LineageItem(
-                  item: item,
-                  showParent: true,
-                  productMap: productMap,
+        return Card(
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.account_tree_outlined, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Batch Lineage & Relations',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            if (lineage.children.isNotEmpty) ...[
-              Text('Children', style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 4),
-              ...lineage.children.map(
-                (item) => _LineageItem(
-                  item: item,
-                  showParent: false,
-                  productMap: productMap,
-                ),
-              ),
-            ],
-          ],
+                if (lineage.parents.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Text('Source / Parent Batches:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  const SizedBox(height: 6),
+                  ...lineage.parents.map(
+                    (item) => _LineageItem(
+                      item: item,
+                      showParent: true,
+                      productMap: productMap,
+                    ),
+                  ),
+                ],
+                if (lineage.children.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Text('Derived / Child Batches:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  const SizedBox(height: 6),
+                  ...lineage.children.map(
+                    (item) => _LineageItem(
+                      item: item,
+                      showParent: false,
+                      productMap: productMap,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         );
       },
-      loading: () => const Text('Lineage: loading...'),
-      error: (_, _) => const Text('Lineage: unavailable'),
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }
@@ -277,37 +637,40 @@ class _LineageItem extends StatelessWidget {
     final batch = item.batch;
     final relatedId = showParent ? item.parentBatchId : item.childBatchId;
     final quantity = item.quantity;
-    final quantityText = quantity == null
-        ? ''
-        : ' • ${quantity.toStringAsFixed(2)}';
-    final productName = batch?.productId != null
-        ? productMap[batch!.productId]
-        : null;
+    final quantityText = quantity == null ? '' : ' • ${quantity.toStringAsFixed(2)}';
+    final productName = batch?.productId != null ? productMap[batch!.productId] : null;
     final ownerLabel = batch?.ownerName ?? batch?.ownerEmail;
-    final ownerText = ownerLabel == null ? '' : ' • Owner: $ownerLabel';
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => BatchDetailPage(batchId: relatedId),
-          ),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                'Batch $relatedId • ${productName ?? batch?.displayProduct ?? 'Product'}'
-                ' • ${item.relationType}$quantityText'
-                '${batch == null ? '' : ' • ${batch.status}'}$ownerText',
-              ),
-            ),
-            const Icon(Icons.chevron_right, size: 18),
-          ],
+    final ownerText = ownerLabel == null ? '' : ' • $ownerLabel';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.2)),
+      ),
+      child: ListTile(
+        dense: true,
+        leading: Icon(
+          showParent ? Icons.arrow_upward : Icons.arrow_downward,
+          size: 18,
+          color: showParent ? Colors.teal : Colors.deepOrange,
         ),
+        title: Text(
+          'Batch #$relatedId: ${productName ?? batch?.displayProduct ?? 'Product'}',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        ),
+        subtitle: Text(
+          '${item.relationType}$quantityText$ownerText',
+          style: const TextStyle(fontSize: 12),
+        ),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => BatchDetailPage(batchId: relatedId)),
+          );
+        },
       ),
     );
   }
@@ -331,40 +694,52 @@ Future<void> _showUpdateDialog(
           final stagesAsync = ref.watch(stageListProvider);
           final stageItems = _buildStageItems(stagesAsync.valueOrNull);
           return AlertDialog(
-            title: const Text('Update batch'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  initialValue: quantityText,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Quantity'),
-                  onChanged: (value) => quantityText = value,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  initialValue: statusText,
-                  decoration: const InputDecoration(labelText: 'Status'),
-                  onChanged: (value) => statusText = value,
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<int?>(
-                  initialValue: stageItems.any((item) => item.value == stageId)
-                      ? stageId
-                      : null,
-                  items: stageItems,
-                  onChanged: (value) => stageId = value,
-                  decoration: const InputDecoration(labelText: 'Stage'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  initialValue: gradeText,
-                  decoration: const InputDecoration(
-                    labelText: 'Grade (optional)',
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Update Batch'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    initialValue: quantityText,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(labelText: 'Quantity', border: OutlineInputBorder()),
+                    onChanged: (value) => quantityText = value,
                   ),
-                  onChanged: (value) => gradeText = value,
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: ['ACTIVE', 'TRANSFERRED', 'SPLIT', 'MERGED', 'TRANSFORMED', 'ARCHIVED', 'DISQUALIFIED'].contains(statusText)
+                        ? statusText
+                        : null,
+                    decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
+                    items: const [
+                      DropdownMenuItem(value: 'ACTIVE', child: Text('ACTIVE')),
+                      DropdownMenuItem(value: 'TRANSFERRED', child: Text('TRANSFERRED')),
+                      DropdownMenuItem(value: 'SPLIT', child: Text('SPLIT')),
+                      DropdownMenuItem(value: 'MERGED', child: Text('MERGED')),
+                      DropdownMenuItem(value: 'TRANSFORMED', child: Text('TRANSFORMED')),
+                      DropdownMenuItem(value: 'ARCHIVED', child: Text('ARCHIVED')),
+                      DropdownMenuItem(value: 'DISQUALIFIED', child: Text('DISQUALIFIED')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) statusText = value;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<int?>(
+                    initialValue: stageItems.any((item) => item.value == stageId) ? stageId : null,
+                    items: stageItems,
+                    onChanged: (value) => stageId = value,
+                    decoration: const InputDecoration(labelText: 'Stage', border: OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    initialValue: gradeText,
+                    decoration: const InputDecoration(labelText: 'Grade / Quality (optional)', border: OutlineInputBorder()),
+                    onChanged: (value) => gradeText = value,
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(
@@ -373,7 +748,7 @@ Future<void> _showUpdateDialog(
               ),
               ElevatedButton(
                 onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('Update'),
+                child: const Text('Save Changes'),
               ),
             ],
           );
@@ -382,28 +757,16 @@ Future<void> _showUpdateDialog(
     },
   );
 
-  if (confirmed != true) {
-    return;
-  }
+  if (confirmed != true) return;
 
   final quantity = double.tryParse(quantityText.trim());
   if (quantity == null || quantity <= 0) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Enter a valid quantity')));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid positive quantity')));
     return;
   }
 
   final status = statusText.trim();
-  if (status.isEmpty) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Status is required')));
-    return;
-  }
-
   final grade = gradeText.trim();
   final updateTasks = <Future<void>>[];
   final api = ref.read(batchApiProvider);
@@ -411,40 +774,28 @@ Future<void> _showUpdateDialog(
   if (quantity != batch.quantity) {
     updateTasks.add(api.updateQuantity(batch.id, quantity).then((_) {}));
   }
-
   if (status != batch.status) {
     updateTasks.add(api.updateStatus(batch.id, status).then((_) {}));
   }
-
   if (grade != (batch.grade ?? '')) {
-    if (grade.isEmpty) {
-      updateTasks.add(api.updateGrade(batch.id, '').then((_) {}));
-    } else {
-      updateTasks.add(api.updateGrade(batch.id, grade).then((_) {}));
-    }
+    updateTasks.add(api.updateGrade(batch.id, grade).then((_) {}));
   }
-
   if (stageId != batch.stageId) {
     updateTasks.add(api.updateStage(batch.id, stageId).then((_) {}));
   }
 
-  if (updateTasks.isEmpty) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('No changes to update')));
-    return;
-  }
+  if (updateTasks.isEmpty) return;
 
   try {
     await Future.wait(updateTasks);
     ref.invalidate(batchByIdProvider(batch.id));
     ref.invalidate(batchHistoryProvider(batch.id));
     ref.invalidate(batchListProvider);
+    ref.invalidate(ownedBatchListProvider);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Batch updated')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Batch updated successfully')),
+    );
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -466,23 +817,32 @@ Future<void> _showSplitDialog(
     context: context,
     builder: (dialogContext) {
       return AlertDialog(
-        title: const Text('Split batch'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Split Batch'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              'Available: ${availableQuantity.toStringAsFixed(2)}',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+            ),
+            const SizedBox(height: 12),
             TextFormField(
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.text,
               decoration: const InputDecoration(
-                labelText: 'Quantities (comma separated)',
-                hintText: '10,20,30',
+                labelText: 'Portions (comma-separated)',
+                hintText: 'e.g. 20, 30',
+                border: OutlineInputBorder(),
               ),
               onChanged: (value) => quantitiesText = value,
             ),
             const SizedBox(height: 12),
             TextFormField(
               decoration: const InputDecoration(
-                labelText: 'Grades (optional, comma separated)',
-                hintText: 'A,B',
+                labelText: 'Grades (comma-separated, optional)',
+                hintText: 'e.g. Grade A, Grade B',
+                border: OutlineInputBorder(),
               ),
               onChanged: (value) => gradesText = value,
             ),
@@ -495,16 +855,14 @@ Future<void> _showSplitDialog(
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Split'),
+            child: const Text('Split Now'),
           ),
         ],
       );
     },
   );
 
-  if (result != true) {
-    return;
-  }
+  if (result != true) return;
 
   final quantities = _parseDoubles(quantitiesText);
   final grades = _parseStrings(gradesText);
@@ -512,15 +870,7 @@ Future<void> _showSplitDialog(
   if (quantities.length < 2) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Enter at least two quantities')),
-    );
-    return;
-  }
-
-  if (quantities.any((q) => q <= 0)) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('All quantities must be greater than zero')),
+      const SnackBar(content: Text('Enter at least two portions (comma-separated)')),
     );
     return;
   }
@@ -529,11 +879,7 @@ Future<void> _showSplitDialog(
   if (total > availableQuantity) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Split total exceeds ${availableQuantity.toStringAsFixed(2)}',
-        ),
-      ),
+      SnackBar(content: Text('Total ($total) exceeds available ($availableQuantity)')),
     );
     return;
   }
@@ -555,8 +901,10 @@ Future<void> _showSplitDialog(
     ref.invalidate(batchByIdProvider(batchId));
     ref.invalidate(batchHistoryProvider(batchId));
     ref.invalidate(batchListProvider);
+    ref.invalidate(ownedBatchListProvider);
+    ref.invalidate(recentBatchesProvider);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Split into ${children.length} batches')),
+      SnackBar(content: Text('Successfully split into ${children.length} batches')),
     );
   } catch (error) {
     if (!context.mounted) return;
@@ -572,84 +920,105 @@ Future<void> _showMergeDialog(
   String batchId,
 ) async {
   var idsText = batchId;
-  var productText = '';
+  int? selectedProductId;
   var mergedItemNameText = '';
   var gradeText = '';
+
+  final products = ref.read(productListProvider).valueOrNull ?? [];
 
   final result = await showDialog<bool>(
     context: context,
     builder: (dialogContext) {
-      return AlertDialog(
-        title: const Text('Merge batches'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              initialValue: idsText,
-              keyboardType: TextInputType.text,
-              decoration: const InputDecoration(
-                labelText: 'Batch IDs (comma separated)',
-                hintText: '1,2,3',
-              ),
-              onChanged: (value) => idsText = value,
+      return StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Merge Batches'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(
+                  initialValue: idsText,
+                  keyboardType: TextInputType.text,
+                  decoration: const InputDecoration(
+                    labelText: 'Batch IDs to merge (comma-separated)',
+                    hintText: 'e.g. 1, 2, 3',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) => idsText = value,
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int?>(
+                  initialValue: selectedProductId,
+                  decoration: const InputDecoration(
+                    labelText: 'Target Product',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('Custom Merged Product Name'),
+                    ),
+                    ...products.map((p) => DropdownMenuItem<int?>(
+                          value: p.id,
+                          child: Text(p.name),
+                        )),
+                  ],
+                  onChanged: (val) {
+                    setDialogState(() => selectedProductId = val);
+                  },
+                ),
+                if (selectedProductId == null) ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Merged Product Name',
+                      hintText: 'e.g. Spice Blend Powder',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) => mergedItemNameText = value,
+                  ),
+                ],
+                const SizedBox(height: 12),
+                TextFormField(
+                  decoration: const InputDecoration(
+                    labelText: 'Grade (optional)',
+                    hintText: 'e.g. Premium',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) => gradeText = value,
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Result batch product ID (optional)',
-                hintText: '1',
-              ),
-              onChanged: (value) => productText = value,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Merged item name (for cross-product merge)',
-                hintText: 'Cinnamon Powder',
-              ),
-              onChanged: (value) => mergedItemNameText = value,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              decoration: const InputDecoration(labelText: 'Grade (optional)'),
-              onChanged: (value) => gradeText = value,
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Merge'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Merge'),
-          ),
-        ],
       );
     },
   );
 
-  if (result != true) {
-    return;
-  }
+  if (result != true) return;
 
   final ids = _parseInts(idsText);
-  final productId = int.tryParse(productText.trim());
-  final newProductName = mergedItemNameText.trim().isEmpty
-      ? null
-      : mergedItemNameText.trim();
+  final newProductName = mergedItemNameText.trim().isEmpty ? null : mergedItemNameText.trim();
   final grade = gradeText.trim().isEmpty ? null : gradeText.trim();
 
   final uniqueIds = ids.toSet().toList();
-  if (uniqueIds.length < 2 || (productId == null && newProductName == null)) {
+  if (uniqueIds.length < 2 || (selectedProductId == null && newProductName == null)) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text(
-          'Enter at least two batch IDs and either a product ID or merged product name',
-        ),
+        content: Text('Enter at least two batch IDs and select a target product or name'),
       ),
     );
     return;
@@ -659,7 +1028,7 @@ Future<void> _showMergeDialog(
     final api = ref.read(batchApiProvider);
     final merged = await api.mergeBatches(
       batchIds: uniqueIds,
-      productId: productId,
+      productId: selectedProductId,
       newProductName: newProductName,
       grade: grade,
     );
@@ -670,18 +1039,12 @@ Future<void> _showMergeDialog(
     ref.invalidate(ownedBatchListProvider);
     ref.invalidate(recentBatchesProvider);
     final mergedBatchId = merged['id']?.toString();
-    if (mergedBatchId == null) {
-      ScaffoldMessenger.of(
+    if (mergedBatchId != null) {
+      Navigator.pushReplacement(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Merge completed')));
-      return;
+        MaterialPageRoute(builder: (_) => BatchDetailPage(batchId: mergedBatchId)),
+      );
     }
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BatchDetailPage(batchId: mergedBatchId),
-      ),
-    );
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -696,127 +1059,101 @@ Future<void> _showTransformDialog(
   String batchId,
   double availableQuantity,
 ) async {
-  var productText = '';
-  var quantityText = '';
+  int? selectedProductId;
+  var quantityText = availableQuantity.toString();
   var gradeText = '';
+
+  final products = ref.read(productListProvider).valueOrNull ?? [];
 
   final result = await showDialog<bool>(
     context: context,
     builder: (dialogContext) {
-      return AlertDialog(
-        title: const Text('Transform batch'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'New product ID',
-                hintText: '2',
-              ),
-              onChanged: (value) => productText = value,
+      return StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Transform Batch Product'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DropdownButtonFormField<int>(
+                  initialValue: selectedProductId,
+                  decoration: const InputDecoration(
+                    labelText: 'New Processed Product',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: products.map((p) => DropdownMenuItem<int>(
+                        value: p.id,
+                        child: Text(p.name),
+                      )).toList(),
+                  onChanged: (val) => setDialogState(() => selectedProductId = val),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  initialValue: quantityText,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Transformed Output Quantity',
+                    hintText: availableQuantity.toString(),
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: (value) => quantityText = value,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  decoration: const InputDecoration(
+                    labelText: 'New Grade / Standard (optional)',
+                    hintText: 'e.g. Export Grade',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) => gradeText = value,
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Quantity (optional)',
-              ),
-              onChanged: (value) => quantityText = value,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              decoration: const InputDecoration(labelText: 'Grade (optional)'),
-              onChanged: (value) => gradeText = value,
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Transform'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Transform'),
-          ),
-        ],
       );
     },
   );
 
-  if (result != true) {
-    return;
-  }
+  if (result != true || selectedProductId == null) return;
 
-  final productId = int.tryParse(productText.trim());
   final quantity = double.tryParse(quantityText.trim());
   final grade = gradeText.trim().isEmpty ? null : gradeText.trim();
-
-  if (productId == null) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Enter a valid product ID')));
-    return;
-  }
-
-  if (quantity != null && quantity <= 0) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Quantity must be greater than zero')),
-    );
-    return;
-  }
-
-  if (quantity != null && quantity > availableQuantity) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Quantity exceeds ${availableQuantity.toStringAsFixed(2)}',
-        ),
-      ),
-    );
-    return;
-  }
 
   try {
     final api = ref.read(batchApiProvider);
     final response = await api.transformBatch(
       batchId: batchId,
-      productId: productId,
+      productId: selectedProductId!,
       quantity: quantity,
       grade: grade,
     );
     final transformed = response['transformed'] as Map<String, dynamic>?;
     if (!context.mounted) return;
-    if (transformed == null) {
-      ScaffoldMessenger.of(
+    ref.invalidate(batchByIdProvider(batchId));
+    ref.invalidate(batchHistoryProvider(batchId));
+    ref.invalidate(batchListProvider);
+    ref.invalidate(ownedBatchListProvider);
+    ref.invalidate(recentBatchesProvider);
+    final newBatchId = transformed?['id']?.toString();
+    if (newBatchId != null) {
+      Navigator.pushReplacement(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Transform completed')));
-      ref.invalidate(batchByIdProvider(batchId));
-      ref.invalidate(batchHistoryProvider(batchId));
-      ref.invalidate(batchListProvider);
-      ref.invalidate(ownedBatchListProvider);
-      ref.invalidate(recentBatchesProvider);
-      return;
+        MaterialPageRoute(builder: (_) => BatchDetailPage(batchId: newBatchId)),
+      );
     }
-
-    final newBatchId = transformed['id']?.toString();
-    if (newBatchId == null) {
-      ref.invalidate(batchByIdProvider(batchId));
-      ref.invalidate(batchHistoryProvider(batchId));
-      ref.invalidate(batchListProvider);
-      ref.invalidate(ownedBatchListProvider);
-      ref.invalidate(recentBatchesProvider);
-      return;
-    }
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => BatchDetailPage(batchId: newBatchId)),
-    );
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -827,9 +1164,7 @@ Future<void> _showTransformDialog(
 
 String _errorText(Object error, String fallback) {
   final text = error.toString();
-  if (text.isEmpty) {
-    return fallback;
-  }
+  if (text.isEmpty) return fallback;
   return text.replaceFirst('Exception: ', '');
 }
 
@@ -842,16 +1177,14 @@ bool _isLockedBatch(Batch batch) {
         'ARCHIVED',
         'DISQUALIFIED',
         'DELETED',
-      ].contains(batch.status);
+      ].contains(batch.status.toUpperCase());
 }
 
 List<DropdownMenuItem<int?>> _buildStageItems(List<Stage>? stages) {
   final items = <DropdownMenuItem<int?>>[
     const DropdownMenuItem(value: null, child: Text('No stage')),
   ];
-  if (stages == null) {
-    return items;
-  }
+  if (stages == null) return items;
   final activeStages = stages.where((stage) => stage.active).toList()
     ..sort((a, b) => a.sequence.compareTo(b.sequence));
   items.addAll(
@@ -875,23 +1208,17 @@ Future<void> _requestOwnershipForBatch(
 ) async {
   final ownerId = batch.ownerId;
   if (ownerId == null) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Batch has no owner')));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Batch has no registered owner')));
     return;
   }
 
   final requesterId = ref.read(currentUserIdProvider);
   if (requesterId.isEmpty) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('You must be logged in')));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You must be logged in')));
     return;
   }
-  if (requesterId == ownerId) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('You already own this batch')));
+  if (requesterId == ownerId.toString()) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You already own this batch')));
     return;
   }
 
@@ -899,13 +1226,15 @@ Future<void> _requestOwnershipForBatch(
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('Request purchase'),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('Request Purchase / Transfer'),
       content: TextFormField(
         initialValue: quantityText,
-        keyboardType: TextInputType.number,
-        decoration: const InputDecoration(
-          labelText: 'Quantity',
-          hintText: '10',
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: InputDecoration(
+          labelText: 'Requested Quantity (${batch.unit})',
+          hintText: batch.quantity.toString(),
+          border: const OutlineInputBorder(),
         ),
         onChanged: (value) => quantityText = value,
       ),
@@ -916,7 +1245,7 @@ Future<void> _requestOwnershipForBatch(
         ),
         ElevatedButton(
           onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: const Text('Send'),
+          child: const Text('Send Request'),
         ),
       ],
     ),
@@ -927,9 +1256,7 @@ Future<void> _requestOwnershipForBatch(
   final quantity = double.tryParse(quantityText.trim());
   if (quantity == null || quantity <= 0) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Enter a valid quantity')));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid quantity')));
     return;
   }
 
@@ -938,20 +1265,18 @@ Future<void> _requestOwnershipForBatch(
     await api.createRequest(
       batchId: batch.id,
       requesterId: requesterId,
-      ownerId: ownerId,
+      ownerId: ownerId.toString(),
       quantity: quantity,
     );
     _invalidateRequestLists(ref);
-    ref
-        .read(notificationsProvider.notifier)
-        .add(
-          title: 'Request sent',
-          message: 'Batch ${batch.id} request sent to owner $ownerId.',
+    ref.read(notificationsProvider.notifier).add(
+          title: 'Transfer Request Sent',
+          message: 'Requested $quantity ${batch.unit} of Batch #${batch.id}.',
         );
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Request sent')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Ownership request sent to owner')),
+    );
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -967,8 +1292,8 @@ Future<void> _archiveBatch(
 ) async {
   final confirmed = await _confirmAction(
     context,
-    title: 'Archive batch?',
-    message: 'This will hide the batch from active lists.',
+    title: 'Archive Batch?',
+    message: 'This will mark the batch as archived and lock modifications.',
     confirmLabel: 'Archive',
   );
   if (confirmed != true) return;
@@ -979,14 +1304,11 @@ Future<void> _archiveBatch(
     if (!context.mounted) return;
     ref.invalidate(batchByIdProvider(batchId));
     ref.invalidate(batchListProvider);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Batch archived')));
-  } catch (_) {
+    ref.invalidate(ownedBatchListProvider);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Batch archived')));
+  } catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Failed to archive batch')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to archive: $e')));
   }
 }
 
@@ -1000,12 +1322,14 @@ Future<void> _disqualifyBatch(
     context: context,
     builder: (dialogContext) {
       return AlertDialog(
-        title: const Text('Mark not suitable'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Mark Not Suitable / Disqualified'),
         content: TextField(
           controller: reasonController,
           decoration: const InputDecoration(
-            labelText: 'Reason',
-            hintText: 'Contaminated / damaged',
+            labelText: 'Reason for Disqualification',
+            hintText: 'e.g. Moisture excess, pesticide residue',
+            border: OutlineInputBorder(),
           ),
         ),
         actions: [
@@ -1014,23 +1338,18 @@ Future<void> _disqualifyBatch(
             child: const Text('Cancel'),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Confirm'),
+            child: const Text('Disqualify'),
           ),
         ],
       );
     },
   );
 
-  if (confirmed != true) {
-    reasonController.dispose();
-    return;
-  }
+  if (confirmed != true) return;
 
-  final reason = reasonController.text.trim().isEmpty
-      ? 'Marked not suitable for use'
-      : reasonController.text.trim();
-  reasonController.dispose();
+  final reason = reasonController.text.trim().isEmpty ? 'Marked not suitable for use' : reasonController.text.trim();
 
   try {
     final api = ref.read(batchApiProvider);
@@ -1038,14 +1357,11 @@ Future<void> _disqualifyBatch(
     if (!context.mounted) return;
     ref.invalidate(batchByIdProvider(batchId));
     ref.invalidate(batchListProvider);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Batch marked not suitable')));
-  } catch (_) {
+    ref.invalidate(ownedBatchListProvider);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Batch marked disqualified')));
+  } catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Failed to update batch')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
   }
 }
 
@@ -1056,8 +1372,8 @@ Future<void> _deleteBatch(
 ) async {
   final confirmed = await _confirmAction(
     context,
-    title: 'Delete batch?',
-    message: 'This will permanently remove the batch.',
+    title: 'Delete Batch?',
+    message: 'This will permanently delete the batch. This action cannot be undone.',
     confirmLabel: 'Delete',
   );
   if (confirmed != true) return;
@@ -1067,15 +1383,12 @@ Future<void> _deleteBatch(
     await api.deleteBatch(batchId);
     if (!context.mounted) return;
     ref.invalidate(batchListProvider);
+    ref.invalidate(ownedBatchListProvider);
     Navigator.of(context).maybePop();
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Batch deleted')));
-  } catch (_) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Batch deleted')));
+  } catch (e) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Failed to delete batch')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
   }
 }
 
@@ -1088,6 +1401,7 @@ Future<bool?> _confirmAction(
   return showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(title),
       content: Text(message),
       actions: [
@@ -1141,22 +1455,34 @@ class _QrPayloadView extends ConsumerWidget {
     final qrPayload = ref.watch(batchQrPayloadProvider(batchId));
 
     return qrPayload.when(
-      data: (payload) => Center(
+      data: (payload) => Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: QrImageView(
           data: payload,
-          size: 180,
+          size: 190,
           backgroundColor: Colors.white,
         ),
       ),
       loading: () => const SizedBox(
-        height: 180,
+        height: 190,
         child: Center(child: CircularProgressIndicator()),
       ),
       error: (error, stackTrace) => SizedBox(
-        height: 180,
+        height: 190,
         child: Center(
           child: Text(
-            'Failed to load QR',
+            'Failed to load QR code',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),

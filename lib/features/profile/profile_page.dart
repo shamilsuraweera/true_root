@@ -106,6 +106,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 children: [
+                  if (auth.role == UserRole.admin) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1569C7),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: const Icon(Icons.admin_panel_settings),
+                        label: const Text(
+                          'Open Admin Console',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () {
+                          Navigator.pushNamed(context, AppRoutes.admin);
+                        },
+                      ),
+                    ),
+                  ],
                   const CircleAvatar(
                     radius: 36,
                     child: Icon(Icons.person, size: 36),

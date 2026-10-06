@@ -1,11 +1,11 @@
-import { IsInt, IsPositive, IsString, IsOptional } from 'class-validator';
+import { IsInt, IsNumber, IsPositive, IsString, IsOptional } from 'class-validator';
 
 export class CreateBatchDto {
   @IsInt()
   @IsPositive()
   productId: number;
 
-  @IsInt()
+  @IsNumber()
   @IsPositive()
   quantity: number;
 
@@ -17,4 +17,13 @@ export class CreateBatchDto {
   @IsOptional()
   @IsString()
   grade?: string;
+
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  stageId?: number;
+
+  @IsOptional()
+  @IsString()
+  unit?: string;
 }

@@ -25,7 +25,7 @@ class DashboardApi {
     final uri = Uri.parse('$baseUrl/ownership-requests/inbox?ownerId=$ownerId&limit=$limit');
     final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to load requests');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to load requests'));
     }
     final data = jsonDecode(response.body) as List<dynamic>;
     return data.map((item) => OwnershipRequest.fromApi(item as Map<String, dynamic>)).toList();
@@ -39,7 +39,7 @@ class DashboardApi {
     final uri = Uri.parse('$baseUrl/batch-events/recent?$query');
     final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to load activity');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to load activity'));
     }
     final data = jsonDecode(response.body) as List<dynamic>;
     return data

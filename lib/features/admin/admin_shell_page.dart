@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../app_routes.dart';
+import '../../state/auth_state.dart';
 
 import 'admin_dashboard_page.dart';
 import 'admin_batches_page.dart';
@@ -8,14 +11,14 @@ import 'admin_products_page.dart';
 import 'admin_stages_page.dart';
 import 'admin_users_page.dart';
 
-class AdminShellPage extends StatefulWidget {
+class AdminShellPage extends ConsumerStatefulWidget {
   const AdminShellPage({super.key});
 
   @override
-  State<AdminShellPage> createState() => _AdminShellPageState();
+  ConsumerState<AdminShellPage> createState() => _AdminShellPageState();
 }
 
-class _AdminShellPageState extends State<AdminShellPage> {
+class _AdminShellPageState extends ConsumerState<AdminShellPage> {
   int _index = 0;
 
   final _destinations = const [
@@ -40,6 +43,35 @@ class _AdminShellPageState extends State<AdminShellPage> {
             : AppColors.textMuted;
 
         return Scaffold(
+          appBar: isWide
+              ? null
+              : AppBar(
+                  title: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.shield_outlined, color: AppColors.primary, size: 20),
+                      const SizedBox(width: 8),
+                      Text('Admin: ${_destinations[_index].label}'),
+                    ],
+                  ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.swap_horiz),
+                      tooltip: 'Switch to User View',
+                      onPressed: () {
+                        Navigator.pushNamed(context, AppRoutes.dashboard);
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.logout),
+                      tooltip: 'Sign Out',
+                      onPressed: () {
+                        ref.read(authProvider.notifier).logout();
+                        Navigator.pushReplacementNamed(context, AppRoutes.login);
+                      },
+                    ),
+                  ],
+                ),
           body: Row(
             children: [
               if (isWide)
@@ -77,10 +109,10 @@ class _AdminShellPageState extends State<AdminShellPage> {
                                 width: 28,
                                 height: 28,
                                 errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.eco, size: 24),
+                                    const Icon(Icons.eco, size: 24, color: AppColors.primary),
                               ),
                               const SizedBox(width: 8),
-                              const Text('Admin'),
+                              const Text('Admin', style: TextStyle(fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
@@ -104,6 +136,35 @@ class _AdminShellPageState extends State<AdminShellPage> {
                               label: Text(destination.label),
                             ),
                         ],
+                        trailing: Expanded(
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.swap_horiz),
+                                    tooltip: 'Switch to User View',
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, AppRoutes.dashboard);
+                                    },
+                                  ),
+                                  const SizedBox(height: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.logout),
+                                    tooltip: 'Sign Out',
+                                    onPressed: () {
+                                      ref.read(authProvider.notifier).logout();
+                                      Navigator.pushReplacementNamed(context, AppRoutes.login);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),

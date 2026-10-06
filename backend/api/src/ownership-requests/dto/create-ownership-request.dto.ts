@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsPositive, IsString } from 'class-validator';
+import { IsInt, IsNumber, IsOptional, IsPositive, IsString } from 'class-validator';
 
 export class CreateOwnershipRequestDto {
   @IsInt()
@@ -13,6 +13,7 @@ export class CreateOwnershipRequestDto {
   @IsPositive()
   ownerId: number;
 
+  @IsNumber()
   @IsPositive()
   quantity: number;
 

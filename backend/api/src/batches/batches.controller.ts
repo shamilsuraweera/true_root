@@ -33,6 +33,8 @@ export class BatchesController {
       body.quantity,
       body.grade,
       body.ownerId,
+      body.stageId,
+      body.unit,
     );
   }
 

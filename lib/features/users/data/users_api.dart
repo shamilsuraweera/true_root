@@ -24,7 +24,7 @@ class UsersApi {
     final uri = Uri.parse('$baseUrl/users');
     final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to load users');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to load users'));
     }
     final data = jsonDecode(response.body) as List<dynamic>;
     return data.map((item) => AppUser.fromApi(item as Map<String, dynamic>)).toList();
@@ -34,7 +34,7 @@ class UsersApi {
     final uri = Uri.parse('$baseUrl/users/$id');
     final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to load user');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to load user'));
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return AppUser.fromApi(data);
@@ -48,7 +48,7 @@ class UsersApi {
       body: jsonEncode(payload),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to update user');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to update user'));
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return AppUser.fromApi(data);
@@ -62,7 +62,7 @@ class UsersApi {
       body: jsonEncode(payload),
     );
     if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('Failed to create user');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to create user'));
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return AppUser.fromApi(data);
@@ -72,7 +72,7 @@ class UsersApi {
     final uri = Uri.parse('$baseUrl/users/$id');
     final response = await http.delete(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to delete user');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to delete user'));
     }
   }
 }
