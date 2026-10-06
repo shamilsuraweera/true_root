@@ -21,13 +21,24 @@ class BatchHistoryTimeline extends ConsumerWidget {
           separatorBuilder: (context, index) => const Divider(),
           itemBuilder: (context, index) {
             final event = events[index];
+            final local = event.createdAt.toLocal();
+            final stamp =
+                '${local.year.toString().padLeft(4, '0')}-'
+                '${local.month.toString().padLeft(2, '0')}-'
+                '${local.day.toString().padLeft(2, '0')} '
+                '${local.hour.toString().padLeft(2, '0')}:'
+                '${local.minute.toString().padLeft(2, '0')}';
             return ListTile(
               leading: CircleAvatar(
                 radius: 10,
                 backgroundColor: Theme.of(context).colorScheme.primary,
               ),
               title: Text(event.type),
-              subtitle: Text(event.description ?? event.createdAt),
+              subtitle: Text(
+                event.description == null || event.description!.isEmpty
+                    ? stamp
+                    : '${event.description}\n$stamp',
+              ),
             );
           },
         );

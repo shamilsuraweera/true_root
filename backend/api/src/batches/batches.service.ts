@@ -353,7 +353,35 @@ export class BatchesService {
     const productMap = new Map(
       products.map((product) => [product.id, product.name]),
     );
-    return batches.map((batch) => this.attachProductName(batch, productMap));
+    const ownerIds = Array.from(
+      new Set(
+        batches
+          .map((batch) => batch.ownerId)
+          .filter((id): id is number => id != null),
+      ),
+    );
+    const owners =
+      ownerIds.length > 0 ? await this.users.findBy({ id: In(ownerIds) }) : [];
+    const ownerMap = new Map(owners.map((owner) => [owner.id, owner]));
+
+    return batches.map((batch) => {
+      const withProduct = this.attachProductName(batch, productMap);
+      if (batch.ownerId == null) {
+        return withProduct;
+      }
+      const owner = ownerMap.get(batch.ownerId);
+      if (!owner) {
+        return withProduct;
+      }
+      return {
+        ...withProduct,
+        owner: {
+          id: owner.id,
+          name: owner.name,
+          email: owner.email,
+        },
+      };
+    });
   }
 
   private attachProductName(

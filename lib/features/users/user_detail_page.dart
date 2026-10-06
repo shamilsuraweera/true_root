@@ -146,13 +146,18 @@ class _UserBatchCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final ownerLabel = batch.ownerName ?? batch.ownerEmail;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         title: Text(
           '$titlePrefix ${batch.id} • ${productName ?? batch.displayProduct}',
         ),
-        subtitle: Text('${batch.quantity} ${batch.unit} • ${batch.status}'),
+        subtitle: Text(
+          ownerLabel == null
+              ? '${batch.quantity} ${batch.unit} • ${batch.status}'
+              : '${batch.quantity} ${batch.unit} • ${batch.status} • Owner: $ownerLabel',
+        ),
         trailing: allowRequest
             ? ElevatedButton(
                 onPressed: () =>
