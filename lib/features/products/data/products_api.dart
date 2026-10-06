@@ -25,7 +25,7 @@ class ProductsApi {
     final uri = Uri.parse('$baseUrl/products');
     final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to load products');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to load products'));
     }
     final data = jsonDecode(response.body) as List<dynamic>;
     return data
@@ -37,7 +37,7 @@ class ProductsApi {
     final uri = Uri.parse('$baseUrl/products/owners/$ownerId');
     final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to load owner products');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to load owner products'));
     }
     final data = jsonDecode(response.body) as List<dynamic>;
     return data
@@ -53,7 +53,7 @@ class ProductsApi {
       body: jsonEncode(payload),
     );
     if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('Failed to create product');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to create product'));
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return Product.fromApi(data);
@@ -67,7 +67,7 @@ class ProductsApi {
       body: jsonEncode(payload),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to update product');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to update product'));
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return Product.fromApi(data);
@@ -77,7 +77,7 @@ class ProductsApi {
     final uri = Uri.parse('$baseUrl/products/$id');
     final response = await http.delete(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to delete product');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to delete product'));
     }
   }
 }

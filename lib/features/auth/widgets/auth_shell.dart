@@ -8,12 +8,14 @@ class AuthShell extends StatelessWidget {
   final String title;
   final String subtitle;
   final Widget child;
+  final Widget? trailing;
 
   const AuthShell({
     super.key,
     required this.title,
     required this.subtitle,
     required this.child,
+    this.trailing,
   });
 
   @override
@@ -84,21 +86,34 @@ class AuthShell extends StatelessWidget {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            subtitle,
-                                            style: const TextStyle(
-                                              color: Colors.white70,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          Text(
-                                            title,
-                                            style: const TextStyle(
-                                              fontSize: 34,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w800,
-                                              height: 1.05,
-                                            ),
+                                          Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      subtitle,
+                                                      style: const TextStyle(
+                                                        color: Colors.white70,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      title,
+                                                      style: const TextStyle(
+                                                        fontSize: 34,
+                                                        color: Colors.white,
+                                                        fontWeight: FontWeight.w800,
+                                                        height: 1.05,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              if (trailing != null) trailing!,
+                                            ],
                                           ),
                                           const SizedBox(height: 18),
                                           child,
@@ -247,7 +262,7 @@ class _Ribbon extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0x66073A6B).withValues(alpha: 0.35),
+              color: const Color(0x66004D43).withValues(alpha: 0.35),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),

@@ -20,6 +20,7 @@ class BatchListPage extends ConsumerStatefulWidget {
 
 class _BatchListPageState extends ConsumerState<BatchListPage> {
   late final TextEditingController _searchController;
+  String _selectedStatus = 'ALL';
 
   @override
   void initState() {
@@ -44,11 +45,15 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
     Map<int, String> productMap,
     String query,
   ) {
-    if (query.trim().isEmpty) return items;
+    var result = items;
+    if (_selectedStatus != 'ALL') {
+      result = result.where((b) => b.status.toUpperCase() == _selectedStatus).toList();
+    }
+    if (query.trim().isEmpty) return result;
     final normalized = query.toLowerCase();
     final digits = query.replaceAll(RegExp(r'\D'), '');
     final queryId = int.tryParse(digits);
-    return items.where((batch) {
+    return result.where((batch) {
       if (queryId != null && batch.id == queryId.toString()) {
         return true;
       }
@@ -86,9 +91,7 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final headerBackground = isDark ? colorScheme.surface : AppColors.primary;
-    final contentBackground = isDark
-        ? theme.scaffoldBackgroundColor
-        : AppColors.background;
+    final contentBackground = isDark ? theme.scaffoldBackgroundColor : AppColors.background;
     final headerIconBackground = isDark
         ? colorScheme.onSurface.withValues(alpha: 0.12)
         : Colors.white.withValues(alpha: 0.2);
@@ -118,14 +121,15 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
       length: 2,
       child: Scaffold(
         backgroundColor: headerBackground,
-        floatingActionButton: FloatingActionButton(
+        floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CreateBatchPage()),
             );
           },
-          child: const Icon(Icons.add),
+          icon: const Icon(Icons.add),
+          label: const Text('New Batch'),
         ),
         body: Column(
           children: [
@@ -143,7 +147,7 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                     children: [
                       Expanded(
                         child: _AppSearchField(
-                          hintText: 'Search batches',
+                          hintText: 'Search batches by ID or name...',
                           controller: _searchController,
                           onChanged: _handleSearchChanged,
                           useLightStyle: !isDark,
@@ -158,6 +162,7 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                             Icons.qr_code_scanner,
                             color: headerTitleColor,
                           ),
+                          tooltip: 'Scan QR Code',
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -177,6 +182,7 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                             Icons.notifications_none,
                             color: headerTitleColor,
                           ),
+                          tooltip: 'Notifications',
                           onPressed: () {
                             showNotificationsSheet(context, ref);
                           },
@@ -186,7 +192,7 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    'Track your lot flow',
+                    'Track Lot Traceability',
                     style: TextStyle(
                       color: headerTitleColor,
                       fontSize: 23,
@@ -195,8 +201,8 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Monitor owned batches and outgoing requests in one stream.',
-                    style: TextStyle(color: headerSubtitleColor, fontSize: 14),
+                    'Monitor your active harvest, inventory, and pending ownership transfers.',
+                    style: TextStyle(color: headerSubtitleColor, fontSize: 13),
                   ),
                 ],
               ),
@@ -205,7 +211,7 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
               child: Container(
                 decoration: BoxDecoration(
                   color: contentBackground,
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(28),
                     topRight: Radius.circular(28),
                   ),
@@ -216,168 +222,284 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                       padding: EdgeInsets.fromLTRB(12, 12, 12, 4),
                       child: TabBar(
                         tabs: [
-                          Tab(text: 'Owned'),
-                          Tab(text: 'Pending'),
+                          Tab(text: 'My Batches'),
+                          Tab(text: 'Pending Requests'),
                         ],
                       ),
                     ),
                     Expanded(
                       child: TabBarView(
                         children: [
-                          batchesAsync.when(
-                            data: (batches) {
-                              if (batches.isEmpty) {
-                                return RefreshIndicator(
-                                  onRefresh: () async {
-                                    ref.invalidate(ownedBatchListProvider);
-                                    ref.invalidate(productListProvider);
-                                    await Future.wait([
-                                      ref.read(ownedBatchListProvider.future),
-                                      ref.read(productListProvider.future),
-                                    ]);
-                                  },
-                                  child: ListView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    children: const [
-                                      SizedBox(height: 200),
-                                      Center(child: Text('No batches yet')),
-                                    ],
-                                  ),
-                                );
-                              }
-                              return productsAsync.when(
-                                data: (products) {
-                                  final Map<int, String> productMap = {
-                                    for (final product in products)
-                                      product.id: product.name,
-                                  };
-                                  final filteredBatches = _filterBatches(
-                                    batches,
-                                    productMap,
-                                    searchQuery,
-                                  );
-                                  final emptyBatchMessage = searchQuery.isEmpty
-                                      ? 'No batches yet'
-                                      : 'No matching batches';
-                                  if (filteredBatches.isEmpty) {
-                                    return RefreshIndicator(
-                                      onRefresh: () async {
-                                        ref.invalidate(ownedBatchListProvider);
-                                        ref.invalidate(productListProvider);
-                                        await Future.wait([
-                                          ref.read(
-                                            ownedBatchListProvider.future,
+                          // Tab 1: Owned Batches
+                          Column(
+                            children: [
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                child: Row(
+                                  children: [
+                                    'ALL',
+                                    'ACTIVE',
+                                    'TRANSFERRED',
+                                    'SPLIT',
+                                    'MERGED',
+                                    'ARCHIVED',
+                                    'DISQUALIFIED',
+                                  ].map((status) {
+                                    final isSelected = _selectedStatus == status;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: FilterChip(
+                                        label: Text(
+                                          status,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                           ),
-                                          ref.read(productListProvider.future),
-                                        ]);
+                                        ),
+                                        selected: isSelected,
+                                        onSelected: (selected) {
+                                          setState(() => _selectedStatus = selected ? status : 'ALL');
+                                        },
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                              Expanded(
+                                child: batchesAsync.when(
+                                  data: (batches) {
+                                    if (batches.isEmpty) {
+                                      return RefreshIndicator(
+                                        onRefresh: () async {
+                                          ref.invalidate(ownedBatchListProvider);
+                                          ref.invalidate(productListProvider);
+                                          await Future.wait([
+                                            ref.read(ownedBatchListProvider.future),
+                                            ref.read(productListProvider.future),
+                                          ]);
+                                        },
+                                        child: ListView(
+                                          physics: const AlwaysScrollableScrollPhysics(),
+                                          children: const [
+                                            SizedBox(height: 120),
+                                            Center(
+                                              child: Column(
+                                                children: [
+                                                  Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey),
+                                                  SizedBox(height: 8),
+                                                  Text('No batches found in your inventory', style: TextStyle(color: Colors.grey)),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }
+                                    return productsAsync.when(
+                                      data: (products) {
+                                        final Map<int, String> productMap = {
+                                          for (final product in products)
+                                            product.id: product.name,
+                                        };
+                                        final filteredBatches = _filterBatches(
+                                          batches,
+                                          productMap,
+                                          searchQuery,
+                                        );
+                                        if (filteredBatches.isEmpty) {
+                                          return ListView(
+                                            physics: const AlwaysScrollableScrollPhysics(),
+                                            children: const [
+                                              SizedBox(height: 120),
+                                              Center(child: Text('No batches matching your filter')),
+                                            ],
+                                          );
+                                        }
+                                        return RefreshIndicator(
+                                          onRefresh: () async {
+                                            ref.invalidate(ownedBatchListProvider);
+                                            ref.invalidate(productListProvider);
+                                            await Future.wait([
+                                              ref.read(ownedBatchListProvider.future),
+                                              ref.read(productListProvider.future),
+                                            ]);
+                                          },
+                                          child: ListView.separated(
+                                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+                                            itemCount: filteredBatches.length,
+                                            separatorBuilder: (context, _) => const SizedBox(height: 10),
+                                            itemBuilder: (context, index) {
+                                              final batch = filteredBatches[index];
+                                              final productName = batch.productId != null
+                                                  ? productMap[batch.productId]
+                                                  : null;
+                                              return _BatchCard(
+                                                title: 'Batch #${batch.id}: ${productName ?? batch.displayProduct}',
+                                                subtitle: '${batch.quantity} ${batch.unit} • ${batch.grade ?? 'Standard'}',
+                                                status: batch.status,
+                                                trailing: const Icon(Icons.chevron_right),
+                                                onTap: () {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (_) => BatchDetailPage(batchId: batch.id),
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            },
+                                          ),
+                                        );
                                       },
-                                      child: ListView(
-                                        physics:
-                                            const AlwaysScrollableScrollPhysics(),
+                                      loading: () => const Center(child: CircularProgressIndicator()),
+                                      error: (_, _) => const Center(child: Text('Failed to load products')),
+                                    );
+                                  },
+                                  loading: () => const Center(child: CircularProgressIndicator()),
+                                  error: (_, _) {
+                                    if (cachedOwnedBatches.isNotEmpty) {
+                                      final filtered = _filterBatches(
+                                        cachedOwnedBatches,
+                                        cachedProductMap,
+                                        searchQuery,
+                                      );
+                                      return ListView.separated(
+                                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+                                        itemCount: filtered.length,
+                                        separatorBuilder: (context, _) => const SizedBox(height: 10),
+                                        itemBuilder: (context, index) {
+                                          final batch = filtered[index];
+                                          final productName = batch.productId != null
+                                              ? cachedProductMap[batch.productId]
+                                              : null;
+                                          return _BatchCard(
+                                            title: 'Batch #${batch.id}: ${productName ?? batch.displayProduct}',
+                                            subtitle: '${batch.quantity} ${batch.unit}',
+                                            status: batch.status,
+                                            trailing: const Icon(Icons.chevron_right),
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) => BatchDetailPage(batchId: batch.id),
+                                                ),
+                                              );
+                                            },
+                                          );
+                                        },
+                                      );
+                                    }
+                                    return Center(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const SizedBox(height: 200),
-                                          Center(
-                                            child: Text(emptyBatchMessage),
+                                          const Text('Failed to load batches'),
+                                          const SizedBox(height: 8),
+                                          ElevatedButton(
+                                            onPressed: () => ref.invalidate(ownedBatchListProvider),
+                                            child: const Text('Retry'),
                                           ),
                                         ],
                                       ),
                                     );
-                                  }
-                                  return RefreshIndicator(
-                                    onRefresh: () async {
-                                      ref.invalidate(ownedBatchListProvider);
-                                      ref.invalidate(productListProvider);
-                                      await Future.wait([
-                                        ref.read(ownedBatchListProvider.future),
-                                        ref.read(productListProvider.future),
-                                      ]);
-                                    },
-                                    child: ListView.separated(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        16,
-                                        12,
-                                        16,
-                                        24,
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // Tab 2: Outgoing Pending Requests
+                          outboxAsync.when(
+                            data: (requests) {
+                              final pending = requests.where((item) => item.status == 'PENDING').toList();
+                              final filteredPending = _filterRequests(pending, searchQuery);
+                              if (filteredPending.isEmpty) {
+                                return RefreshIndicator(
+                                  onRefresh: () async {
+                                    ref.invalidate(ownershipOutboxProvider);
+                                    await ref.read(ownershipOutboxProvider.future);
+                                  },
+                                  child: ListView(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    children: const [
+                                      SizedBox(height: 120),
+                                      Center(
+                                        child: Column(
+                                          children: [
+                                            Icon(Icons.outbox_outlined, size: 48, color: Colors.grey),
+                                            SizedBox(height: 8),
+                                            Text('No pending purchase requests in outbox', style: TextStyle(color: Colors.grey)),
+                                          ],
+                                        ),
                                       ),
-                                      itemCount: filteredBatches.length,
-                                      separatorBuilder: (context, _) =>
-                                          const SizedBox(height: 12),
-                                      itemBuilder: (context, index) {
-                                        final batch = filteredBatches[index];
-                                        final productName =
-                                            batch.productId != null
-                                            ? productMap[batch.productId]
+                                    ],
+                                  ),
+                                );
+                              }
+                              return RefreshIndicator(
+                                onRefresh: () async {
+                                  ref.invalidate(ownershipOutboxProvider);
+                                  await ref.read(ownershipOutboxProvider.future);
+                                },
+                                child: ListView.separated(
+                                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+                                  itemCount: filteredPending.length,
+                                  separatorBuilder: (context, _) => const SizedBox(height: 10),
+                                  itemBuilder: (context, index) {
+                                    final request = filteredPending[index];
+                                    return Consumer(
+                                      builder: (context, ref, _) {
+                                        final batchAsync = ref.watch(batchByIdProvider(request.batchId));
+                                        final products = ref.watch(productListProvider).valueOrNull;
+                                        final productMap = {
+                                          for (final product in products ?? []) product.id: product.name,
+                                        };
+                                        final batch = batchAsync.valueOrNull;
+                                        final productName = batch?.productId != null
+                                            ? productMap[batch!.productId]
                                             : null;
                                         return _BatchCard(
-                                          title:
-                                              'Batch ${batch.id} • ${productName ?? batch.displayProduct}',
-                                          subtitle:
-                                              '${batch.quantity} ${batch.unit} • ${batch.status}',
-                                          trailing: const Icon(
-                                            Icons.chevron_right,
-                                          ),
+                                          title: 'Batch #${request.batchId}: ${productName ?? batch?.displayProduct ?? 'Product'}',
+                                          subtitle: 'Requested: ${request.quantity} ${batch?.unit ?? 'kg'}',
+                                          status: request.status,
+                                          trailing: const Icon(Icons.chevron_right),
                                           onTap: () {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (_) => BatchDetailPage(
-                                                  batchId: batch.id,
-                                                ),
+                                                builder: (_) => BatchDetailPage(batchId: request.batchId),
                                               ),
                                             );
                                           },
                                         );
                                       },
-                                    ),
-                                  );
-                                },
-                                loading: () => const Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                                error: (_, _) => const Center(
-                                  child: Text('Failed to load products'),
+                                    );
+                                  },
                                 ),
                               );
                             },
-                            loading: () => const Center(
-                              child: CircularProgressIndicator(),
-                            ),
+                            loading: () => const Center(child: CircularProgressIndicator()),
                             error: (_, _) {
-                              if (cachedOwnedBatches.isNotEmpty) {
-                                final filtered = _filterBatches(
-                                  cachedOwnedBatches,
-                                  cachedProductMap,
-                                  searchQuery,
-                                );
+                              if (cachedOutbox.isNotEmpty) {
+                                final pending = cachedOutbox.where((item) => item.status == 'PENDING').toList();
+                                final filteredPending = _filterRequests(pending, searchQuery);
                                 return ListView.separated(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    12,
-                                    16,
-                                    24,
-                                  ),
-                                  itemCount: filtered.length,
-                                  separatorBuilder: (context, _) =>
-                                      const SizedBox(height: 12),
+                                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+                                  itemCount: filteredPending.length,
+                                  separatorBuilder: (context, _) => const SizedBox(height: 10),
                                   itemBuilder: (context, index) {
-                                    final batch = filtered[index];
-                                    final productName = batch.productId != null
-                                        ? cachedProductMap[batch.productId]
-                                        : null;
+                                    final request = filteredPending[index];
                                     return _BatchCard(
-                                      title:
-                                          'Batch ${batch.id} • ${productName ?? batch.displayProduct}',
-                                      subtitle:
-                                          '${batch.quantity} ${batch.unit} • ${batch.status}',
+                                      title: 'Batch #${request.batchId}',
+                                      subtitle: 'Requested: ${request.quantity}',
+                                      status: request.status,
                                       trailing: const Icon(Icons.chevron_right),
                                       onTap: () {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) => BatchDetailPage(
-                                              batchId: batch.id,
-                                            ),
+                                            builder: (_) => BatchDetailPage(batchId: request.batchId),
                                           ),
                                         );
                                       },
@@ -385,192 +507,10 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                                   },
                                 );
                               }
-                              return RefreshIndicator(
-                                onRefresh: () async {
-                                  ref.invalidate(ownedBatchListProvider);
-                                  ref.invalidate(productListProvider);
-                                  await Future.wait([
-                                    ref.read(ownedBatchListProvider.future),
-                                    ref.read(productListProvider.future),
-                                  ]);
-                                },
-                                child: ListView(
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  children: [
-                                    const SizedBox(height: 200),
-                                    const Center(
-                                      child: Text('Failed to load batches'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => ref.invalidate(
-                                        ownedBatchListProvider,
-                                      ),
-                                      child: const Text('Retry'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                          outboxAsync.when(
-                            data: (requests) {
-                              final pending = requests
-                                  .where((item) => item.status == 'PENDING')
-                                  .toList();
-                              final filteredPending = _filterRequests(
-                                pending,
-                                searchQuery,
-                              );
-                              final emptyPendingMessage = searchQuery.isEmpty
-                                  ? 'No pending requests'
-                                  : 'No matching requests';
-                              if (filteredPending.isEmpty) {
-                                return RefreshIndicator(
-                                  onRefresh: () async {
-                                    ref.invalidate(ownershipOutboxProvider);
-                                    await ref.read(
-                                      ownershipOutboxProvider.future,
-                                    );
-                                  },
-                                  child: ListView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    children: [
-                                      const SizedBox(height: 200),
-                                      Center(child: Text(emptyPendingMessage)),
-                                    ],
-                                  ),
-                                );
-                              }
-                              return RefreshIndicator(
-                                onRefresh: () async {
-                                  ref.invalidate(ownershipOutboxProvider);
-                                  await ref.read(
-                                    ownershipOutboxProvider.future,
-                                  );
-                                },
-                                child: ListView.separated(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    12,
-                                    16,
-                                    24,
-                                  ),
-                                  itemCount: filteredPending.length,
-                                  separatorBuilder: (context, _) =>
-                                      const SizedBox(height: 12),
-                                  itemBuilder: (context, index) {
-                                    final request = filteredPending[index];
-                                    return Consumer(
-                                      builder: (context, ref, _) {
-                                        final batchAsync = ref.watch(
-                                          batchByIdProvider(request.batchId),
-                                        );
-                                        final products = ref
-                                            .watch(productListProvider)
-                                            .valueOrNull;
-                                        final productMap = {
-                                          for (final product in products ?? [])
-                                            product.id: product.name,
-                                        };
-                                        final batch = batchAsync.valueOrNull;
-                                        final productName =
-                                            batch?.productId != null
-                                            ? productMap[batch!.productId]
-                                            : null;
-                                        return _BatchCard(
-                                          title:
-                                              'Batch ${request.batchId} • ${productName ?? batch?.displayProduct ?? 'Product'}',
-                                          subtitle:
-                                              '${request.quantity} ${batch?.unit ?? 'kg'} • ${batch?.status ?? request.status}',
-                                          trailing: _StatusPill(
-                                            label: request.status,
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                            loading: () => const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                            error: (_, _) {
-                              if (cachedOutbox.isNotEmpty) {
-                                final pending = cachedOutbox
-                                    .where((item) => item.status == 'PENDING')
-                                    .toList();
-                                final filteredPending = _filterRequests(
-                                  pending,
-                                  searchQuery,
-                                );
-                                return ListView.separated(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    12,
-                                    16,
-                                    24,
-                                  ),
-                                  itemCount: filteredPending.length,
-                                  separatorBuilder: (context, _) =>
-                                      const SizedBox(height: 12),
-                                  itemBuilder: (context, index) {
-                                    final request = filteredPending[index];
-                                    return Consumer(
-                                      builder: (context, ref, _) {
-                                        final batchAsync = ref.watch(
-                                          batchByIdProvider(request.batchId),
-                                        );
-                                        final products = ref
-                                            .watch(productListProvider)
-                                            .valueOrNull;
-                                        final productMap = {
-                                          for (final product in products ?? [])
-                                            product.id: product.name,
-                                        };
-                                        final batch = batchAsync.valueOrNull;
-                                        final productName =
-                                            batch?.productId != null
-                                            ? productMap[batch!.productId]
-                                            : null;
-                                        return _BatchCard(
-                                          title:
-                                              'Batch ${request.batchId} • ${productName ?? batch?.displayProduct ?? 'Product'}',
-                                          subtitle:
-                                              '${request.quantity} ${batch?.unit ?? 'kg'} • ${batch?.status ?? request.status}',
-                                          trailing: _StatusPill(
-                                            label: request.status,
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                );
-                              }
-                              return RefreshIndicator(
-                                onRefresh: () async {
-                                  ref.invalidate(ownershipOutboxProvider);
-                                  await ref.read(
-                                    ownershipOutboxProvider.future,
-                                  );
-                                },
-                                child: ListView(
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  children: [
-                                    const SizedBox(height: 200),
-                                    const Center(
-                                      child: Text('Failed to load requests'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => ref.invalidate(
-                                        ownershipOutboxProvider,
-                                      ),
-                                      child: const Text('Retry'),
-                                    ),
-                                  ],
+                              return Center(
+                                child: TextButton(
+                                  onPressed: () => ref.invalidate(ownershipOutboxProvider),
+                                  child: const Text('Retry'),
                                 ),
                               );
                             },
@@ -605,7 +545,7 @@ class _AppSearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 40,
+      height: 42,
       child: TextField(
         controller: controller,
         decoration: InputDecoration(
@@ -619,12 +559,9 @@ class _AppSearchField extends StatelessWidget {
               ? Colors.white.withValues(alpha: 0.18)
               : Theme.of(context).colorScheme.surface,
           hintStyle: useLightStyle
-              ? TextStyle(color: Colors.white.withValues(alpha: 0.85))
-              : null,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 8,
-          ),
+              ? TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)
+              : const TextStyle(fontSize: 13),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
             borderSide: BorderSide(
@@ -644,9 +581,7 @@ class _AppSearchField extends StatelessWidget {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
             borderSide: BorderSide(
-              color: useLightStyle
-                  ? Colors.white
-                  : Theme.of(context).colorScheme.primary,
+              color: useLightStyle ? Colors.white : Theme.of(context).colorScheme.primary,
               width: 1.4,
             ),
           ),
@@ -660,12 +595,14 @@ class _AppSearchField extends StatelessWidget {
 class _BatchCard extends StatelessWidget {
   final String title;
   final String subtitle;
+  final String? status;
   final VoidCallback? onTap;
   final Widget? trailing;
 
   const _BatchCard({
     required this.title,
     required this.subtitle,
+    this.status,
     this.onTap,
     this.trailing,
   });
@@ -675,32 +612,51 @@ class _BatchCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Material(
       color: colorScheme.surface,
-      elevation: 0.6,
+      elevation: 1,
       borderRadius: BorderRadius.circular(16),
-      shadowColor: colorScheme.shadow.withValues(alpha: 0.12),
+      shadowColor: colorScheme.shadow.withValues(alpha: 0.08),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           child: Row(
             children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary, size: 22),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 6),
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                     ),
                   ],
                 ),
               ),
-              if (trailing != null) ...[const SizedBox(width: 12), trailing!],
+              if (status != null) ...[
+                const SizedBox(width: 8),
+                _StatusPill(label: status!),
+              ],
+              if (trailing != null) ...[const SizedBox(width: 8), trailing!],
             ],
           ),
         ),
@@ -716,18 +672,20 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final color = AppColors.statusColor(label);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: colorScheme.primary,
-          fontWeight: FontWeight.w600,
+        label.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

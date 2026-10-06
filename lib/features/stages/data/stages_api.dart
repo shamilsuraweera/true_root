@@ -24,7 +24,7 @@ class StagesApi {
     final uri = Uri.parse('$baseUrl/stages');
     final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to load stages');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to load stages'));
     }
     final data = jsonDecode(response.body) as List<dynamic>;
     return data.map((item) => Stage.fromApi(item as Map<String, dynamic>)).toList();
@@ -38,7 +38,7 @@ class StagesApi {
       body: jsonEncode(payload),
     );
     if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('Failed to create stage');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to create stage'));
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return Stage.fromApi(data);
@@ -52,7 +52,7 @@ class StagesApi {
       body: jsonEncode(payload),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to update stage');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to update stage'));
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return Stage.fromApi(data);
@@ -62,7 +62,7 @@ class StagesApi {
     final uri = Uri.parse('$baseUrl/stages/$id');
     final response = await http.delete(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to delete stage');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to delete stage'));
     }
   }
 }

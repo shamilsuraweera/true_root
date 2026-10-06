@@ -9,6 +9,7 @@ import '../activity/activity_page.dart';
 import '../requests/state/ownership_requests_provider.dart';
 import '../batches/state/batch_provider.dart';
 import '../batches/models/batch.dart';
+import '../batches/batch_detail_page.dart';
 import '../requests/models/ownership_request.dart';
 import 'models/recent_activity.dart';
 import '../notifications/notifications_sheet.dart';
@@ -139,7 +140,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   children: [
                     Expanded(
                       child: _AppSearchField(
-                        hintText: 'Search',
+                        hintText: 'Search batches, requests, or activity...',
                         controller: _searchController,
                         onChanged: _handleSearchChanged,
                         useLightStyle: !isDark,
@@ -154,6 +155,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           Icons.notifications_none,
                           color: headerTitleColor,
                         ),
+                        tooltip: 'Notifications',
                         onPressed: () {
                           showNotificationsSheet(context, ref);
                         },
@@ -161,9 +163,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 Text(
-                  'Stay on top of your batches',
+                  'Supply Chain Overview',
                   style: TextStyle(
                     color: headerTitleColor,
                     fontSize: 24,
@@ -172,8 +174,29 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'See requests, recent activity, and stock movement in one place.',
-                  style: TextStyle(color: headerSubtitleColor, fontSize: 14),
+                  'Trace agricultural lots from farm to export in real-time.',
+                  style: TextStyle(color: headerSubtitleColor, fontSize: 13),
+                ),
+                const SizedBox(height: 14),
+                // Top KPI summary chips
+                Row(
+                  children: [
+                    Expanded(
+                      child: _KpiMiniCard(
+                        label: 'Active Batches',
+                        value: '${batchesAsync.valueOrNull?.length ?? 0}',
+                        icon: Icons.inventory_2_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _KpiMiniCard(
+                        label: 'Pending Inbound',
+                        value: '${requestsAsync.valueOrNull?.where((r) => r.status == 'PENDING').length ?? 0}',
+                        icon: Icons.inbox_outlined,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -182,7 +205,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             child: Container(
               decoration: BoxDecoration(
                 color: contentBackground,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(28),
                   topRight: Radius.circular(28),
                 ),
@@ -192,6 +215,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ref.invalidate(pendingRequestsProvider);
                   ref.invalidate(recentBatchesProvider);
                   ref.invalidate(recentActivityProvider);
+                  ref.invalidate(productListProvider);
                   await Future.wait([
                     ref.read(pendingRequestsProvider.future),
                     ref.read(recentBatchesProvider.future),
@@ -200,10 +224,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                 },
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 32),
                   children: [
                     _SectionCard(
-                      title: 'Purchase Requests',
+                      title: 'Purchase & Transfer Requests',
                       actionLabel: 'View all',
                       onAction: () {
                         Navigator.push(
@@ -223,7 +247,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             searchQuery,
                           );
                           final emptyMessage = searchQuery.isEmpty
-                              ? 'No pending requests'
+                              ? 'No pending purchase requests'
                               : 'No matching requests';
                           if (filtered.isEmpty) {
                             return _EmptyState(message: emptyMessage);
@@ -234,9 +258,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   (item) => Padding(
                                     padding: const EdgeInsets.only(bottom: 8),
                                     child: _RequestCard(
-                                      name: 'Requester ${item.requesterId}',
-                                      batchId: 'Batch ${item.batchId}',
+                                      name: 'Requester ID #${item.requesterId}',
+                                      batchId: 'Batch #${item.batchId}',
                                       quantity: _requestQuantityText(ref, item),
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => BatchDetailPage(batchId: item.batchId),
+                                          ),
+                                        );
+                                      },
                                       onReject: () =>
                                           _rejectRequest(context, ref, item.id),
                                       onApprove: () => _approveRequest(
@@ -266,9 +298,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   (item) => Padding(
                                     padding: const EdgeInsets.only(bottom: 8),
                                     child: _RequestCard(
-                                      name: 'Requester ${item.requesterId}',
-                                      batchId: 'Batch ${item.batchId}',
+                                      name: 'Requester ID #${item.requesterId}',
+                                      batchId: 'Batch #${item.batchId}',
                                       quantity: _requestQuantityText(ref, item),
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => BatchDetailPage(batchId: item.batchId),
+                                          ),
+                                        );
+                                      },
                                       onReject: () =>
                                           _rejectRequest(context, ref, item.id),
                                       onApprove: () => _approveRequest(
@@ -290,9 +330,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         },
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     _SectionCard(
-                      title: 'My Batches',
+                      title: 'My Batches & Lots',
                       actionLabel: 'View all',
                       onAction: () {
                         ref.read(dashboardTabProvider.notifier).state = 1;
@@ -305,7 +345,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             productMap,
                           );
                           final emptyMessage = searchQuery.isEmpty
-                              ? 'No batches yet'
+                              ? 'No batches in your inventory'
                               : 'No matching batches';
                           if (filtered.isEmpty) {
                             return _EmptyState(message: emptyMessage);
@@ -315,9 +355,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 .map(
                                   (item) => _InfoTile(
                                     title:
-                                        'Batch ${item.id} • ${productMap[item.productId] ?? item.displayProduct}',
-                                    subtitle: '${item.quantity} ${item.unit}',
+                                        'Batch #${item.id}: ${productMap[item.productId] ?? item.displayProduct}',
+                                    subtitle: '${item.quantity} ${item.unit} • ${item.grade ?? 'Standard'}',
                                     trailing: _StatusChip(label: item.status),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => BatchDetailPage(batchId: item.id),
+                                        ),
+                                      );
+                                    },
                                   ),
                                 )
                                 .toList(),
@@ -337,9 +385,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 ...fallback.map(
                                   (item) => _InfoTile(
                                     title:
-                                        'Batch ${item.id} • ${productMap[item.productId] ?? item.displayProduct}',
+                                        'Batch #${item.id}: ${productMap[item.productId] ?? item.displayProduct}',
                                     subtitle: '${item.quantity} ${item.unit}',
                                     trailing: _StatusChip(label: item.status),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => BatchDetailPage(batchId: item.id),
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ),
                               ],
@@ -353,7 +409,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         },
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     _SectionCard(
                       title: 'Recent Activity',
                       actionLabel: 'View all',
@@ -369,7 +425,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         data: (items) {
                           final filtered = _filterActivity(items, searchQuery);
                           final emptyMessage = searchQuery.isEmpty
-                              ? 'No recent activity'
+                              ? 'No recent activity recorded'
                               : 'No matching activity';
                           if (filtered.isEmpty) {
                             return _EmptyState(message: emptyMessage);
@@ -423,6 +479,53 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
+class _KpiMiniCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+
+  const _KpiMiniCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white, size: 20),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              Text(
+                label,
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SectionCard extends StatelessWidget {
   final String title;
   final String actionLabel;
@@ -439,6 +542,8 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 0.8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -447,8 +552,16 @@ class _SectionCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                TextButton(onPressed: onAction, child: Text(actionLabel)),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                TextButton(
+                  onPressed: onAction,
+                  child: Text(actionLabel),
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -476,7 +589,7 @@ class _AppSearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 40,
+      height: 42,
       child: TextField(
         controller: controller,
         decoration: InputDecoration(
@@ -490,12 +603,9 @@ class _AppSearchField extends StatelessWidget {
               ? Colors.white.withValues(alpha: 0.18)
               : Theme.of(context).colorScheme.surface,
           hintStyle: useLightStyle
-              ? TextStyle(color: Colors.white.withValues(alpha: 0.85))
-              : null,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 8,
-          ),
+              ? TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)
+              : const TextStyle(fontSize: 13),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
             borderSide: BorderSide(
@@ -515,9 +625,7 @@ class _AppSearchField extends StatelessWidget {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
             borderSide: BorderSide(
-              color: useLightStyle
-                  ? Colors.white
-                  : Theme.of(context).colorScheme.primary,
+              color: useLightStyle ? Colors.white : Theme.of(context).colorScheme.primary,
               width: 1.4,
             ),
           ),
@@ -532,6 +640,7 @@ class _RequestCard extends StatelessWidget {
   final String name;
   final String batchId;
   final String quantity;
+  final VoidCallback? onTap;
   final VoidCallback onReject;
   final VoidCallback onApprove;
 
@@ -539,6 +648,7 @@ class _RequestCard extends StatelessWidget {
     required this.name,
     required this.batchId,
     required this.quantity,
+    this.onTap,
     required this.onReject,
     required this.onApprove,
   });
@@ -549,35 +659,53 @@ class _RequestCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.accent.withValues(alpha: 0.5)),
+        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.25)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(name, style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 4),
-            Text('$batchId • $quantity'),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: onReject,
-                    child: const Text('Reject'),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text('$batchId • $quantity', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red.shade700,
+                        side: BorderSide(color: Colors.red.shade200),
+                      ),
+                      onPressed: onReject,
+                      child: const Text('Reject'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: onApprove,
-                    child: const Text('Approve'),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2E7D32),
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: onApprove,
+                      child: const Text('Approve'),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -586,18 +714,8 @@ class _RequestCard extends StatelessWidget {
 
 String _requestQuantityText(WidgetRef ref, OwnershipRequest request) {
   final batchAsync = ref.watch(batchByIdProvider(request.batchId));
-  final products = ref.watch(productListProvider).valueOrNull;
-  final productMap = {
-    for (final product in products ?? []) product.id: product.name,
-  };
   final batch = batchAsync.valueOrNull;
-  final productName = batch?.productId != null
-      ? productMap[batch!.productId]
-      : null;
   final unit = batch?.unit ?? 'kg';
-  if (productName != null) {
-    return '${request.quantity} $unit • $productName';
-  }
   return '${request.quantity} $unit';
 }
 
@@ -605,20 +723,40 @@ class _InfoTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final Widget trailing;
+  final VoidCallback? onTap;
 
   const _InfoTile({
     required this.title,
     required this.subtitle,
     required this.trailing,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(title),
-      subtitle: Text(subtitle),
-      trailing: trailing,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.2)),
+      ),
+      child: ListTile(
+        dense: true,
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary, size: 18),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+        trailing: trailing,
+        onTap: onTap,
+      ),
     );
   }
 }
@@ -632,13 +770,15 @@ class _ActivityTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      dense: true,
       contentPadding: EdgeInsets.zero,
       leading: const Icon(
         Icons.check_circle_outline,
         color: AppColors.secondary,
+        size: 20,
       ),
-      title: Text(title),
-      subtitle: Text(subtitle),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
     );
   }
 }
@@ -685,8 +825,10 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(message, style: Theme.of(context).textTheme.bodyMedium),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Center(
+        child: Text(message, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+      ),
     );
   }
 }
@@ -713,18 +855,20 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final color = AppColors.statusColor(label);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.secondary.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(999),
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: onSurface.withValues(alpha: 0.75),
-          fontWeight: FontWeight.w600,
+        label.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
@@ -736,20 +880,42 @@ Future<void> _approveRequest(
   WidgetRef ref,
   String requestId,
 ) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('Approve Purchase Request?'),
+      content: const Text(
+        'This will accept the request and transfer lot ownership to the requester.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32)),
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Approve & Transfer'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed != true) return;
+
   try {
     final api = ref.read(ownershipRequestsApiProvider);
     await api.approve(requestId);
     _invalidateRequests(ref);
-    ref
-        .read(notificationsProvider.notifier)
-        .add(
-          title: 'Request approved',
-          message: 'Purchase request $requestId approved.',
+    ref.read(notificationsProvider.notifier).add(
+          title: 'Request Approved',
+          message: 'Purchase request #$requestId has been approved and transferred.',
         );
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Request approved')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Request approved successfully')),
+    );
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -763,20 +929,42 @@ Future<void> _rejectRequest(
   WidgetRef ref,
   String requestId,
 ) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('Reject Purchase Request?'),
+      content: const Text(
+        'Are you sure you want to decline this purchase request?',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Reject Request'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed != true) return;
+
   try {
     final api = ref.read(ownershipRequestsApiProvider);
     await api.reject(requestId);
     _invalidateRequests(ref);
-    ref
-        .read(notificationsProvider.notifier)
-        .add(
-          title: 'Request rejected',
-          message: 'Purchase request $requestId rejected.',
+    ref.read(notificationsProvider.notifier).add(
+          title: 'Request Rejected',
+          message: 'Purchase request #$requestId has been rejected.',
         );
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Request rejected')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Request rejected')),
+    );
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

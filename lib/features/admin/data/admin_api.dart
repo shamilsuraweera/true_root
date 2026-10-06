@@ -24,7 +24,7 @@ class AdminApi {
     final uri = Uri.parse('$baseUrl/admin/overview?limit=$limit');
     final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to load admin overview');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to load admin overview'));
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return AdminOverview.fromApi(data);

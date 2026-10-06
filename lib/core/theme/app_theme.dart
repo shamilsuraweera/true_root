@@ -52,7 +52,7 @@ class AppTheme {
       cardTheme: const CardThemeData(
         color: AppColors.surface,
         elevation: 3,
-        shadowColor: Color(0x1A114E8B),
+        shadowColor: Color(0x12004D43),
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(18)),
@@ -149,7 +149,7 @@ class AppTheme {
         primary: AppColors.primary,
         secondary: AppColors.secondary,
         surface: AppColors.darkSurface,
-        surfaceContainerHighest: Color(0xFF17324F),
+        surfaceContainerHighest: AppColors.darkSurfaceAlt,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: AppColors.darkText,
@@ -199,7 +199,7 @@ class AppTheme {
       ),
       inputDecorationTheme: const InputDecorationTheme(
         filled: true,
-        fillColor: Color(0xFF17324F),
+        fillColor: AppColors.darkSurfaceAlt,
         hintStyle: TextStyle(color: AppColors.darkMuted),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.all(Radius.circular(14)),
@@ -238,8 +238,8 @@ class AppTheme {
         ),
       ),
       chipTheme: const ChipThemeData(
-        backgroundColor: Color(0xFF17324F),
-        selectedColor: Color(0xFF1D3C5D),
+        backgroundColor: AppColors.darkSurfaceAlt,
+        selectedColor: Color(0xFF224A3E),
         shape: StadiumBorder(),
         side: BorderSide(color: AppColors.darkBorder),
         labelStyle: TextStyle(color: AppColors.darkText),

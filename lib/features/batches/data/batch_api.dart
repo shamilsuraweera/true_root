@@ -239,9 +239,11 @@ class BatchApi {
 
   Future<Batch> createBatch({
     required int productId,
-    required int quantity,
+    required double quantity,
     String? grade,
     int? ownerId,
+    int? stageId,
+    String? unit,
   }) async {
     final uri = Uri.parse('$baseUrl/batches');
     final response = await http.post(
@@ -251,11 +253,13 @@ class BatchApi {
         'productId': productId,
         'quantity': quantity,
         if (ownerId != null) 'ownerId': ownerId,
-        if (grade != null) 'grade': grade,
+        if (grade != null && grade.isNotEmpty) 'grade': grade,
+        if (stageId != null) 'stageId': stageId,
+        if (unit != null && unit.isNotEmpty) 'unit': unit,
       }),
     );
     if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('Failed to create batch');
+      throw Exception(_errorMessage(response, 'Failed to create batch'));
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return Batch.fromApi(data);
@@ -269,7 +273,7 @@ class BatchApi {
       body: jsonEncode({'reason': reason}),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to disqualify batch');
+      throw Exception(_errorMessage(response, 'Failed to mark batch not suitable'));
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return Batch.fromApi(data);
@@ -279,7 +283,7 @@ class BatchApi {
     final uri = Uri.parse('$baseUrl/batches/$batchId/archive');
     final response = await http.patch(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to archive batch');
+      throw Exception(_errorMessage(response, 'Failed to archive batch'));
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return Batch.fromApi(data);
@@ -289,7 +293,7 @@ class BatchApi {
     final uri = Uri.parse('$baseUrl/batches/$batchId');
     final response = await http.delete(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to delete batch');
+      throw Exception(_errorMessage(response, 'Failed to delete batch'));
     }
   }
 }

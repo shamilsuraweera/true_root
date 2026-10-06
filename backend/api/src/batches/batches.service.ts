@@ -59,21 +59,30 @@ export class BatchesService {
     quantity: number,
     grade?: string,
     ownerId?: number,
+    stageId?: number,
+    unit?: string,
   ) {
     await this.assertProductExists(productId);
+    if (stageId != null) {
+      const stage = await this.stages.findOne({ where: { id: stageId } });
+      if (!stage) {
+        throw new BadRequestException('Stage not found');
+      }
+    }
     const saved = await this.createBatchRecord({
       productId,
       quantity,
       grade: grade ?? null,
       status: 'CREATED',
-      unit: 'kg',
-      stageId: null,
+      unit: unit ?? 'kg',
+      stageId: stageId ?? null,
       ownerId: ownerId ?? 1,
     });
     await this.events.log(saved.id, BatchEventType.CREATED, 'Batch created', {
       quantityAfter: saved.quantity,
       statusAfter: saved.status,
       gradeAfter: saved.grade ?? null,
+      stageId: saved.stageId ?? null,
     });
     return saved;
   }

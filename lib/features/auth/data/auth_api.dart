@@ -15,7 +15,7 @@ class AuthApi {
       body: jsonEncode({'email': email, 'password': password}),
     );
     if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('Login failed');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Login failed'));
     }
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
@@ -38,7 +38,7 @@ class AuthApi {
       }),
     );
     if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('Registration failed');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Registration failed'));
     }
     return jsonDecode(response.body) as Map<String, dynamic>;
   }

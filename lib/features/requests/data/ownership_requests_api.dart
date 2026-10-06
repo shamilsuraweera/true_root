@@ -36,11 +36,11 @@ class OwnershipRequestsApi {
         'requesterId': int.parse(requesterId),
         'ownerId': int.parse(ownerId),
         'quantity': quantity,
-        if (note != null) 'note': note,
+        if (note != null && note.isNotEmpty) 'note': note,
       }),
     );
     if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception('Failed to create request');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to create request'));
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return OwnershipRequest.fromApi(data);
@@ -50,7 +50,7 @@ class OwnershipRequestsApi {
     final uri = Uri.parse('$baseUrl/ownership-requests/inbox?ownerId=$ownerId');
     final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to load inbox');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to load inbox'));
     }
     final data = jsonDecode(response.body) as List<dynamic>;
     return data.map((item) => OwnershipRequest.fromApi(item as Map<String, dynamic>)).toList();
@@ -60,7 +60,7 @@ class OwnershipRequestsApi {
     final uri = Uri.parse('$baseUrl/ownership-requests/outbox?requesterId=$requesterId');
     final response = await http.get(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to load outbox');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to load outbox'));
     }
     final data = jsonDecode(response.body) as List<dynamic>;
     return data.map((item) => OwnershipRequest.fromApi(item as Map<String, dynamic>)).toList();
@@ -70,7 +70,7 @@ class OwnershipRequestsApi {
     final uri = Uri.parse('$baseUrl/ownership-requests/$requestId/approve');
     final response = await http.patch(uri, headers: _headers(json: false));
     if (response.statusCode != 200) {
-      throw Exception('Failed to approve request');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to approve request'));
     }
   }
 
@@ -84,7 +84,7 @@ class OwnershipRequestsApi {
       }),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to reject request');
+      throw Exception(ApiConfig.extractErrorMessage(response, 'Failed to reject request'));
     }
   }
 }
