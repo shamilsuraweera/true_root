@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/theme/app_colors.dart';
 import 'state/batch_provider.dart';
 import 'models/batch_event.dart';
 
@@ -182,9 +183,9 @@ class _TimelineItem extends StatelessWidget {
       case 'MERGED':
         return _EventConfig(title: 'Batch Merged', icon: Icons.merge_type, color: const Color(0xFFEF6C00));
       case 'TRANSFORMED':
-        return _EventConfig(title: 'Product Transformed', icon: Icons.transform, color: const Color(0xFF0288D1));
+        return _EventConfig(title: 'Product Transformed', icon: Icons.transform, color: const Color(0xFF0D9488));
       case 'STAGE_CHANGED':
-        return _EventConfig(title: 'Stage Advanced', icon: Icons.timeline, color: const Color(0xFF3949AB));
+        return _EventConfig(title: 'Stage Advanced', icon: Icons.timeline, color: const Color(0xFF059669));
       case 'STATUS_CHANGED':
         return _EventConfig(title: 'Status Updated', icon: Icons.sync_alt, color: const Color(0xFFF57C00));
       case 'OWNERSHIP_TRANSFERRED':
@@ -194,7 +195,7 @@ class _TimelineItem extends StatelessWidget {
       case 'ARCHIVED':
         return _EventConfig(title: 'Batch Archived', icon: Icons.archive_outlined, color: const Color(0xFF757575));
       default:
-        return _EventConfig(title: type.replaceAll('_', ' '), icon: Icons.history, color: const Color(0xFF1569C7));
+        return _EventConfig(title: type.replaceAll('_', ' '), icon: Icons.history, color: AppColors.primary);
     }
   }
 }

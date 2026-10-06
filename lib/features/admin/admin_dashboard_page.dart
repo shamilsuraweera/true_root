@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/theme/app_colors.dart';
 import '../home/models/recent_activity.dart';
 import 'state/admin_provider.dart';
 import 'widgets/admin_page_shell.dart';
@@ -43,7 +44,7 @@ class AdminDashboardPage extends ConsumerWidget {
                           label: 'Total Users',
                           value: overview.users.toString(),
                           icon: Icons.people_outline,
-                          color: const Color(0xFF1569C7),
+                          color: AppColors.primary,
                         ),
                         _MetricCard(
                           label: 'Products',
@@ -216,10 +217,10 @@ class _ActivityRow extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: Colors.blue.withValues(alpha: 0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(Icons.check_circle_outline, color: Color(0xFF1569C7), size: 20),
+          child: const Icon(Icons.check_circle_outline, color: AppColors.primary, size: 20),
         ),
         title: Text(activity.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
         subtitle: Text(activity.subtitle, style: const TextStyle(fontSize: 12)),

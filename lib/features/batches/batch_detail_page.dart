@@ -310,7 +310,7 @@ class BatchDetailPage extends ConsumerWidget {
                     Expanded(
                       child: _MetricTile(
                         icon: Icons.scale_outlined,
-                        iconColor: Colors.blue,
+                        iconColor: AppColors.primary,
                         label: 'Quantity',
                         value: '${batch.quantity.toStringAsFixed(batch.quantity.truncateToDouble() == batch.quantity ? 0 : 2)} ${batch.unit}',
                       ),
@@ -825,7 +825,7 @@ Future<void> _showSplitDialog(
           children: [
             Text(
               'Available: ${availableQuantity.toStringAsFixed(2)}',
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
             ),
             const SizedBox(height: 12),
             TextFormField(

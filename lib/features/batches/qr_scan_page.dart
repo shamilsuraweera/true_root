@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../../core/theme/app_colors.dart';
 import 'batch_detail_page.dart';
 
 class QrScanPage extends StatefulWidget {
@@ -43,7 +44,7 @@ class _QrScanPageState extends State<QrScanPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.keyboard, color: Color(0xFF1569C7)),
+            Icon(Icons.keyboard, color: AppColors.primary),
             SizedBox(width: 8),
             Text('Manual Batch Entry', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ],

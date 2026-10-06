@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_routes.dart';
+import '../../core/theme/app_colors.dart';
 import '../../state/auth_state.dart';
 import 'state/auth_provider.dart';
 import 'widgets/auth_shell.dart';
@@ -112,7 +113,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
               initialValue: _role,
-              dropdownColor: const Color(0xFF1E5B97),
+              dropdownColor: const Color(0xFF005C50),
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.badge_outlined, color: Colors.white70),
@@ -138,7 +139,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               child: ElevatedButton(
                 onPressed: _isSubmitting ? null : _submit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0A355E),
+                  backgroundColor: AppColors.primaryDark,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 2,

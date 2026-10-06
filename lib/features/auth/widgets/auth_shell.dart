@@ -262,7 +262,7 @@ class _Ribbon extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0x66073A6B).withValues(alpha: 0.35),
+              color: const Color(0x66004D43).withValues(alpha: 0.35),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_routes.dart';
 import '../../core/api/api_config.dart';
+import '../../core/theme/app_colors.dart';
 import '../../state/auth_state.dart';
 import 'state/auth_provider.dart';
 import 'models/saved_account.dart';
@@ -26,10 +27,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   List<SavedAccount> _accounts = [];
 
   static const _demoAccounts = [
-    {'role': 'Admin', 'email': 'admin@trueroot.com', 'pass': 'admin123', 'color': Color(0xFF003366)},
+    {'role': 'Admin', 'email': 'admin@trueroot.com', 'pass': 'admin123', 'color': Color(0xFF005C50)},
     {'role': 'Farmer', 'email': 'farmer@trueroot.com', 'pass': 'farmer123', 'color': Color(0xFF2E7D32)},
     {'role': 'Trader', 'email': 'trader@trueroot.com', 'pass': 'trader123', 'color': Color(0xFFEF6C00)},
-    {'role': 'Exporter', 'email': 'exporter@trueroot.com', 'pass': 'exporter123', 'color': Color(0xFF6A1B9A)},
+    {'role': 'Exporter', 'email': 'exporter@trueroot.com', 'pass': 'exporter123', 'color': Color(0xFF007E6E)},
   ];
 
   @override
@@ -244,7 +245,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               child: ElevatedButton(
                 onPressed: _isSubmitting ? null : _submit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0A355E),
+                  backgroundColor: AppColors.primaryDark,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 2,
@@ -352,7 +353,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Row(
             children: [
-              Icon(Icons.dns_outlined, color: Color(0xFF1569C7)),
+              Icon(Icons.dns_outlined, color: AppColors.primary),
               SizedBox(width: 8),
               Text('Server Configuration', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ],
@@ -412,7 +413,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               setDialogState(() {
                                 testing = true;
                                 testStatus = 'Testing connection...';
-                                testColor = Colors.blue;
+                                testColor = AppColors.primary;
                               });
                               final ok = await ApiConfig.testConnection(urlController.text);
                               setDialogState(() {

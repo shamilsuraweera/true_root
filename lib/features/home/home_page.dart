@@ -659,7 +659,7 @@ class _RequestCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.blue.withValues(alpha: 0.25)),
+        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.25)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
