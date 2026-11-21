@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_routes.dart';
-import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/app_widgets.dart';
 import '../../state/auth_state.dart';
 import '../auth/state/auth_provider.dart';
 import '../users/models/user.dart';
@@ -49,29 +50,32 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: _AppSearchField(
-          hintText: 'Search',
-          controller: _searchController,
-          onChanged: (value) {
-            setState(() => _searchQuery = value.trim().toLowerCase());
-          },
-        ),
+        title: const Text('Profile'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () {
-              showNotificationsSheet(context, ref);
-            },
+            tooltip: 'Notifications',
+            icon: const Icon(Icons.notifications_none_rounded),
+            onPressed: () => showNotificationsSheet(context, ref),
           ),
           IconButton(
-            icon: Icon(
-              ref.watch(themeModeProvider) == ThemeMode.dark
-                  ? Icons.light_mode
-                  : Icons.dark_mode,
+            tooltip: 'Toggle theme',
+            icon: AnimatedSwitcher(
+              duration: Motion.base,
+              child: Icon(
+                Theme.of(context).brightness == Brightness.dark
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                key: ValueKey(Theme.of(context).brightness),
+              ),
             ),
             onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
           ),
-          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
+          IconButton(
+            tooltip: 'Sign out',
+            icon: const Icon(Icons.logout_rounded),
+            onPressed: _logout,
+          ),
+          const SizedBox(width: Gap.sm),
         ],
       ),
       body: RefreshIndicator(
@@ -105,20 +109,33 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               key: _formKey,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.fromLTRB(
+                  Gap.lg,
+                  Gap.sm,
+                  Gap.lg,
+                  MediaQuery.sizeOf(context).width < Breakpoints.tablet
+                      ? 120
+                      : Gap.xxl,
+                ),
                 children: [
+                  _ProfileHeader(
+                    name: _nameController.text.isNotEmpty
+                        ? _nameController.text
+                        : (profile.name ?? 'Your profile'),
+                    subtitle: [
+                      auth.role?.name ?? "",
+                      if ((profile.organization ?? '').isNotEmpty)
+                        profile.organization!,
+                    ].where((e) => e.isNotEmpty).join(' · '),
+                  ),
+                  const SizedBox(height: Gap.xl),
                   if (auth.role == UserRole.admin) ...[
                     Container(
                       margin: const EdgeInsets.only(bottom: 16),
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          minimumSize: const Size(0, 52),
                         ),
                         icon: const Icon(Icons.admin_panel_settings),
                         label: const Text(
@@ -131,11 +148,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                     ),
                   ],
-                  const CircleAvatar(
-                    radius: 36,
-                    child: Icon(Icons.person, size: 36),
-                  ),
-                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _nameController,
                     decoration: const InputDecoration(labelText: 'Name'),
@@ -183,6 +195,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
+                    AppSearchField(
+                      hint: 'Search members',
+                      controller: _searchController,
+                      onChanged: (value) => setState(
+                        () => _searchQuery = value.trim().toLowerCase(),
+                      ),
+                    ),
+                    const SizedBox(height: Gap.md),
                     Row(
                       children: [
                         Expanded(
@@ -229,21 +249,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  ElevatedButton(
+                  PrimaryButton(
+                    label: 'Save changes',
+                    icon: Icons.check_rounded,
                     onPressed: () => _save(profile.id),
-                    child: const Text('Save'),
                   ),
                 ],
               ),
             );
           },
-          loading: () => ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: const [
-              SizedBox(height: 200),
-              Center(child: CircularProgressIndicator()),
-            ],
-          ),
+          loading: () => const LoadingList(count: 3),
           error: (_, _) {
             if (cachedProfile != null) {
               return ListView(
@@ -381,51 +396,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 }
 
-class _AppSearchField extends StatelessWidget {
-  final String hintText;
-  final TextEditingController? controller;
-  final ValueChanged<String>? onChanged;
-
-  const _AppSearchField({
-    required this.hintText,
-    this.controller,
-    this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          hintText: hintText,
-          prefixIcon: const Icon(Icons.search),
-          filled: true,
-          fillColor: Theme.of(context).colorScheme.surface,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 8,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.outline,
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.outline,
-            ),
-          ),
-        ),
-        onChanged: onChanged,
-      ),
-    );
-  }
-}
-
 class _ProfileInfoRow extends StatelessWidget {
   final String label;
   final String value;
@@ -440,6 +410,65 @@ class _ProfileInfoRow extends StatelessWidget {
         children: [
           SizedBox(width: 120, child: Text(label)),
           Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({required this.name, required this.subtitle});
+  final String name;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final initial = name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase();
+    return Container(
+      padding: const EdgeInsets.all(Gap.xl),
+      decoration: BoxDecoration(
+        gradient: AppGradients.brand,
+        borderRadius: Radii.xlAll,
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 32,
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            child: Text(
+              initial,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: Gap.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if (subtitle.isNotEmpty)
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
