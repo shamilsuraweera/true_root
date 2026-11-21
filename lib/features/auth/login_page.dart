@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_routes.dart';
 import '../../core/api/api_config.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/app_widgets.dart';
 import '../../state/auth_state.dart';
 import 'state/auth_provider.dart';
 import 'models/saved_account.dart';
@@ -52,7 +54,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       title: 'Login',
       subtitle: 'True Root',
       trailing: IconButton(
-        icon: const Icon(Icons.settings_outlined, color: Colors.white70),
+        icon: const Icon(Icons.settings_outlined),
         tooltip: 'Server Connection Settings',
         onPressed: _showServerSettingsDialog,
       ),
@@ -61,212 +63,108 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Demo accounts quick select
-            Container(
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.flash_on, color: Colors.amber, size: 16),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Demo Accounts (1-Tap Fill)',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: _demoAccounts.map((demo) {
-                      return InkWell(
-                        onTap: () {
-                          _emailController.text = demo['email'] as String;
-                          _passwordController.text = demo['pass'] as String;
-                          setState(() {});
-                        },
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: (demo['color'] as Color).withValues(alpha: 0.75),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-                          ),
-                          child: Text(
-                            demo['role'] as String,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
+            _DemoAccounts(
+              accounts: _demoAccounts,
+              onPick: (demo) => setState(() {
+                _emailController.text = demo['email'] as String;
+                _passwordController.text = demo['pass'] as String;
+              }),
             ),
-
             if (_accounts.isNotEmpty) ...[
-              Text(
-                'Saved accounts',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
+              Text('Saved accounts', style: Theme.of(context).textTheme.titleSmall),
+              const SizedBox(height: Gap.sm),
               ..._accounts.map(
-                (account) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.white.withValues(alpha: 0.12),
-                  ),
-                  child: ListTile(
-                    dense: true,
-                    title: Text(
-                      account.email,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    subtitle: account.role != null
-                        ? Text(
-                            account.role!,
-                            style: const TextStyle(color: Colors.white70),
-                          )
-                        : null,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.white),
-                          onPressed: () => _removeAccount(account.email),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.login, color: Colors.white),
-                          onPressed: _isSubmitting ? null : () => _quickLogin(account),
-                        ),
-                      ],
-                    ),
-                    onTap: () {
+                (account) => Padding(
+                  padding: const EdgeInsets.only(bottom: Gap.sm),
+                  child: AppCard(
+                    padding: EdgeInsets.zero,
+                    onTap: () => setState(() {
                       _emailController.text = account.email;
                       _passwordController.clear();
-                      setState(() {});
-                    },
+                    }),
+                    child: ListTile(
+                      dense: true,
+                      leading: CircleAvatar(
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        child: Text(account.email.substring(0, 1).toUpperCase()),
+                      ),
+                      title: Text(account.email, overflow: TextOverflow.ellipsis),
+                      subtitle: account.role != null ? Text(account.role!) : null,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: 'Remove',
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () => _removeAccount(account.email),
+                          ),
+                          IconButton(
+                            tooltip: 'Sign in',
+                            icon: const Icon(Icons.login_rounded),
+                            onPressed: _isSubmitting ? null : () => _quickLogin(account),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: Gap.sm),
             ] else if (_loadingAccounts)
-              const SizedBox(height: 8),
-
-            const Text('Email', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 6),
+              const SizedBox(height: Gap.sm),
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
+              autofillHints: const [AutofillHints.email],
+              decoration: const InputDecoration(
+                labelText: 'Email',
                 hintText: 'username@email.com',
-                prefixIcon: const Icon(Icons.email_outlined, color: Colors.white70),
-                fillColor: Colors.white.withValues(alpha: 0.15),
-                filled: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                prefixIcon: Icon(Icons.mail_outline_rounded),
               ),
               validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Email is required';
-                }
-                if (!value.contains('@')) {
-                  return 'Enter a valid email';
-                }
+                if (value == null || value.trim().isEmpty) return 'Email is required';
+                if (!value.contains('@')) return 'Enter a valid email';
                 return null;
               },
             ),
-            const SizedBox(height: 14),
-            const Text('Password', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 6),
+            const SizedBox(height: Gap.lg),
             TextFormField(
               controller: _passwordController,
               obscureText: _obscurePassword,
-              style: const TextStyle(color: Colors.white),
+              autofillHints: const [AutofillHints.password],
+              onFieldSubmitted: (_) => _isSubmitting ? null : _submit(),
               decoration: InputDecoration(
-                hintText: 'Password',
-                prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
-                fillColor: Colors.white.withValues(alpha: 0.15),
-                filled: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                labelText: 'Password',
+                prefixIcon: const Icon(Icons.lock_outline_rounded),
                 suffixIcon: IconButton(
+                  tooltip: _obscurePassword ? 'Show password' : 'Hide password',
                   icon: Icon(
-                    _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    color: Colors.white70,
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
                   ),
                   onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Password is required';
-                }
-                return null;
-              },
+              validator: (value) =>
+                  (value == null || value.isEmpty) ? 'Password is required' : null,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: Gap.xs),
             CheckboxListTile(
               value: _rememberAccount,
               onChanged: (value) => setState(() => _rememberAccount = value ?? true),
               contentPadding: EdgeInsets.zero,
-              activeColor: Colors.white,
-              checkColor: Colors.black,
-              side: const BorderSide(color: Colors.white70),
-              title: const Text(
-                'Remember this account',
-                style: TextStyle(color: Colors.white, fontSize: 13),
-              ),
+              dense: true,
+              title: const Text('Remember this account'),
               controlAffinity: ListTileControlAffinity.leading,
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _isSubmitting ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryDark,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
-                ),
-                child: _isSubmitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text('Sign in', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: Gap.md),
+            PrimaryButton(label: 'Sign in', loading: _isSubmitting, onPressed: _submit),
+            const SizedBox(height: Gap.lg),
             Center(
               child: TextButton(
                 onPressed: () => Navigator.pushNamed(context, AppRoutes.register),
-                child: const Text(
-                  'Need an account? Register',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                ),
+                child: const Text('Need an account? Register'),
               ),
             ),
           ],
@@ -467,6 +365,60 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DemoAccounts extends StatelessWidget {
+  const _DemoAccounts({required this.accounts, required this.onPick});
+  final List<Map<String, Object>> accounts;
+  final ValueChanged<Map<String, Object>> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(Gap.md),
+      margin: const EdgeInsets.only(bottom: Gap.lg),
+      decoration: BoxDecoration(
+        color: c.primaryContainer.withValues(alpha: 0.5),
+        borderRadius: Radii.mdAll,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.bolt_rounded, size: 16, color: c.primary),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text('Demo accounts - tap to fill',
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+          const SizedBox(height: Gap.sm),
+          Wrap(
+            spacing: Gap.sm,
+            runSpacing: Gap.sm,
+            children: [
+              for (final demo in accounts)
+                ActionChip(
+                  label: Text(demo['role'] as String),
+                  avatar: CircleAvatar(
+                    radius: 5,
+                    backgroundColor: demo['color'] as Color,
+                  ),
+                  onPressed: () => onPick(demo),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

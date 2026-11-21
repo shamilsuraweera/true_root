@@ -1,11 +1,11 @@
 {
-    "name": "true_root",
-    "short_name": "true_root",
+    "name": "True Root",
+    "short_name": "True Root",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#007E6E",
     "theme_color": "#007E6E",
-    "description": "A new Flutter project.",
+    "description": "Agricultural supply chain traceability from root to shelf.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

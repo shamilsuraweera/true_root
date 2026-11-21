@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/app_widgets.dart';
 
+/// Shared header + content layout for admin pages.
 class AdminPageShell extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -20,70 +22,52 @@ class AdminPageShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-    final headerBackground = isDark ? colorScheme.surface : AppColors.primary;
-    final contentBackground = isDark
-        ? theme.scaffoldBackgroundColor
-        : AppColors.background;
-    final titleColor = isDark ? colorScheme.onSurface : Colors.white;
-    final subtitleColor = isDark
-        ? colorScheme.onSurface.withValues(alpha: 0.82)
-        : Colors.white.withValues(alpha: 0.9);
+    final t = Theme.of(context).textTheme;
+    final c = Theme.of(context).colorScheme;
+    final compact = Breakpoints.isCompact(context);
+    final hasToolbar = searchField != null || actions.isNotEmpty;
 
     return ColoredBox(
-      color: headerBackground,
-      child: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              16,
-              MediaQuery.paddingOf(context).top + 12,
-              16,
-              18,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: ContentWidth(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                Gap.lg,
+                compact ? Gap.sm : MediaQuery.paddingOf(context).top + Gap.xl,
+                Gap.lg,
+                Gap.lg,
+              ),
+              child: FadeSlideIn(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (searchField != null) Expanded(child: searchField!),
-                    if (searchField != null && actions.isNotEmpty)
-                      const SizedBox(width: 10),
-                    ...actions,
+                    Text(title, style: t.headlineMedium),
+                    const SizedBox(height: Gap.xs),
+                    Text(
+                      subtitle,
+                      style: t.bodyMedium?.copyWith(color: c.onSurfaceVariant),
+                    ),
+                    if (hasToolbar) ...[
+                      const SizedBox(height: Gap.lg),
+                      Row(
+                        children: [
+                          if (searchField != null) Expanded(child: searchField!),
+                          if (searchField != null && actions.isNotEmpty)
+                            const SizedBox(width: Gap.md),
+                          ...actions,
+                        ],
+                      ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 18),
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: titleColor,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  subtitle,
-                  style: TextStyle(color: subtitleColor, fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: contentBackground,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(28),
-                  topRight: Radius.circular(28),
-                ),
               ),
-              child: child,
             ),
-          ),
-        ],
+            Expanded(child: child),
+          ],
+        ),
       ),
     );
   }
@@ -102,63 +86,11 @@ class AdminHeaderSearchField extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return SizedBox(
-      height: 44,
-      child: TextField(
+  Widget build(BuildContext context) => AppSearchField(
         controller: controller,
+        hint: hintText,
         onChanged: onChanged,
-        decoration: InputDecoration(
-          hintText: hintText,
-          prefixIcon: Icon(
-            Icons.search,
-            color: isDark
-                ? theme.colorScheme.onSurface.withValues(alpha: 0.85)
-                : Colors.white,
-          ),
-          filled: true,
-          fillColor: isDark
-              ? theme.colorScheme.onSurface.withValues(alpha: 0.08)
-              : Colors.white.withValues(alpha: 0.18),
-          hintStyle: TextStyle(
-            color: isDark
-                ? theme.colorScheme.onSurface.withValues(alpha: 0.72)
-                : Colors.white.withValues(alpha: 0.85),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 8,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(
-              color: isDark
-                  ? theme.colorScheme.onSurface.withValues(alpha: 0.14)
-                  : Colors.white.withValues(alpha: 0.25),
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(
-              color: isDark
-                  ? theme.colorScheme.onSurface.withValues(alpha: 0.14)
-                  : Colors.white.withValues(alpha: 0.25),
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(
-              color: isDark ? theme.colorScheme.onSurface : Colors.white,
-              width: 1.4,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+      );
 }
 
 class AdminHeaderIconButton extends StatelessWidget {
@@ -172,22 +104,9 @@ class AdminHeaderIconButton extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Material(
-      color: isDark
-          ? theme.colorScheme.onSurface.withValues(alpha: 0.12)
-          : Colors.white.withValues(alpha: 0.2),
-      shape: const CircleBorder(),
-      child: IconButton(
+  Widget build(BuildContext context) => IconButton.filled(
         onPressed: onPressed,
-        icon: Icon(
-          icon,
-          color: isDark ? theme.colorScheme.onSurface : Colors.white,
-        ),
-      ),
-    );
-  }
+        icon: Icon(icon),
+        style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
+      );
 }

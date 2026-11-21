@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_routes.dart';
-import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/app_widgets.dart';
 import '../../state/auth_state.dart';
 import 'state/auth_provider.dart';
 import 'widgets/auth_shell.dart';
@@ -41,85 +42,62 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Full name', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 6),
             TextFormField(
               controller: _nameController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Your full name',
-                prefixIcon: const Icon(Icons.person_outline, color: Colors.white70),
-                fillColor: Colors.white.withValues(alpha: 0.15),
-                filled: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              textCapitalization: TextCapitalization.words,
+              autofillHints: const [AutofillHints.name],
+              decoration: const InputDecoration(
+                labelText: 'Full name',
+                prefixIcon: Icon(Icons.person_outline_rounded),
               ),
               validator: (value) =>
                   value == null || value.trim().isEmpty ? 'Name is required' : null,
             ),
-            const SizedBox(height: 12),
-            const Text('Email', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 6),
+            const SizedBox(height: Gap.lg),
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
+              autofillHints: const [AutofillHints.email],
+              decoration: const InputDecoration(
+                labelText: 'Email',
                 hintText: 'username@email.com',
-                prefixIcon: const Icon(Icons.email_outlined, color: Colors.white70),
-                fillColor: Colors.white.withValues(alpha: 0.15),
-                filled: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                prefixIcon: Icon(Icons.mail_outline_rounded),
               ),
               validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Email is required';
-                }
-                if (!value.contains('@')) {
-                  return 'Enter a valid email';
-                }
+                if (value == null || value.trim().isEmpty) return 'Email is required';
+                if (!value.contains('@')) return 'Enter a valid email';
                 return null;
               },
             ),
-            const SizedBox(height: 12),
-            const Text('Password', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 6),
+            const SizedBox(height: Gap.lg),
             TextFormField(
               controller: _passwordController,
               obscureText: _obscurePassword,
-              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
+                labelText: 'Password',
                 hintText: 'At least 6 characters',
-                prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
-                fillColor: Colors.white.withValues(alpha: 0.15),
-                filled: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                prefixIcon: const Icon(Icons.lock_outline_rounded),
                 suffixIcon: IconButton(
+                  tooltip: _obscurePassword ? 'Show password' : 'Hide password',
                   icon: Icon(
-                    _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                    color: Colors.white70,
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
                   ),
                   onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
-              validator: (value) {
-                if (value == null || value.length < 6) {
-                  return 'Min 6 characters';
-                }
-                return null;
-              },
+              validator: (value) =>
+                  (value == null || value.length < 6) ? 'Min 6 characters' : null,
             ),
-            const SizedBox(height: 12),
-            const Text('Role', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 6),
+            const SizedBox(height: Gap.lg),
             DropdownButtonFormField<String>(
               initialValue: _role,
-              dropdownColor: const Color(0xFF005C50),
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.badge_outlined, color: Colors.white70),
-                fillColor: Colors.white.withValues(alpha: 0.15),
-                filled: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              isExpanded: true,
+              borderRadius: Radii.mdAll,
+              decoration: const InputDecoration(
+                labelText: 'Role',
+                prefixIcon: Icon(Icons.badge_outlined),
               ),
               items: const [
                 DropdownMenuItem(value: 'farmer', child: Text('Farmer (Origin)')),
@@ -132,35 +110,13 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 setState(() => _role = value);
               },
             ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: _isSubmitting ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryDark,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 2,
-                ),
-                child: _isSubmitting
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text('Create account', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
-            ),
-            const SizedBox(height: 14),
+            const SizedBox(height: Gap.xl),
+            PrimaryButton(label: 'Create account', loading: _isSubmitting, onPressed: _submit),
+            const SizedBox(height: Gap.lg),
             Center(
               child: TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'Already have an account? Sign In',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                ),
+                child: const Text('Already have an account? Sign In'),
               ),
             ),
           ],

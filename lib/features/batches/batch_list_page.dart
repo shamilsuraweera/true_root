@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/app_widgets.dart';
 import 'state/batch_provider.dart';
 import 'batch_detail_page.dart';
 import 'create_batch_page.dart';
@@ -47,7 +48,9 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
   ) {
     var result = items;
     if (_selectedStatus != 'ALL') {
-      result = result.where((b) => b.status.toUpperCase() == _selectedStatus).toList();
+      result = result
+          .where((b) => b.status.toUpperCase() == _selectedStatus)
+          .toList();
     }
     if (query.trim().isEmpty) return result;
     final normalized = query.toLowerCase();
@@ -87,27 +90,13 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-    final headerBackground = isDark ? colorScheme.surface : AppColors.primary;
-    final contentBackground = isDark ? theme.scaffoldBackgroundColor : AppColors.background;
-    final headerIconBackground = isDark
-        ? colorScheme.onSurface.withValues(alpha: 0.12)
-        : Colors.white.withValues(alpha: 0.2);
-    final headerTitleColor = isDark ? colorScheme.onSurface : Colors.white;
-    final headerSubtitleColor = isDark
-        ? colorScheme.onSurface.withValues(alpha: 0.82)
-        : Colors.white.withValues(alpha: 0.9);
-
     final batchesAsync = ref.watch(ownedBatchListProvider);
     final productsAsync = ref.watch(productListProvider);
     final searchQuery = ref.watch(batchSearchProvider);
     final cachedOwnedBatches = ref.watch(cachedOwnedBatchListProvider);
     final cachedOutbox = ref.watch(cachedOwnershipOutboxProvider);
     final Map<int, String> cachedProductMap = {
-      for (final product in productsAsync.value ?? [])
-        product.id: product.name,
+      for (final product in productsAsync.value ?? []) product.id: product.name,
     };
     if (_searchController.text != searchQuery) {
       _searchController.value = TextEditingValue(
@@ -120,7 +109,6 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: headerBackground,
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
             Navigator.push(
@@ -146,76 +134,52 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: _AppSearchField(
-                          hintText: 'Search batches by ID or name...',
+                        child: AppSearchField(
+                          hint: 'Search batches by ID or name...',
                           controller: _searchController,
                           onChanged: _handleSearchChanged,
-                          useLightStyle: !isDark,
                         ),
                       ),
                       const SizedBox(width: 10),
-                      Material(
-                        color: headerIconBackground,
-                        shape: const CircleBorder(),
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.qr_code_scanner,
-                            color: headerTitleColor,
-                          ),
-                          tooltip: 'Scan QR Code',
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const QrScanPage(),
-                              ),
-                            );
-                          },
-                        ),
+                      IconButton.filledTonal(
+                        icon: Icon(Icons.qr_code_scanner),
+                        tooltip: 'Scan QR Code',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const QrScanPage(),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(width: 8),
-                      Material(
-                        color: headerIconBackground,
-                        shape: const CircleBorder(),
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.notifications_none,
-                            color: headerTitleColor,
-                          ),
-                          tooltip: 'Notifications',
-                          onPressed: () {
-                            showNotificationsSheet(context, ref);
-                          },
-                        ),
+                      IconButton.filledTonal(
+                        icon: Icon(Icons.notifications_none),
+                        tooltip: 'Notifications',
+                        onPressed: () {
+                          showNotificationsSheet(context, ref);
+                        },
                       ),
                     ],
                   ),
                   const SizedBox(height: 18),
                   Text(
                     'Track Lot Traceability',
-                    style: TextStyle(
-                      color: headerTitleColor,
-                      fontSize: 23,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 6),
                   Text(
                     'Monitor your active harvest, inventory, and pending ownership transfers.',
-                    style: TextStyle(color: headerSubtitleColor, fontSize: 13),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
             ),
             Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: contentBackground,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(28),
-                    topRight: Radius.circular(28),
-                  ),
-                ),
+              child: ContentWidth(
                 child: Column(
                   children: [
                     const Padding(
@@ -235,35 +199,48 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                             children: [
                               SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
                                 child: Row(
-                                  children: [
-                                    'ALL',
-                                    'ACTIVE',
-                                    'TRANSFERRED',
-                                    'SPLIT',
-                                    'MERGED',
-                                    'ARCHIVED',
-                                    'DISQUALIFIED',
-                                  ].map((status) {
-                                    final isSelected = _selectedStatus == status;
-                                    return Padding(
-                                      padding: const EdgeInsets.only(right: 8),
-                                      child: FilterChip(
-                                        label: Text(
-                                          status,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  children:
+                                      [
+                                        'ALL',
+                                        'ACTIVE',
+                                        'TRANSFERRED',
+                                        'SPLIT',
+                                        'MERGED',
+                                        'ARCHIVED',
+                                        'DISQUALIFIED',
+                                      ].map((status) {
+                                        final isSelected =
+                                            _selectedStatus == status;
+                                        return Padding(
+                                          padding: const EdgeInsets.only(
+                                            right: 8,
                                           ),
-                                        ),
-                                        selected: isSelected,
-                                        onSelected: (selected) {
-                                          setState(() => _selectedStatus = selected ? status : 'ALL');
-                                        },
-                                      ),
-                                    );
-                                  }).toList(),
+                                          child: FilterChip(
+                                            label: Text(
+                                              status,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: isSelected
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
+                                              ),
+                                            ),
+                                            selected: isSelected,
+                                            onSelected: (selected) {
+                                              setState(
+                                                () => _selectedStatus = selected
+                                                    ? status
+                                                    : 'ALL',
+                                              );
+                                            },
+                                          ),
+                                        );
+                                      }).toList(),
                                 ),
                               ),
                               Expanded(
@@ -272,25 +249,29 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                                     if (batches.isEmpty) {
                                       return RefreshIndicator(
                                         onRefresh: () async {
-                                          ref.invalidate(ownedBatchListProvider);
+                                          ref.invalidate(
+                                            ownedBatchListProvider,
+                                          );
                                           ref.invalidate(productListProvider);
                                           await Future.wait([
-                                            ref.read(ownedBatchListProvider.future),
-                                            ref.read(productListProvider.future),
+                                            ref.read(
+                                              ownedBatchListProvider.future,
+                                            ),
+                                            ref.read(
+                                              productListProvider.future,
+                                            ),
                                           ]);
                                         },
                                         child: ListView(
-                                          physics: const AlwaysScrollableScrollPhysics(),
+                                          physics:
+                                              const AlwaysScrollableScrollPhysics(),
                                           children: const [
-                                            SizedBox(height: 120),
-                                            Center(
-                                              child: Column(
-                                                children: [
-                                                  Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey),
-                                                  SizedBox(height: 8),
-                                                  Text('No batches found in your inventory', style: TextStyle(color: Colors.grey)),
-                                                ],
-                                              ),
+                                            SizedBox(height: 80),
+                                            EmptyState(
+                                              icon: Icons.inventory_2_outlined,
+                                              title: 'No batches yet',
+                                              message:
+                                                  'Batches in your inventory will appear here.',
                                             ),
                                           ],
                                         ),
@@ -309,41 +290,67 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                                         );
                                         if (filteredBatches.isEmpty) {
                                           return ListView(
-                                            physics: const AlwaysScrollableScrollPhysics(),
+                                            physics:
+                                                const AlwaysScrollableScrollPhysics(),
                                             children: const [
                                               SizedBox(height: 120),
-                                              Center(child: Text('No batches matching your filter')),
+                                              Center(
+                                                child: Text(
+                                                  'No batches matching your filter',
+                                                ),
+                                              ),
                                             ],
                                           );
                                         }
                                         return RefreshIndicator(
                                           onRefresh: () async {
-                                            ref.invalidate(ownedBatchListProvider);
+                                            ref.invalidate(
+                                              ownedBatchListProvider,
+                                            );
                                             ref.invalidate(productListProvider);
                                             await Future.wait([
-                                              ref.read(ownedBatchListProvider.future),
-                                              ref.read(productListProvider.future),
+                                              ref.read(
+                                                ownedBatchListProvider.future,
+                                              ),
+                                              ref.read(
+                                                productListProvider.future,
+                                              ),
                                             ]);
                                           },
                                           child: ListView.separated(
-                                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+                                            padding: const EdgeInsets.fromLTRB(
+                                              16,
+                                              12,
+                                              16,
+                                              80,
+                                            ),
                                             itemCount: filteredBatches.length,
-                                            separatorBuilder: (context, _) => const SizedBox(height: 10),
+                                            separatorBuilder: (context, _) =>
+                                                const SizedBox(height: 10),
                                             itemBuilder: (context, index) {
-                                              final batch = filteredBatches[index];
-                                              final productName = batch.productId != null
+                                              final batch =
+                                                  filteredBatches[index];
+                                              final productName =
+                                                  batch.productId != null
                                                   ? productMap[batch.productId]
                                                   : null;
                                               return _BatchCard(
-                                                title: 'Batch #${batch.id}: ${productName ?? batch.displayProduct}',
-                                                subtitle: '${batch.quantity} ${batch.unit} • ${batch.grade ?? 'Standard'}',
+                                                title:
+                                                    'Batch #${batch.id}: ${productName ?? batch.displayProduct}',
+                                                subtitle:
+                                                    '${batch.quantity} ${batch.unit} • ${batch.grade ?? 'Standard'}',
                                                 status: batch.status,
-                                                trailing: const Icon(Icons.chevron_right),
+                                                trailing: const Icon(
+                                                  Icons.chevron_right,
+                                                ),
                                                 onTap: () {
                                                   Navigator.push(
                                                     context,
                                                     MaterialPageRoute(
-                                                      builder: (_) => BatchDetailPage(batchId: batch.id),
+                                                      builder: (_) =>
+                                                          BatchDetailPage(
+                                                            batchId: batch.id,
+                                                          ),
                                                     ),
                                                   );
                                                 },
@@ -352,11 +359,17 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                                           ),
                                         );
                                       },
-                                      loading: () => const Center(child: CircularProgressIndicator()),
-                                      error: (_, _) => const Center(child: Text('Failed to load products')),
+                                      loading: () => const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                      error: (_, _) => const Center(
+                                        child: Text('Failed to load products'),
+                                      ),
                                     );
                                   },
-                                  loading: () => const Center(child: CircularProgressIndicator()),
+                                  loading: () => const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
                                   error: (_, _) {
                                     if (cachedOwnedBatches.isNotEmpty) {
                                       final filtered = _filterBatches(
@@ -365,24 +378,39 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                                         searchQuery,
                                       );
                                       return ListView.separated(
-                                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+                                        padding: const EdgeInsets.fromLTRB(
+                                          16,
+                                          12,
+                                          16,
+                                          80,
+                                        ),
                                         itemCount: filtered.length,
-                                        separatorBuilder: (context, _) => const SizedBox(height: 10),
+                                        separatorBuilder: (context, _) =>
+                                            const SizedBox(height: 10),
                                         itemBuilder: (context, index) {
                                           final batch = filtered[index];
-                                          final productName = batch.productId != null
-                                              ? cachedProductMap[batch.productId]
+                                          final productName =
+                                              batch.productId != null
+                                              ? cachedProductMap[batch
+                                                    .productId]
                                               : null;
                                           return _BatchCard(
-                                            title: 'Batch #${batch.id}: ${productName ?? batch.displayProduct}',
-                                            subtitle: '${batch.quantity} ${batch.unit}',
+                                            title:
+                                                'Batch #${batch.id}: ${productName ?? batch.displayProduct}',
+                                            subtitle:
+                                                '${batch.quantity} ${batch.unit}',
                                             status: batch.status,
-                                            trailing: const Icon(Icons.chevron_right),
+                                            trailing: const Icon(
+                                              Icons.chevron_right,
+                                            ),
                                             onTap: () {
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
-                                                  builder: (_) => BatchDetailPage(batchId: batch.id),
+                                                  builder: (_) =>
+                                                      BatchDetailPage(
+                                                        batchId: batch.id,
+                                                      ),
                                                 ),
                                               );
                                             },
@@ -397,7 +425,9 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                                           const Text('Failed to load batches'),
                                           const SizedBox(height: 8),
                                           ElevatedButton(
-                                            onPressed: () => ref.invalidate(ownedBatchListProvider),
+                                            onPressed: () => ref.invalidate(
+                                              ownedBatchListProvider,
+                                            ),
                                             child: const Text('Retry'),
                                           ),
                                         ],
@@ -412,26 +442,31 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                           // Tab 2: Outgoing Pending Requests
                           outboxAsync.when(
                             data: (requests) {
-                              final pending = requests.where((item) => item.status == 'PENDING').toList();
-                              final filteredPending = _filterRequests(pending, searchQuery);
+                              final pending = requests
+                                  .where((item) => item.status == 'PENDING')
+                                  .toList();
+                              final filteredPending = _filterRequests(
+                                pending,
+                                searchQuery,
+                              );
                               if (filteredPending.isEmpty) {
                                 return RefreshIndicator(
                                   onRefresh: () async {
                                     ref.invalidate(ownershipOutboxProvider);
-                                    await ref.read(ownershipOutboxProvider.future);
+                                    await ref.read(
+                                      ownershipOutboxProvider.future,
+                                    );
                                   },
                                   child: ListView(
-                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
                                     children: const [
-                                      SizedBox(height: 120),
-                                      Center(
-                                        child: Column(
-                                          children: [
-                                            Icon(Icons.outbox_outlined, size: 48, color: Colors.grey),
-                                            SizedBox(height: 8),
-                                            Text('No pending purchase requests in outbox', style: TextStyle(color: Colors.grey)),
-                                          ],
-                                        ),
+                                      SizedBox(height: 80),
+                                      EmptyState(
+                                        icon: Icons.outbox_outlined,
+                                        title: 'Outbox is empty',
+                                        message:
+                                            'No pending purchase requests.',
                                       ),
                                     ],
                                   ),
@@ -440,35 +475,55 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                               return RefreshIndicator(
                                 onRefresh: () async {
                                   ref.invalidate(ownershipOutboxProvider);
-                                  await ref.read(ownershipOutboxProvider.future);
+                                  await ref.read(
+                                    ownershipOutboxProvider.future,
+                                  );
                                 },
                                 child: ListView.separated(
-                                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    12,
+                                    16,
+                                    80,
+                                  ),
                                   itemCount: filteredPending.length,
-                                  separatorBuilder: (context, _) => const SizedBox(height: 10),
+                                  separatorBuilder: (context, _) =>
+                                      const SizedBox(height: 10),
                                   itemBuilder: (context, index) {
                                     final request = filteredPending[index];
                                     return Consumer(
                                       builder: (context, ref, _) {
-                                        final batchAsync = ref.watch(batchByIdProvider(request.batchId));
-                                        final products = ref.watch(productListProvider).value;
+                                        final batchAsync = ref.watch(
+                                          batchByIdProvider(request.batchId),
+                                        );
+                                        final products = ref
+                                            .watch(productListProvider)
+                                            .value;
                                         final productMap = {
-                                          for (final product in products ?? []) product.id: product.name,
+                                          for (final product in products ?? [])
+                                            product.id: product.name,
                                         };
                                         final batch = batchAsync.value;
-                                        final productName = batch?.productId != null
+                                        final productName =
+                                            batch?.productId != null
                                             ? productMap[batch!.productId]
                                             : null;
                                         return _BatchCard(
-                                          title: 'Batch #${request.batchId}: ${productName ?? batch?.displayProduct ?? 'Product'}',
-                                          subtitle: 'Requested: ${request.quantity} ${batch?.unit ?? 'kg'}',
+                                          title:
+                                              'Batch #${request.batchId}: ${productName ?? batch?.displayProduct ?? 'Product'}',
+                                          subtitle:
+                                              'Requested: ${request.quantity} ${batch?.unit ?? 'kg'}',
                                           status: request.status,
-                                          trailing: const Icon(Icons.chevron_right),
+                                          trailing: const Icon(
+                                            Icons.chevron_right,
+                                          ),
                                           onTap: () {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (_) => BatchDetailPage(batchId: request.batchId),
+                                                builder: (_) => BatchDetailPage(
+                                                  batchId: request.batchId,
+                                                ),
                                               ),
                                             );
                                           },
@@ -479,27 +534,43 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                                 ),
                               );
                             },
-                            loading: () => const Center(child: CircularProgressIndicator()),
+                            loading: () => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
                             error: (_, _) {
                               if (cachedOutbox.isNotEmpty) {
-                                final pending = cachedOutbox.where((item) => item.status == 'PENDING').toList();
-                                final filteredPending = _filterRequests(pending, searchQuery);
+                                final pending = cachedOutbox
+                                    .where((item) => item.status == 'PENDING')
+                                    .toList();
+                                final filteredPending = _filterRequests(
+                                  pending,
+                                  searchQuery,
+                                );
                                 return ListView.separated(
-                                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    12,
+                                    16,
+                                    80,
+                                  ),
                                   itemCount: filteredPending.length,
-                                  separatorBuilder: (context, _) => const SizedBox(height: 10),
+                                  separatorBuilder: (context, _) =>
+                                      const SizedBox(height: 10),
                                   itemBuilder: (context, index) {
                                     final request = filteredPending[index];
                                     return _BatchCard(
                                       title: 'Batch #${request.batchId}',
-                                      subtitle: 'Requested: ${request.quantity}',
+                                      subtitle:
+                                          'Requested: ${request.quantity}',
                                       status: request.status,
                                       trailing: const Icon(Icons.chevron_right),
                                       onTap: () {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) => BatchDetailPage(batchId: request.batchId),
+                                            builder: (_) => BatchDetailPage(
+                                              batchId: request.batchId,
+                                            ),
                                           ),
                                         );
                                       },
@@ -509,7 +580,8 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                               }
                               return Center(
                                 child: TextButton(
-                                  onPressed: () => ref.invalidate(ownershipOutboxProvider),
+                                  onPressed: () =>
+                                      ref.invalidate(ownershipOutboxProvider),
                                   child: const Text('Retry'),
                                 ),
                               );
@@ -524,69 +596,6 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _AppSearchField extends StatelessWidget {
-  final String hintText;
-  final TextEditingController? controller;
-  final ValueChanged<String>? onChanged;
-  final bool useLightStyle;
-
-  const _AppSearchField({
-    required this.hintText,
-    this.controller,
-    this.onChanged,
-    this.useLightStyle = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 42,
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          hintText: hintText,
-          prefixIcon: Icon(
-            Icons.search,
-            color: useLightStyle ? Colors.white.withValues(alpha: 0.9) : null,
-          ),
-          filled: true,
-          fillColor: useLightStyle
-              ? Colors.white.withValues(alpha: 0.18)
-              : Theme.of(context).colorScheme.surface,
-          hintStyle: useLightStyle
-              ? TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)
-              : const TextStyle(fontSize: 13),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(
-              color: useLightStyle
-                  ? Colors.white.withValues(alpha: 0.25)
-                  : Theme.of(context).colorScheme.outline,
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(
-              color: useLightStyle
-                  ? Colors.white.withValues(alpha: 0.25)
-                  : Theme.of(context).colorScheme.outline,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide(
-              color: useLightStyle ? Colors.white : Theme.of(context).colorScheme.primary,
-              width: 1.4,
-            ),
-          ),
-        ),
-        onChanged: onChanged,
       ),
     );
   }
@@ -609,84 +618,52 @@ class _BatchCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Material(
-      color: colorScheme.surface,
-      elevation: 1,
-      borderRadius: BorderRadius.circular(16),
-      shadowColor: colorScheme.shadow.withValues(alpha: 0.08),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-              if (status != null) ...[
-                const SizedBox(width: 8),
-                _StatusPill(label: status!),
-              ],
-              if (trailing != null) ...[const SizedBox(width: 8), trailing!],
-            ],
+    final c = Theme.of(context).colorScheme;
+    return AppCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(Gap.md + 2),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: c.primaryContainer,
+              borderRadius: Radii.mdAll,
+            ),
+            child: Icon(
+              Icons.inventory_2_rounded,
+              color: c.onPrimaryContainer,
+              size: 22,
+            ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  final String label;
-
-  const _StatusPill({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = AppColors.statusColor(label);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
+          const SizedBox(width: Gap.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: c.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          if (status != null) ...[
+            const SizedBox(width: Gap.sm),
+            StatusPill(status),
+          ],
+          if (trailing != null) ...[const SizedBox(width: Gap.sm), trailing!],
+        ],
       ),
     );
   }

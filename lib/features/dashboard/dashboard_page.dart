@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/theme/app_colors.dart';
+import '../../core/widgets/adaptive_shell.dart';
 
 import '../home/home_page.dart';
 import '../batches/batch_list_page.dart';
@@ -36,13 +36,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     final index = ref.watch(dashboardTabProvider);
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final navBackground = isDark ? colorScheme.surface : Colors.white;
-    final unselected = isDark
-        ? colorScheme.onSurface.withValues(alpha: 0.7)
-        : AppColors.textMuted;
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -58,76 +51,44 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Navigator.of(context).maybePop();
         }
       },
-      child: Scaffold(
+      child: AdaptiveShell(
+        destinations: _destinations,
+        selectedIndex: index,
+        onSelected: (i) {
+          if (i == index) {
+            _navigatorKeys[i].currentState?.popUntil((r) => r.isFirst);
+          } else {
+            ref.read(dashboardTabProvider.notifier).state = i;
+          }
+        },
         body: IndexedStack(index: index, children: _pages),
-        bottomNavigationBar: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: navBackground,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.13),
-                    blurRadius: 16,
-                    offset: Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: Theme(
-                  data: Theme.of(context).copyWith(
-                    splashFactory: NoSplash.splashFactory,
-                    highlightColor: Colors.transparent,
-                    splashColor: Colors.transparent,
-                  ),
-                  child: BottomNavigationBar(
-                    currentIndex: index,
-                    onTap: (i) {
-                      if (i == index) {
-                        _navigatorKeys[i].currentState?.popUntil(
-                          (route) => route.isFirst,
-                        );
-                      } else {
-                        ref.read(dashboardTabProvider.notifier).state = i;
-                      }
-                    },
-                    type: BottomNavigationBarType.fixed,
-                    backgroundColor: navBackground,
-                    selectedItemColor: AppColors.primary,
-                    unselectedItemColor: unselected,
-                    showUnselectedLabels: true,
-                    items: const [
-                      BottomNavigationBarItem(
-                        icon: Icon(Icons.home_filled),
-                        label: 'Dashboard',
-                      ),
-                      BottomNavigationBarItem(
-                        icon: Icon(Icons.inventory_2_outlined),
-                        label: 'Batches',
-                      ),
-                      BottomNavigationBarItem(
-                        icon: Icon(Icons.people_outline),
-                        label: 'Users',
-                      ),
-                      BottomNavigationBarItem(
-                        icon: Icon(Icons.person_outline),
-                        label: 'Profile',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
 }
+
+const _destinations = [
+  ShellDestination(
+    label: 'Dashboard',
+    icon: Icons.space_dashboard_outlined,
+    selectedIcon: Icons.space_dashboard_rounded,
+  ),
+  ShellDestination(
+    label: 'Batches',
+    icon: Icons.inventory_2_outlined,
+    selectedIcon: Icons.inventory_2_rounded,
+  ),
+  ShellDestination(
+    label: 'Users',
+    icon: Icons.people_outline_rounded,
+    selectedIcon: Icons.people_rounded,
+  ),
+  ShellDestination(
+    label: 'Profile',
+    icon: Icons.person_outline_rounded,
+    selectedIcon: Icons.person_rounded,
+  ),
+];
 
 class _TabNavigator extends StatelessWidget {
   final GlobalKey<NavigatorState> navigatorKey;

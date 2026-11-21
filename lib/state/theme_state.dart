@@ -8,7 +8,7 @@ final themeStorageProvider = Provider<ThemeStorage>((ref) {
 });
 
 class ThemeNotifier extends StateNotifier<ThemeMode> {
-  ThemeNotifier(this.storage) : super(ThemeMode.light) {
+  ThemeNotifier(this.storage) : super(ThemeMode.system) {
     _load();
   }
 
@@ -18,7 +18,7 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
     final saved = await storage.loadThemeMode();
     if (saved == 'dark') {
       state = ThemeMode.dark;
-    } else {
+    } else if (saved == 'light') {
       state = ThemeMode.light;
     }
   }
