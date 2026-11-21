@@ -59,8 +59,9 @@ flutter doctor
 
 ## 3. Database
 
-The API creates all tables itself on first start (TypeORM `synchronize`). You only need an empty
-database and a user. The defaults below match what the API expects out of the box.
+The API creates all tables itself on first start (TypeORM `synchronize`), or you can run
+`npm run migration:run` in `backend/api`. You only need an empty database and a user. Migrations and seed data are
+covered in [DATABASE.md](DATABASE.md). The defaults below match what the API expects out of the box.
 
 ```bash
 # Linux/macOS (run as the postgres superuser)
@@ -157,9 +158,9 @@ done
 
 A `500` response means the email already exists, so nothing is wrong.
 
-> `npm run seed` (demo products, stages and batches) expects `sql/seed_data.sql`, which is **not
-> currently in the repository**. Without it, create products and stages in the Admin console
-> (see the [user guide](USER_GUIDE.md)).
+Alternatively, load the full demo dataset (the four demo users above, stages, products, batches and a
+request) with `cd backend/api && npm run seed`. It is idempotent and needs the tables to exist first. See
+[DATABASE.md](DATABASE.md#seed-data-demo-content).
 
 > Demo accounts are for development only. **Never create them in production.**
 
