@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/adaptive_shell.dart';
+import '../../core/widgets/brand_logo.dart';
 import '../../app_routes.dart';
 import '../../state/auth_state.dart';
 
@@ -21,210 +23,98 @@ class AdminShellPage extends ConsumerStatefulWidget {
 class _AdminShellPageState extends ConsumerState<AdminShellPage> {
   int _index = 0;
 
-  final _destinations = const [
-    _AdminDestination(label: 'Dashboard', icon: Icons.dashboard),
-    _AdminDestination(label: 'Users', icon: Icons.people),
-    _AdminDestination(label: 'Products', icon: Icons.inventory_2),
-    _AdminDestination(label: 'Stages', icon: Icons.timeline),
-    _AdminDestination(label: 'Batches', icon: Icons.local_shipping),
+  static const _destinations = [
+    ShellDestination(
+      label: 'Dashboard',
+      icon: Icons.dashboard_outlined,
+      selectedIcon: Icons.dashboard_rounded,
+    ),
+    ShellDestination(
+      label: 'Users',
+      icon: Icons.people_outline_rounded,
+      selectedIcon: Icons.people_rounded,
+    ),
+    ShellDestination(
+      label: 'Products',
+      icon: Icons.inventory_2_outlined,
+      selectedIcon: Icons.inventory_2_rounded,
+    ),
+    ShellDestination(
+      label: 'Stages',
+      icon: Icons.timeline_rounded,
+      selectedIcon: Icons.timeline_rounded,
+    ),
+    ShellDestination(
+      label: 'Batches',
+      icon: Icons.local_shipping_outlined,
+      selectedIcon: Icons.local_shipping_rounded,
+    ),
   ];
+
+  void _switchToUserView() => Navigator.pushNamed(context, AppRoutes.dashboard);
+
+  void _signOut() {
+    ref.read(authProvider.notifier).logout();
+    Navigator.pushReplacementNamed(context, AppRoutes.login);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= 900;
-        final theme = Theme.of(context);
-        final colorScheme = theme.colorScheme;
-        final isDark = theme.brightness == Brightness.dark;
-        final navBackground = isDark ? colorScheme.surface : Colors.white;
-        final unselectedColor = isDark
-            ? colorScheme.onSurface.withValues(alpha: 0.72)
-            : AppColors.textMuted;
-
-        return Scaffold(
-          appBar: isWide
-              ? null
-              : AppBar(
-                  title: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.shield_outlined, color: AppColors.primary, size: 20),
-                      const SizedBox(width: 8),
-                      Text('Admin: ${_destinations[_index].label}'),
-                    ],
-                  ),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.swap_horiz),
-                      tooltip: 'Switch to User View',
-                      onPressed: () {
-                        Navigator.pushNamed(context, AppRoutes.dashboard);
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.logout),
-                      tooltip: 'Sign Out',
-                      onPressed: () {
-                        ref.read(authProvider.notifier).logout();
-                        Navigator.pushReplacementNamed(context, AppRoutes.login);
-                      },
-                    ),
-                  ],
+    final compact = MediaQuery.sizeOf(context).width < Breakpoints.tablet;
+    return AdaptiveShell(
+      destinations: _destinations,
+      selectedIndex: _index,
+      onSelected: (value) => setState(() => _index = value),
+      appBar: compact
+          ? AppBar(
+              title: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const BrandLogo(size: 28),
+                  const SizedBox(width: Gap.sm),
+                  Text('Admin · ${_destinations[_index].label}'),
+                ],
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.swap_horiz_rounded),
+                  tooltip: 'Switch to User View',
+                  onPressed: _switchToUserView,
                 ),
-          body: Row(
-            children: [
-              if (isWide)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 0, 24),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: navBackground,
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(
-                            alpha: isDark ? 0.35 : 0.13,
-                          ),
-                          blurRadius: 18,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(28),
-                      child: NavigationRail(
-                        backgroundColor: navBackground,
-                        selectedIndex: _index,
-                        onDestinationSelected: (value) =>
-                            setState(() => _index = value),
-                        labelType: NavigationRailLabelType.all,
-                        leading: Padding(
-                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Image.asset(
-                                'assets/icon/app_icon.png',
-                                width: 28,
-                                height: 28,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.eco, size: 24, color: AppColors.primary),
-                              ),
-                              const SizedBox(width: 8),
-                              const Text('Admin', style: TextStyle(fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                        selectedIconTheme: const IconThemeData(
-                          color: AppColors.primary,
-                        ),
-                        unselectedIconTheme: IconThemeData(
-                          color: unselectedColor,
-                        ),
-                        selectedLabelTextStyle: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        unselectedLabelTextStyle: TextStyle(
-                          color: unselectedColor,
-                        ),
-                        destinations: [
-                          for (final destination in _destinations)
-                            NavigationRailDestination(
-                              icon: Icon(destination.icon),
-                              label: Text(destination.label),
-                            ),
-                        ],
-                        trailing: Expanded(
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.swap_horiz),
-                                    tooltip: 'Switch to User View',
-                                    onPressed: () {
-                                      Navigator.pushNamed(context, AppRoutes.dashboard);
-                                    },
-                                  ),
-                                  const SizedBox(height: 8),
-                                  IconButton(
-                                    icon: const Icon(Icons.logout),
-                                    tooltip: 'Sign Out',
-                                    onPressed: () {
-                                      ref.read(authProvider.notifier).logout();
-                                      Navigator.pushReplacementNamed(context, AppRoutes.login);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                IconButton(
+                  icon: const Icon(Icons.logout_rounded),
+                  tooltip: 'Sign Out',
+                  onPressed: _signOut,
                 ),
-              Expanded(child: _AdminContent(index: _index)),
-            ],
+              ],
+            )
+          : null,
+      trailing: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.swap_horiz_rounded),
+            tooltip: 'Switch to User View',
+            onPressed: _switchToUserView,
           ),
-          bottomNavigationBar: isWide
-              ? null
-              : SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: navBackground,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(
-                              alpha: isDark ? 0.35 : 0.13,
-                            ),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: BottomNavigationBar(
-                          currentIndex: _index,
-                          onTap: (value) => setState(() => _index = value),
-                          type: BottomNavigationBarType.fixed,
-                          backgroundColor: navBackground,
-                          selectedItemColor: AppColors.primary,
-                          unselectedItemColor: unselectedColor,
-                          showUnselectedLabels: true,
-                          items: [
-                            for (final destination in _destinations)
-                              BottomNavigationBarItem(
-                                icon: Icon(destination.icon),
-                                label: destination.label,
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-        );
-      },
+          const SizedBox(height: Gap.sm),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            tooltip: 'Sign Out',
+            onPressed: _signOut,
+          ),
+        ],
+      ),
+      body: AnimatedSwitcher(
+        duration: Motion.base,
+        switchInCurve: Motion.curve,
+        child: KeyedSubtree(
+          key: ValueKey(_index),
+          child: _AdminContent(index: _index),
+        ),
+      ),
     );
   }
-}
-
-class _AdminDestination {
-  final String label;
-  final IconData icon;
-
-  const _AdminDestination({required this.label, required this.icon});
 }
 
 class _AdminContent extends StatelessWidget {
