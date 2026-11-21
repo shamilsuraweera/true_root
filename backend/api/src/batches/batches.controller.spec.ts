@@ -64,4 +64,3 @@ describe('BatchesController', () => {
     expect(splitBatch).toHaveBeenCalledWith(10, splitDto.items);
   });
 });
-
