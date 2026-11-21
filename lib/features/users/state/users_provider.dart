@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../data/users_api.dart';
 import '../models/user.dart';
 import '../../../state/auth_state.dart';

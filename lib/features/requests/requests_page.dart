@@ -178,11 +178,11 @@ class _InboxCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final batchAsync = ref.watch(batchByIdProvider(request.batchId));
-    final products = ref.watch(productListProvider).valueOrNull;
+    final products = ref.watch(productListProvider).value;
     final productMap = {
       for (final product in products ?? []) product.id: product.name,
     };
-    final batch = batchAsync.valueOrNull;
+    final batch = batchAsync.value;
     final productName = batch?.productId != null
         ? productMap[batch!.productId]
         : null;
@@ -300,11 +300,11 @@ class _OutboxTitle extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final batchAsync = ref.watch(batchByIdProvider(request.batchId));
-    final products = ref.watch(productListProvider).valueOrNull;
+    final products = ref.watch(productListProvider).value;
     final productMap = {
       for (final product in products ?? []) product.id: product.name,
     };
-    final batch = batchAsync.valueOrNull;
+    final batch = batchAsync.value;
     final productName = batch?.productId != null
         ? productMap[batch!.productId]
         : null;

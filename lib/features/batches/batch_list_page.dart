@@ -106,7 +106,7 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
     final cachedOwnedBatches = ref.watch(cachedOwnedBatchListProvider);
     final cachedOutbox = ref.watch(cachedOwnershipOutboxProvider);
     final Map<int, String> cachedProductMap = {
-      for (final product in productsAsync.valueOrNull ?? [])
+      for (final product in productsAsync.value ?? [])
         product.id: product.name,
     };
     if (_searchController.text != searchQuery) {
@@ -451,11 +451,11 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                                     return Consumer(
                                       builder: (context, ref, _) {
                                         final batchAsync = ref.watch(batchByIdProvider(request.batchId));
-                                        final products = ref.watch(productListProvider).valueOrNull;
+                                        final products = ref.watch(productListProvider).value;
                                         final productMap = {
                                           for (final product in products ?? []) product.id: product.name,
                                         };
-                                        final batch = batchAsync.valueOrNull;
+                                        final batch = batchAsync.value;
                                         final productName = batch?.productId != null
                                             ? productMap[batch!.productId]
                                             : null;

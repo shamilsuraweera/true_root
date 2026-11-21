@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../core/storage/theme_storage.dart';
 
 final themeStorageProvider = Provider<ThemeStorage>((ref) {

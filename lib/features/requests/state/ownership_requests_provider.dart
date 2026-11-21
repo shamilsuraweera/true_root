@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../../profile/state/profile_provider.dart';
 import '../data/ownership_requests_api.dart';
 import '../models/ownership_request.dart';
