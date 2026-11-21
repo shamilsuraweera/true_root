@@ -69,11 +69,10 @@ class AuthShell extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    borderRadius: const BorderRadius.vertical(
+                child: Material(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
                       top: Radius.circular(Radii.xl + 8),
                     ),
                   ),

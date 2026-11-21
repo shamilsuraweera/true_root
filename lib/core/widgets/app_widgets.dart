@@ -376,22 +376,26 @@ class LoadingList extends StatelessWidget {
   final int count;
 
   @override
-  Widget build(BuildContext context) => ListView.separated(
+  Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.all(Gap.lg),
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: count,
-        separatorBuilder: (_, _) => const SizedBox(height: Gap.md),
-        itemBuilder: (_, _) => const AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Skeleton(height: 18, width: 160),
-              SizedBox(height: Gap.sm),
-              Skeleton(height: 12),
-              SizedBox(height: Gap.xs),
-              Skeleton(height: 12, width: 220),
+        child: Column(
+          children: [
+            for (var i = 0; i < count; i++) ...[
+              if (i > 0) const SizedBox(height: Gap.md),
+              const AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Skeleton(height: 18, width: 160),
+                    SizedBox(height: Gap.sm),
+                    Skeleton(height: 12),
+                    SizedBox(height: Gap.xs),
+                    Skeleton(height: 12, width: 220),
+                  ],
+                ),
+              ),
             ],
-          ),
+          ],
         ),
       );
 }

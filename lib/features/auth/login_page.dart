@@ -392,11 +392,14 @@ class _DemoAccounts extends StatelessWidget {
             children: [
               Icon(Icons.bolt_rounded, size: 16, color: c.primary),
               const SizedBox(width: 6),
-              Text('Demo accounts - tap to fill',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(fontWeight: FontWeight.w700)),
+              Flexible(
+                child: Text('Demo accounts - tap to fill',
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+              ),
             ],
           ),
           const SizedBox(height: Gap.sm),

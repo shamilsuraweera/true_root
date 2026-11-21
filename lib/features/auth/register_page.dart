@@ -93,6 +93,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             const SizedBox(height: Gap.lg),
             DropdownButtonFormField<String>(
               initialValue: _role,
+              isExpanded: true,
               borderRadius: Radii.mdAll,
               decoration: const InputDecoration(
                 labelText: 'Role',
