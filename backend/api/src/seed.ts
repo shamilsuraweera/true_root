@@ -20,10 +20,26 @@ async function runSeed() {
       throw new Error(`Seed SQL file not found at: ${sqlPath}`);
     }
 
+    const tables = await client.query<{
+      users: string | null;
+      batches: string | null;
+    }>(
+      "SELECT to_regclass('users') AS users, to_regclass('batches') AS batches",
+    );
+    const { users, batches } = tables.rows[0];
+    if (!users || !batches) {
+      throw new Error(
+        'Tables do not exist yet. Start the API once (synchronize) or run `npm run migration:run`, then seed again.',
+      );
+    }
+
     const sql = fs.readFileSync(sqlPath, 'utf8');
     await client.query(sql);
     console.log(
-      'Database seeded successfully with demo users, products, stages, batches, and events!',
+      'Database seeded with demo users, stages, products, batches, events and a request.',
+    );
+    console.log(
+      'Logins: admin|farmer|trader|exporter@trueroot.com / <role>123',
     );
   } catch (err) {
     console.error('Seeding failed:', err);

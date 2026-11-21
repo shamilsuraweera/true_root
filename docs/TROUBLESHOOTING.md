@@ -11,7 +11,8 @@
 | `Not allowed by CORS` (browser console) | Add the web app's origin to `CORS_ORIGINS` (production), including `https://` and no trailing slash. |
 | `Must use import to load ES Module` / syntax errors on start | Node is too old. Use Node **22.12 or newer** (`node -v`). |
 | Register returns 500 | Email already registered (duplicate). Use another email or log in. |
-| `Seed SQL file not found` | `sql/seed_data.sql` is not in the repo. Create data via the Admin console instead. |
+| `Tables do not exist yet` when seeding | Create the schema first: start the API once or run `npm run migration:run`, then `npm run seed`. |
+| `permission denied to create extension "pgcrypto"` | Run `CREATE EXTENSION pgcrypto;` once as the `postgres` superuser in the `true_root` database, then seed again. |
 | Port 3000 busy | `PORT=3001 npm run start:dev`, then set the app's server URL to match. |
 | `npm audit` shows moderate `glob`/`minimatch` | Dev-tooling only (Jest). Not in production dependencies (`npm audit --omit=dev` is clean). |
 

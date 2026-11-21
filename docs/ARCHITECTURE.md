@@ -52,8 +52,8 @@ One Nest module per domain: `auth`, `users`, `products`, `stages`, `batches`, `b
 | `batch_events` | immutable per-batch event log (history timeline) |
 | `ownership_requests` | batchId, requesterId, ownerId, quantity, status, note |
 
-Tables are created and altered automatically on API start (`synchronize: true`); see
-[DEPLOYMENT.md](DEPLOYMENT.md#known-production-caveats).
+Tables are created automatically on API start in development (`synchronize`); production uses migrations in
+`backend/api/src/database/migrations/`. See [DATABASE.md](DATABASE.md).
 
 ## Branching and releases
 

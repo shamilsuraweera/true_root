@@ -30,6 +30,7 @@ ownership from the farm, through traders, to the exporter.
 | [docs/RUNNING.md](docs/RUNNING.md) | Running the API and app (web, mobile, phone-in-browser), tests, lint |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Production deployment: API, database, web, Android, iOS |
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | How to use the app (all roles) |
+| [docs/DATABASE.md](docs/DATABASE.md) | Migrations, seed data, backups |
 | [docs/API.md](docs/API.md) | REST API reference |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Code layout, design system, data model |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common errors and fixes |

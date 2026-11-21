@@ -219,10 +219,10 @@ Google Play Console -> create app -> upload the `.aab` -> internal testing -> pr
 
 ## Known production caveats
 
-- **Automatic schema sync.** The API runs with TypeORM `synchronize: true` (`backend/api/src/app.module.ts`), which
-  alters tables automatically on start. That is convenient in development but can drop or alter columns
-  unexpectedly in production. Before storing valuable data, switch to migrations (`synchronize: false` +
-  `typeorm migration:generate`) and back up before each deploy.
+- **Automatic schema sync.** `synchronize` is on by default (it alters tables on start), which can drop or alter
+  columns unexpectedly in production. In production set `DB_SYNCHRONIZE=false` and use migrations
+  (`npm run migration:run`, or `DB_MIGRATIONS_RUN=true`), and back up before each deploy.
+  See [DATABASE.md](DATABASE.md). Do not run `npm run seed` in production (public demo passwords).
 - **No rate limiting or audit of failed logins** on `/auth/login` - put the API behind a proxy/WAF with rate limits.
 - **Open registration.** `POST /auth/register` lets anyone create an account with any role, **including admin**.
   Before going public, restrict registration (for example disallow the `admin` role in `RegisterDto`/`AuthService`).
