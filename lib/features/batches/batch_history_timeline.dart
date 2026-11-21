@@ -22,11 +22,11 @@ class BatchHistoryTimeline extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.history_toggle_off, size: 48, color: Colors.grey.shade400),
+                  Icon(Icons.history_toggle_off, size: 48, color: Theme.of(context).colorScheme.outline),
                   const SizedBox(height: 8),
                   Text(
                     'No timeline events yet',
-                    style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -59,7 +59,7 @@ class BatchHistoryTimeline extends ConsumerWidget {
       error: (err, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Text('Failed to load history: $err', style: const TextStyle(color: Colors.red)),
+          child: Text('Failed to load history: $err', style: TextStyle(color: Theme.of(context).colorScheme.error)),
         ),
       ),
     );
@@ -98,7 +98,7 @@ class _TimelineItem extends StatelessWidget {
                 Container(
                   width: 2,
                   height: 12,
-                  color: isFirst ? Colors.transparent : Colors.grey.shade300,
+                  color: isFirst ? Colors.transparent : Theme.of(context).colorScheme.outline,
                 ),
                 // Icon circle
                 Container(
@@ -115,7 +115,7 @@ class _TimelineItem extends StatelessWidget {
                 Expanded(
                   child: Container(
                     width: 2,
-                    color: isLast ? Colors.transparent : Colors.grey.shade300,
+                    color: isLast ? Colors.transparent : Theme.of(context).colorScheme.outline,
                   ),
                 ),
               ],
@@ -151,7 +151,7 @@ class _TimelineItem extends StatelessWidget {
                       ),
                       Text(
                         timeStr,
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       ),
                     ],
                   ),
@@ -177,23 +177,23 @@ class _TimelineItem extends StatelessWidget {
   _EventConfig _getEventConfig(String type) {
     switch (type.toUpperCase()) {
       case 'CREATED':
-        return _EventConfig(title: 'Batch Created', icon: Icons.add_circle, color: const Color(0xFF2E7D32));
+        return _EventConfig(title: 'Batch Created', icon: Icons.add_circle, color: AppColors.statusActive);
       case 'SPLIT':
-        return _EventConfig(title: 'Batch Split', icon: Icons.call_split, color: const Color(0xFF8E24AA));
+        return _EventConfig(title: 'Batch Split', icon: Icons.call_split, color: AppColors.statusSplit);
       case 'MERGED':
-        return _EventConfig(title: 'Batch Merged', icon: Icons.merge_type, color: const Color(0xFFEF6C00));
+        return _EventConfig(title: 'Batch Merged', icon: Icons.merge_type, color: AppColors.statusPending);
       case 'TRANSFORMED':
-        return _EventConfig(title: 'Product Transformed', icon: Icons.transform, color: const Color(0xFF0D9488));
+        return _EventConfig(title: 'Product Transformed', icon: Icons.transform, color: AppColors.statusTransferred);
       case 'STAGE_CHANGED':
-        return _EventConfig(title: 'Stage Advanced', icon: Icons.timeline, color: const Color(0xFF059669));
+        return _EventConfig(title: 'Stage Advanced', icon: Icons.timeline, color: AppColors.statusMerged);
       case 'STATUS_CHANGED':
-        return _EventConfig(title: 'Status Updated', icon: Icons.sync_alt, color: const Color(0xFFF57C00));
+        return _EventConfig(title: 'Status Updated', icon: Icons.sync_alt, color: AppColors.statusPending);
       case 'OWNERSHIP_TRANSFERRED':
-        return _EventConfig(title: 'Ownership Transferred', icon: Icons.swap_horiz, color: const Color(0xFF5E35B1));
+        return _EventConfig(title: 'Ownership Transferred', icon: Icons.swap_horiz, color: AppColors.statusSplit);
       case 'DISQUALIFIED':
-        return _EventConfig(title: 'Batch Disqualified', icon: Icons.highlight_off, color: const Color(0xFFD32F2F));
+        return _EventConfig(title: 'Batch Disqualified', icon: Icons.highlight_off, color: AppColors.statusDisqualified);
       case 'ARCHIVED':
-        return _EventConfig(title: 'Batch Archived', icon: Icons.archive_outlined, color: const Color(0xFF757575));
+        return _EventConfig(title: 'Batch Archived', icon: Icons.archive_outlined, color: AppColors.statusArchived);
       default:
         return _EventConfig(title: type.replaceAll('_', ' '), icon: Icons.history, color: AppColors.primary);
     }

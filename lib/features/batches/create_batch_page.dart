@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'batch_detail_page.dart';
 import 'state/batch_provider.dart';
@@ -96,7 +97,7 @@ class _CreateBatchPageState extends ConsumerState<CreateBatchPage> {
                           );
                         },
                         loading: () => const LinearProgressIndicator(),
-                        error: (err, _) => Text('Failed to load products: $err', style: const TextStyle(color: Colors.red)),
+                        error: (err, _) => Text('Failed to load products: $err', style: TextStyle(color: Theme.of(context).colorScheme.error)),
                       ),
                       const SizedBox(height: 16),
                       stagesAsync.when(
@@ -294,7 +295,7 @@ class _CreateBatchPageState extends ConsumerState<CreateBatchPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Batch #${batch.id} created successfully!'),
-          backgroundColor: Colors.green.shade700,
+          backgroundColor: AppColors.statusActive,
         ),
       );
       Navigator.pushReplacement(
@@ -307,7 +308,7 @@ class _CreateBatchPageState extends ConsumerState<CreateBatchPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to create batch: $msg'),
-          backgroundColor: Colors.red.shade700,
+          backgroundColor: AppColors.statusDisqualified,
         ),
       );
     } finally {

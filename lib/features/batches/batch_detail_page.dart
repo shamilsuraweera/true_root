@@ -284,18 +284,18 @@ class BatchDetailPage extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.amber.shade50,
+                      color: AppColors.statusPending.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.amber.shade300),
+                      border: Border.all(color: AppColors.statusPending.withValues(alpha: 0.45)),
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.lock_outline, color: Colors.amber.shade900, size: 20),
+                        Icon(Icons.lock_outline, color: AppColors.statusPending, size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'This batch is locked because it is finalized, archived, or has child derived batches.',
-                            style: TextStyle(color: Colors.amber.shade900, fontSize: 12),
+                            style: TextStyle(color: AppColors.statusPending, fontSize: 12),
                           ),
                         ),
                       ],
@@ -359,7 +359,7 @@ class BatchDetailPage extends ConsumerWidget {
                       icon: const Icon(Icons.shopping_cart_outlined),
                       label: const Text('Request Purchase / Transfer'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2E7D32),
+                        backgroundColor: AppColors.statusActive,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -449,7 +449,7 @@ class BatchDetailPage extends ConsumerWidget {
                         Center(
                           child: Text(
                             'Scan with True Root mobile app to verify origin & authenticity',
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -531,7 +531,7 @@ class _MetricTile extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 label,
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -1338,7 +1338,7 @@ Future<void> _disqualifyBatch(
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Disqualify'),
           ),
