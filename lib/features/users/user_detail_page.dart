@@ -17,7 +17,7 @@ class UserDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final batchesAsync = ref.watch(_userBatchesProvider(user.id));
-    final products = ref.watch(productListProvider).valueOrNull;
+    final products = ref.watch(productListProvider).value;
     final productMap = {
       for (final product in products ?? []) product.id: product.name,
     };

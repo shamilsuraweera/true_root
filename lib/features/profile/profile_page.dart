@@ -297,7 +297,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   void _addMember(AsyncValue<List<AppUser>> usersAsync) {
     final value = _memberController.text.trim();
     if (value.isEmpty) return;
-    final users = usersAsync.valueOrNull ?? [];
+    final users = usersAsync.value ?? [];
     final exists = users.any(
       (user) => user.email.toLowerCase() == value.toLowerCase(),
     );

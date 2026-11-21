@@ -15,6 +15,6 @@ final adminOverviewProvider = FutureProvider<AdminOverview>((ref) async {
 });
 
 final adminRecentActivityProvider = Provider<List<RecentActivity>>((ref) {
-  final overview = ref.watch(adminOverviewProvider).valueOrNull;
+  final overview = ref.watch(adminOverviewProvider).value;
   return overview?.recentActivity ?? const [];
 });

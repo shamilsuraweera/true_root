@@ -120,7 +120,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final cachedRequests = ref.watch(cachedPendingRequestsProvider);
     final cachedBatches = ref.watch(cachedRecentBatchesProvider);
     final cachedActivity = ref.watch(cachedRecentActivityProvider);
-    final products = ref.watch(productListProvider).valueOrNull;
+    final products = ref.watch(productListProvider).value;
     final Map<int, String> productMap = {
       for (final product in products ?? []) product.id: product.name,
     };
@@ -184,7 +184,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     Expanded(
                       child: _KpiMiniCard(
                         label: 'Active Batches',
-                        value: '${batchesAsync.valueOrNull?.length ?? 0}',
+                        value: '${batchesAsync.value?.length ?? 0}',
                         icon: Icons.inventory_2_outlined,
                       ),
                     ),
@@ -192,7 +192,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     Expanded(
                       child: _KpiMiniCard(
                         label: 'Pending Inbound',
-                        value: '${requestsAsync.valueOrNull?.where((r) => r.status == 'PENDING').length ?? 0}',
+                        value: '${requestsAsync.value?.where((r) => r.status == 'PENDING').length ?? 0}',
                         icon: Icons.inbox_outlined,
                       ),
                     ),
@@ -714,7 +714,7 @@ class _RequestCard extends StatelessWidget {
 
 String _requestQuantityText(WidgetRef ref, OwnershipRequest request) {
   final batchAsync = ref.watch(batchByIdProvider(request.batchId));
-  final batch = batchAsync.valueOrNull;
+  final batch = batchAsync.value;
   final unit = batch?.unit ?? 'kg';
   return '${request.quantity} $unit';
 }

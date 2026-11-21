@@ -34,11 +34,11 @@ class BatchDetailPage extends ConsumerWidget {
         }
 
         final lineageAsync = ref.watch(batchLineageProvider(batch.id));
-        final hasChildren = lineageAsync.valueOrNull?.children.isNotEmpty ?? false;
+        final hasChildren = lineageAsync.value?.children.isNotEmpty ?? false;
         final isLocked = _isLockedBatch(batch) || hasChildren;
 
-        final products = ref.watch(productListProvider).valueOrNull;
-        final stages = ref.watch(stageListProvider).valueOrNull;
+        final products = ref.watch(productListProvider).value;
+        final stages = ref.watch(stageListProvider).value;
         String? productName;
         String? stageName;
         if (products != null && batch.productId != null) {
@@ -556,7 +556,7 @@ class _BatchLineageSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lineageAsync = ref.watch(batchLineageProvider(batchId));
-    final products = ref.watch(productListProvider).valueOrNull;
+    final products = ref.watch(productListProvider).value;
     final Map<int, String> productMap = {
       for (final product in products ?? []) product.id: product.name,
     };
@@ -692,7 +692,7 @@ Future<void> _showUpdateDialog(
       return Consumer(
         builder: (context, ref, _) {
           final stagesAsync = ref.watch(stageListProvider);
-          final stageItems = _buildStageItems(stagesAsync.valueOrNull);
+          final stageItems = _buildStageItems(stagesAsync.value);
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: const Text('Update Batch'),
@@ -924,7 +924,7 @@ Future<void> _showMergeDialog(
   var mergedItemNameText = '';
   var gradeText = '';
 
-  final products = ref.read(productListProvider).valueOrNull ?? [];
+  final products = ref.read(productListProvider).value ?? [];
 
   final result = await showDialog<bool>(
     context: context,
@@ -1063,7 +1063,7 @@ Future<void> _showTransformDialog(
   var quantityText = availableQuantity.toString();
   var gradeText = '';
 
-  final products = ref.read(productListProvider).valueOrNull ?? [];
+  final products = ref.read(productListProvider).value ?? [];
 
   final result = await showDialog<bool>(
     context: context,

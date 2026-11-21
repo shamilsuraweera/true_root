@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../../batches/models/batch.dart';
 import '../../batches/state/batch_provider.dart';
 import '../data/dashboard_api.dart';
