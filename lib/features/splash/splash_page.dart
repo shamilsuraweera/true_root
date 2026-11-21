@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app_routes.dart';
-import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/brand_logo.dart';
 import '../../state/auth_state.dart';
 import '../auth/state/auth_provider.dart';
 
@@ -69,13 +70,42 @@ class _SplashPageState extends ConsumerState<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: AppColors.primary,
-      body: Center(
-        child: Image(
-          image: AssetImage('assets/icon/app_icon.png'),
-          width: 120,
-          height: 120,
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppGradients.brand),
+        child: Center(
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 1100),
+            curve: Curves.easeOutCubic,
+            builder: (_, v, _) => Opacity(
+              opacity: v.clamp(0.0, 1.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  BrandLogo(size: 104, progress: v),
+                  const SizedBox(height: Gap.xl),
+                  const Text(
+                    'True Root',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: Gap.xs),
+                  Text(
+                    'Traceability from root to shelf',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
