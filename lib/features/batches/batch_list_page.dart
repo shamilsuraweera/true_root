@@ -469,9 +469,6 @@ class _BatchListPageState extends ConsumerState<BatchListPage> {
                                             'No pending purchase requests.',
                                       ),
                                     ],
-                                        ),
-                                      ),
-                                    ],
                                   ),
                                 );
                               }
