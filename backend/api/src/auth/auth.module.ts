@@ -25,7 +25,7 @@ export class AuthModule {}
 
 function resolveJwtExpiresIn(value?: string): number | StringValue {
   if (!value || value.trim().length == 0) {
-    return '7d' as StringValue;
+    return '7d';
   }
   const numeric = Number(value);
   if (Number.isFinite(numeric)) {

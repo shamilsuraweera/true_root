@@ -22,7 +22,9 @@ async function runSeed() {
 
     const sql = fs.readFileSync(sqlPath, 'utf8');
     await client.query(sql);
-    console.log('Database seeded successfully with demo users, products, stages, batches, and events!');
+    console.log(
+      'Database seeded successfully with demo users, products, stages, batches, and events!',
+    );
   } catch (err) {
     console.error('Seeding failed:', err);
     process.exit(1);
@@ -32,4 +34,3 @@ async function runSeed() {
 }
 
 void runSeed();
-
