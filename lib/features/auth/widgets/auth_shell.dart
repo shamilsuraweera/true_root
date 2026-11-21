@@ -1,9 +1,12 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/app_widgets.dart';
+import '../../../core/widgets/brand_logo.dart';
 
+/// Responsive auth layout.
+/// * Wide: brand panel on the left, form on the right.
+/// * Narrow: brand header with the form in a rounded sheet below.
 class AuthShell extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -20,297 +23,233 @@ class AuthShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final cardWidth = width > 1100
-        ? 460.0
-        : width > 800
-        ? 420.0
-        : double.infinity;
+    final wide = MediaQuery.sizeOf(context).width >= 900;
+    final form = _FormPane(
+      title: title,
+      subtitle: subtitle,
+      trailing: trailing,
+      child: child,
+    );
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          const _AuthBackdrop(),
-          SafeArea(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary.withValues(alpha: 0.95),
-                          AppColors.primary.withValues(alpha: 0.82),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x33000000),
-                          blurRadius: 24,
-                          offset: Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Stack(
-                      children: [
-                        const _PanelDecorations(),
-                        Center(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(maxWidth: cardWidth),
-                            child: Padding(
-                              padding: const EdgeInsets.all(18),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(20),
-                                child: BackdropFilter(
-                                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                                  child: Container(
-                                    padding: const EdgeInsets.fromLTRB(
-                                      22,
-                                      22,
-                                      22,
-                                      16,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(20),
-                                      color: Colors.white.withValues(alpha: 0.14),
-                                      border: Border.all(
-                                        color: Colors.white.withValues(alpha: 0.2),
-                                      ),
-                                    ),
-                                    child: SingleChildScrollView(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      subtitle,
-                                                      style: const TextStyle(
-                                                        color: Colors.white70,
-                                                        fontWeight: FontWeight.w600,
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      title,
-                                                      style: const TextStyle(
-                                                        fontSize: 34,
-                                                        color: Colors.white,
-                                                        fontWeight: FontWeight.w800,
-                                                        height: 1.05,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              if (trailing != null) trailing!,
-                                            ],
-                                          ),
-                                          const SizedBox(height: 18),
-                                          child,
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+    if (wide) {
+      return Scaffold(
+        body: Row(
+          children: [
+            const Expanded(flex: 5, child: _BrandPanel()),
+            Expanded(
+              flex: 4,
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(Gap.xxl),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    child: FadeSlideIn(child: form),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AuthBackdrop extends StatelessWidget {
-  const _AuthBackdrop();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.secondary.withValues(alpha: 0.9),
-            AppColors.primary.withValues(alpha: 0.6),
           ],
         ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            left: -110,
-            top: -80,
-            child: _SoftCircle(
-              size: 280,
-              color: Colors.white.withValues(alpha: 0.12),
-            ),
-          ),
-          Positioned(
-            right: -90,
-            bottom: -120,
-            child: _SoftCircle(
-              size: 340,
-              color: Colors.white.withValues(alpha: 0.1),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+      );
+    }
 
-class _PanelDecorations extends StatelessWidget {
-  const _PanelDecorations();
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          Positioned(
-            left: 48,
-            top: 100,
-            child: _Ribbon(width: 88, height: 18, rotate: -0.78),
-          ),
-          Positioned(
-            left: 88,
-            top: 145,
-            child: _Ribbon(width: 54, height: 14, rotate: -0.72),
-          ),
-          Positioned(
-            right: 90,
-            top: 72,
-            child: _Loop(size: 160),
-          ),
-          Positioned(
-            right: 140,
-            bottom: 58,
-            child: _WavePair(),
-          ),
-          Positioned(
-            left: 42,
-            bottom: 42,
-            child: _Loop(size: 110),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SoftCircle extends StatelessWidget {
-  final double size;
-  final Color color;
-
-  const _SoftCircle({required this.size, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-    );
-  }
-}
-
-class _Ribbon extends StatelessWidget {
-  final double width;
-  final double height;
-  final double rotate;
-
-  const _Ribbon({
-    required this.width,
-    required this.height,
-    required this.rotate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: rotate,
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            colors: [
-              Colors.white.withValues(alpha: 0.75),
-              Colors.white.withValues(alpha: 0.45),
+    return Scaffold(
+      backgroundColor: const Color(0xFF007E6E),
+      body: Container(
+        decoration: const BoxDecoration(gradient: AppGradients.brand),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(Gap.xl, Gap.xl, Gap.xl, Gap.lg),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: BrandLogo(size: 40, showWordmark: true, light: true),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(Radii.xl + 8),
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(
+                      Gap.xl,
+                      Gap.xxl,
+                      Gap.xl,
+                      Gap.xl + MediaQuery.viewInsetsOf(context).bottom,
+                    ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 480),
+                        child: FadeSlideIn(child: form),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0x66004D43).withValues(alpha: 0.35),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
         ),
       ),
     );
   }
 }
 
-class _Loop extends StatelessWidget {
-  final double size;
-
-  const _Loop({required this.size});
+class _FormPane extends StatelessWidget {
+  const _FormPane({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+    this.trailing,
+  });
+  final String title;
+  final String subtitle;
+  final Widget child;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size * 0.55,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(size),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.16), width: 10),
-      ),
-    );
-  }
-}
-
-class _WavePair extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
+    final t = Theme.of(context).textTheme;
+    final c = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _wave(),
-        const SizedBox(width: 8),
-        _wave(),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: t.headlineLarge),
+                  const SizedBox(height: Gap.xs),
+                  Text(
+                    subtitle == 'True Root'
+                        ? (title == 'Login'
+                            ? 'Welcome back. Sign in to continue.'
+                            : 'Create your True Root account.')
+                        : subtitle,
+                    style: t.bodyMedium?.copyWith(color: c.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ),
+            ?trailing,
+          ],
+        ),
+        const SizedBox(height: Gap.xl),
+        child,
       ],
     );
   }
+}
 
-  Widget _wave() {
+class _BrandPanel extends StatelessWidget {
+  const _BrandPanel();
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      width: 42,
-      height: 20,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.45), width: 6),
+      decoration: const BoxDecoration(gradient: AppGradients.brand),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -120,
+            top: -120,
+            child: _Glow(size: 420, opacity: 0.10),
+          ),
+          Positioned(
+            left: -140,
+            bottom: -160,
+            child: _Glow(size: 480, opacity: 0.08),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(56),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const BrandLogo(size: 48, showWordmark: true, light: true),
+                const Spacer(),
+                const Text(
+                  'Trace every harvest,\nfrom root to shelf.',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 44,
+                    height: 1.1,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -1,
+                  ),
+                ),
+                const SizedBox(height: Gap.lg),
+                Text(
+                  'Verifiable batch history, ownership transfers and QR '
+                  'provenance for every link in your agricultural supply chain.',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.82),
+                    fontSize: 16,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: Gap.xxl),
+                const _Feature(Icons.qr_code_2_rounded, 'Scan & verify batches instantly'),
+                const _Feature(Icons.swap_horiz_rounded, 'Transparent ownership transfers'),
+                const _Feature(Icons.timeline_rounded, 'Complete, tamper-evident history'),
+                const Spacer(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _Feature extends StatelessWidget {
+  const _Feature(this.icon, this.text);
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: Gap.md),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.16),
+                borderRadius: Radii.smAll,
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: Gap.md),
+            Text(text,
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      );
+}
+
+class _Glow extends StatelessWidget {
+  const _Glow({required this.size, required this.opacity});
+  final double size;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: opacity),
+        ),
+      );
 }
