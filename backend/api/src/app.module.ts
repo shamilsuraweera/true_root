@@ -11,20 +11,13 @@ import { StagesModule } from './stages/stages.module';
 import { UsersModule } from './users/users.module';
 import { OwnershipRequestsModule } from './ownership-requests/ownership-requests.module';
 import { AdminModule } from './admin/admin.module';
+import { buildDbOptions } from './database/db-config';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST ?? '127.0.0.1',
-      port: Number(process.env.DB_PORT ?? 5432),
-      username: process.env.DB_USER ?? 'true_root',
-      password: process.env.DB_PASS ?? 'true_root',
-      database: process.env.DB_NAME ?? 'true_root',
+      ...buildDbOptions(),
       autoLoadEntities: true,
-      synchronize: true,
-      ssl:
-        process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
     }),
 
     AuthModule,
