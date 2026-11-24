@@ -1,6 +1,7 @@
 import { Client } from 'pg';
 import * as fs from 'fs';
 import * as path from 'path';
+import { resolveDbName } from './database/db-config';
 
 async function runSeed() {
   const client = new Client({
@@ -8,7 +9,7 @@ async function runSeed() {
     port: Number(process.env.DB_PORT ?? 5432),
     user: process.env.DB_USER ?? 'true_root',
     password: process.env.DB_PASS ?? 'true_root',
-    database: process.env.DB_NAME ?? 'true_root',
+    database: resolveDbName(),
   });
 
   try {

@@ -6,10 +6,14 @@ True Root uses PostgreSQL through TypeORM. Connection settings come from environ
 | Variable | Purpose |
 |---|---|
 | `DB_HOST` / `DB_PORT` | server address [`127.0.0.1` / `5432`] |
-| `DB_USER` / `DB_PASS` / `DB_NAME` | credentials and database [`true_root` for all three] |
+| `DB_USER` / `DB_PASS` / `DB_NAME` | credentials and database [`true_root` for all three]. `DB_NAME` may **never** be `postgres`, `template0` or `template1`: the API, the migration CLI and the seed refuse to start. |
 | `DB_SSL` | `true` for managed databases that require TLS |
 | `DB_SYNCHRONIZE` | `false` turns off automatic schema sync [default: on] |
 | `DB_MIGRATIONS_RUN` | `true` applies pending migrations when the API starts [default: off] |
+
+You can keep these in `backend/api/.env` (git-ignored; copy `.env.example`) instead of exporting them. Real
+environment variables take precedence. You may connect as any role (for example `postgres`), but always to a
+dedicated database; create it once with `CREATE DATABASE true_root;`.
 
 ## Two ways to manage the schema
 
