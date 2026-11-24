@@ -76,6 +76,8 @@ For a **physical phone** (or a browser on another computer) use your computer's 
 2. Allow port 3000 (and 8080 for web) through the firewall (`sudo ufw allow 3000`).
 3. For web on a phone: `flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080`, open `http://<LAN-IP>:8080`.
 4. In the app: login screen, tap the **gear icon**, enter `http://<LAN-IP>:3000` and save. The value is remembered.
+   Alternatively bake the URL in at build time: `flutter run --dart-define=API_URL=http://<LAN-IP>:3000`
+   (a URL saved via the gear icon still takes priority).
 
 The API listens on `0.0.0.0` and allows all origins in development, so no extra API configuration is needed.
 
