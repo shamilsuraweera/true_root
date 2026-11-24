@@ -6,7 +6,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiConfig {
   static const _storageKey = 'custom_base_url';
 
+  /// Build-time override: `flutter run --dart-define=API_URL=http://127.0.0.1:3002`.
+  static const _envUrl = String.fromEnvironment('API_URL');
+
   static String _defaultUrl() {
+    if (_envUrl.trim().isNotEmpty) return _envUrl.trim();
     if (kIsWeb) return 'http://127.0.0.1:3000';
     if (defaultTargetPlatform == TargetPlatform.windows ||
         defaultTargetPlatform == TargetPlatform.macOS ||
